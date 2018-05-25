@@ -34,8 +34,9 @@ func Run() {
 	app.Usage = USAGE
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
-			Name:  "debug",
-			Usage: debugFlagUsage,
+			Name:   "debug",
+			Usage:  debugFlagUsage,
+			EnvVar: "BMP_DEBUG",
 		},
 	}
 	app.Commands = []cli.Command{
