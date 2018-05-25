@@ -1,9 +1,7 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/agurinov/dnskek/log"
+	"github.com/boomfunc/log"
 	"github.com/urfave/cli"
 )
 
@@ -17,5 +15,6 @@ var (
 func runCommandAction(c *cli.Context) {
 	log.SetDebug(c.GlobalBool("debug"))
 
-	fmt.Println("FFFF")
+	log.Info("Info")
+	log.Debug("Debug")
 }
