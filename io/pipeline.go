@@ -24,18 +24,24 @@ func (l *Layer) Read(p []byte) (n int, err error) {
 
 // https://gist.github.com/tyndyll/89fbb2c2273f83a074dc
 
-func run(layers []*exec.Cmd, pipes []*io.PipeWriter) {
+func run(layers []*exec.Cmd, pipes []*io.PipeWriter) (err error) {
+	// look at for loop
 	if len(layers) > 1 {
 		defer func() {
-			pipes[0].Close()
-			run(layers[1:], pipes[1:])
+			if err = pipes[0].Close(); err != nil {
+				return err
+			}
+
+			if err = run(layers[1:], pipes[1:]); err != nil {
+				return err
+			}
 		}()
 	}
 
-	layers[0].Wait()
+	return layers[0].Wait()
 }
 
-func connect(input io.Reader, output io.Writer, layers ...*exec.Cmd) {
+func connect(input io.Reader, output io.Writer, layers ...*exec.Cmd) (err error) {
 	pipes := make([]*io.PipeWriter, len(layers)-1)
 
 	// piping input and output
@@ -52,9 +58,11 @@ func connect(input io.Reader, output io.Writer, layers ...*exec.Cmd) {
 
 	// start the pipeline
 	for _, layer := range layers {
-		layer.Start()
+		if err = layer.Start(); err != nil {
+			return err
+		}
 	}
 
 	// run execution and chaining
-	run(layers, pipes)
+	return run(layers, pipes)
 }
