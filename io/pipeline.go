@@ -24,25 +24,25 @@ func (l *Layer) Read(p []byte) (n int, err error) {
 
 // https://gist.github.com/tyndyll/89fbb2c2273f83a074dc
 
-func run(layers []*exec.Cmd, pipes []*io.PipeWriter) (err error) {
-	// look at for loop
-	if len(layers) > 1 {
-		defer func() {
-			if err = pipes[0].Close(); err != nil {
-				return err
-			}
+func run(layers []*exec.Cmd, pipeWriters []*io.PipeWriter) (err error) {
+	for i, layer := range layers {
+		if err := layer.Wait(); err != nil {
+			return err
+		}
 
-			if err = run(layers[1:], pipes[1:]); err != nil {
+		if i < len(layers)-1 {
+			if err := pipeWriters[i].Close(); err != nil {
 				return err
 			}
-		}()
+		}
 	}
 
-	return layers[0].Wait()
+	return nil
 }
 
 func connect(input io.Reader, output io.Writer, layers ...*exec.Cmd) (err error) {
-	pipes := make([]*io.PipeWriter, len(layers)-1)
+	//pipes count less than layers by one, because last layer no need in piping
+	pipeWriters := make([]*io.PipeWriter, len(layers)-1)
 
 	// piping input and output
 	// TODO link first layer (input)
@@ -51,18 +51,18 @@ func connect(input io.Reader, output io.Writer, layers ...*exec.Cmd) (err error)
 		r, w := io.Pipe()
 		layers[i].Stdout = w
 		layers[i+1].Stdin = r // next element exact!
-		pipes[i] = w          // save pipe for next loops
+		pipeWriters[i] = w    // save pipe for next loops
 	}
 	// link last layer (output)
 	layers[len(layers)-1].Stdout = output
 
 	// start the pipeline
 	for _, layer := range layers {
-		if err = layer.Start(); err != nil {
+		if err := layer.Start(); err != nil {
 			return err
 		}
 	}
 
 	// run execution and chaining
-	return run(layers, pipes)
+	return run(layers, pipeWriters)
 }
