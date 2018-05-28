@@ -1,10 +1,10 @@
 package io
 
 import (
-	"testing"
 	"bytes"
-	"os/exec"
 	"fmt"
+	"os/exec"
+	"testing"
 )
 
 func BenchmarkChaining(b *testing.B) {
@@ -18,15 +18,23 @@ func BenchmarkChaining(b *testing.B) {
 	// 	{"tcp://192.168.99.101:2376", net.ParseIP("192.168.99.101")},
 	// }
 	b.Run("first", func(b *testing.B) {
-		for i := 0; i < 1; i++ {
+		for i := 0; i < b.N; i++ {
+			b.StopTimer()
+
 			input := bytes.NewBuffer([]byte{'g', 'o', 'l', 'a', 'n'})
 			output := bytes.NewBuffer([]byte{})
 
-			chaining(
+			b.StartTimer()
+
+			connect(
 				input,
 				output,
-				exec.Command("echo", "$@"),
+				exec.Command("ls"),
+				// exec.Command("grep bench"),
+				exec.Command("wc", "-l"),
 			)
+
+			b.StopTimer()
 
 			fmt.Println("RESPONSE", output.String())
 		}

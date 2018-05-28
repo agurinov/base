@@ -3,18 +3,18 @@ package io
 import (
 	"io"
 	// "io/ioutil"
-	"fmt"
-	"log"
+	// "fmt"
+	// "log"
 	"os/exec"
 	// "bytes"
 )
 
 type Pipeline []io.ReadWriter
 
-
 type Layer struct {
 	cmd *exec.Cmd
 }
+
 func (l *Layer) Write(p []byte) (n int, err error) {
 	return l.cmd.Stdout.Write(p)
 }
@@ -22,51 +22,39 @@ func (l *Layer) Read(p []byte) (n int, err error) {
 	return l.cmd.Stdin.Read(p)
 }
 
+// https://gist.github.com/tyndyll/89fbb2c2273f83a074dc
 
-func chaining(input io.Reader, output io.Writer, layer *exec.Cmd) {
-	// buf, err := ioutil.ReadAll(input)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	buf := make([]byte, 5)
-
-	reader, writer := io.Pipe()
-
-	layer.Stdin = reader
-	layer.Stdout = writer
-
-	layer.Start()
-
-	io.Copy(writer, input)
-
-	if err := layer.Wait(); err != nil {
-		log.Fatal(err)
+func run(layers []*exec.Cmd, pipes []*io.PipeWriter) {
+	if len(layers) > 1 {
+		defer func() {
+			pipes[0].Close()
+			run(layers[1:], pipes[1:])
+		}()
 	}
 
-	writer.Close()
-
-	// final response
-	io.Copy(output, reader)
-	reader.Close()
+	layers[0].Wait()
 }
 
+func connect(input io.Reader, output io.Writer, layers ...*exec.Cmd) {
+	pipes := make([]*io.PipeWriter, len(layers)-1)
 
+	// piping input and output
+	// TODO link first layer (input)
+	for i := 0; i < len(layers)-1; i++ {
+		// intermediate pipe
+		r, w := io.Pipe()
+		layers[i].Stdout = w
+		layers[i+1].Stdin = r // next element exact!
+		pipes[i] = w          // save pipe for next loops
+	}
+	// link last layer (output)
+	layers[len(layers)-1].Stdout = output
 
-// func main() {
-//     c1 := exec.Command("ls")
-//     c2 := exec.Command("wc", "-l")
-//
-//     r, w := io.Pipe()
-//     c1.Stdout = w
-//     c2.Stdin = r
-//
-//     var b2 bytes.Buffer
-//     c2.Stdout = &b2
-//
-//     c1.Start()
-//     c2.Start()
-//     c1.Wait()
-//     w.Close()
-//     c2.Wait()
-//     io.Copy(os.Stdout, &b2)
-// }
+	// start the pipeline
+	for _, layer := range layers {
+		layer.Start()
+	}
+
+	// run execution and chaining
+	run(layers, pipes)
+}
