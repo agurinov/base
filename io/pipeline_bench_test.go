@@ -22,7 +22,7 @@ func BenchmarkChaining(b *testing.B) {
 				input,
 				output,
 				exec.Command("ls"),
-				// exec.Command("tail -1"),
+				// exec.Command("grep bench"),
 				exec.Command("wc", "-l"),
 			)
 
