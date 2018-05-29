@@ -8,26 +8,32 @@ import (
 // piping establishes pipe connections between IO processes (Layer)
 // the first layer accepts as stdin the input buffer
 // the last layer puts into output buffer his stdout
-func piping(input io.Reader, output io.Writer, layers ...*exec.Cmd) (err error) {
-	//pipes count less than layers by one, because last layer no need in piping
-	pipeWriters := make([]*io.PipeWriter, len(layers)-1)
-
-	// piping input and output
-	// TODO link first layer (input)
-
-	// piping intermediate layers
-	for i := 0; i < len(layers)-1; i++ {
-		// intermediate pipe
-		r, w := io.Pipe()
-		layers[i].Stdout = w
-		layers[i+1].Stdin = r // next element exact!
-		pipeWriters[i] = w    // save pipe for next loops
+func piping(input io.Reader, output io.Writer, layers ...*Pipeliner) (err error) {
+	// main logic that create pairs of (io.ReadCloser, io.WriteCloser)
+	// but with offset to another layer
+	// for example
+	// layer 1: (input, io.WriteCloser 1)
+	// layer 2: (io.ReadCloser 1, io.WriteCloser 2)
+	// layer 3: (io.ReadCloser 2, io.WriteCloser 3)
+	// layer 4: (io.ReadCloser 3, output)
+	// and call each layer's .pipe() method
+	for i := 0; i < len(layers); i++ {
+		if i == 0 {
+			// case this layer first
+			layers[i].setStdin(input)
+		}
+		if i == len(layers)-1 {
+			// case this layer last
+			layers[i].setStdout(output)
+		} else {
+			// this is intermediate layer, need piping
+			r, w := io.Pipe()
+			layers[i].setStdout(w)
+			layers[i+1].setStdin(r)
+		}
 	}
 
-	// link last layer (output)
-	layers[len(layers)-1].Stdout = output
-
-	return nil
+	nil
 }
 
 // start invokes the layer's .Start() method in the order of the queue

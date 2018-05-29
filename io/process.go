@@ -30,8 +30,10 @@ func (c *Process) start() (err error) {
 
 	return nil
 }
-func (c *Process) pipe(reader io.ReadCloser, writer io.WriteCloser) {
+func (c *Process) setStdin(reader io.ReadCloser) {
 	c.stdin = reader
+}
+func (c *Process) setStdout(writer io.WriteCloser) {
 	c.stdout = writer
 }
 func (c *Process) run() (err error) {

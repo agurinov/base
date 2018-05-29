@@ -22,8 +22,10 @@ func (s *Socket) start() (err error) {
 
 	return nil
 }
-func (s *Socket) pipe(reader io.ReadCloser, writer io.WriteCloser) {
+func (s *Socket) setStdin(reader io.ReadCloser) {
 	s.stdin = reader
+}
+func (s *Socket) setStdout(writer io.WriteCloser) {
 	s.stdout = writer
 }
 func (s *Socket) run() (err error) {

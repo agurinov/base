@@ -34,13 +34,3 @@ func (p *Pipeline) Run() (err error) {
 // return run(layers, pipeWriters)
 
 // io.ReadWriter
-// type Layer struct {
-// 	cmd *exec.Cmd
-// }
-//
-// func (l *Layer) Write(p []byte) (n int, err error) {
-// 	return l.cmd.Stdout.Write(p)
-// }
-// func (l *Layer) Read(p []byte) (n int, err error) {
-// 	return l.cmd.Stdin.Read(p)
-// }

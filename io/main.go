@@ -1,7 +1,8 @@
 package io
 
 type Pipeliner interface {
-	pipe(reader io.ReadCloser, writer io.WriteCloser)
+	setStdin(reader io.ReadCloser)
+	setStdout(writer io.WriteCloser)
 }
 
 type RunCloser interface {
