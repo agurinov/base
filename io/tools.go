@@ -8,7 +8,7 @@ import (
 // piping establishes pipe connections between IO processes (Layer)
 // the first layer accepts as stdin the input buffer
 // the last layer puts into output buffer his stdout
-func piping(input io.Reader, output io.Writer, layers ...*exec.Cmd) {
+func piping(input io.Reader, output io.Writer, layers ...*exec.Cmd) (err error) {
 	//pipes count less than layers by one, because last layer no need in piping
 	pipeWriters := make([]*io.PipeWriter, len(layers)-1)
 
@@ -26,6 +26,8 @@ func piping(input io.Reader, output io.Writer, layers ...*exec.Cmd) {
 
 	// link last layer (output)
 	layers[len(layers)-1].Stdout = output
+
+	return nil
 }
 
 // start invokes the layer's .Start() method in the order of the queue

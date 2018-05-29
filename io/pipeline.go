@@ -9,7 +9,21 @@ import (
 	// "bytes"
 )
 
-type Pipeline []io.ReadWriter
+type Pipeline []*Layer
+
+func (p *Pipeline) Run() (err error) {
+	if err := piping(); err != nil {
+		return err
+	}
+
+	if err := start(); err != nil {
+		return err
+	}
+
+	if err := run(); err != nil {
+		return err
+	}
+}
 
 // start the pipeline
 // if err := start(layers); err != nil {
@@ -19,13 +33,14 @@ type Pipeline []io.ReadWriter
 // run execution and chaining
 // return run(layers, pipeWriters)
 
-type Layer struct {
-	cmd *exec.Cmd
-}
-
-func (l *Layer) Write(p []byte) (n int, err error) {
-	return l.cmd.Stdout.Write(p)
-}
-func (l *Layer) Read(p []byte) (n int, err error) {
-	return l.cmd.Stdin.Read(p)
-}
+// io.ReadWriter
+// type Layer struct {
+// 	cmd *exec.Cmd
+// }
+//
+// func (l *Layer) Write(p []byte) (n int, err error) {
+// 	return l.cmd.Stdout.Write(p)
+// }
+// func (l *Layer) Read(p []byte) (n int, err error) {
+// 	return l.cmd.Stdin.Read(p)
+// }
