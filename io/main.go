@@ -1,16 +1,20 @@
 package io
 
-type Pipeliner interface {
+import (
+	"io"
+)
+
+type Pipeable interface {
 	setStdin(reader io.ReadCloser)
 	setStdout(writer io.WriteCloser)
 }
 
 type RunCloser interface {
 	run() (err error)
-	close() (err error)
+	io.Closer
 }
 
 type PipeExec interface {
-	Pipeliner
+	Pipeable
 	RunCloser
 }

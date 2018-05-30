@@ -6,21 +6,25 @@ import (
 )
 
 type Process struct {
-	// name string
-	arg []string
-	cmd *exec.Cmd
+	name string
+	arg  []string
+	cmd  *exec.Cmd
 
 	stdin  io.ReadCloser
 	stdout io.WriteCloser
 }
 
+func NewProcess(name string, arg ...string) *Process {
+	return &Process{name: name, arg: arg}
+}
+
 func (c *Process) start() (err error) {
 	if c.cmd == nil {
-		c.cmd = exec.Command(arg...)
+		c.cmd = exec.Command(c.name, c.arg...)
 	}
 
-	c.cmd.Stdin = reader
-	c.cmd.Stdout = writer
+	c.cmd.Stdin = c.stdin
+	c.cmd.Stdout = c.stdout
 
 	if c.cmd.Process == nil {
 		if err = c.cmd.Start(); err != nil {
@@ -41,7 +45,9 @@ func (c *Process) run() (err error) {
 	if err = c.start(); err != nil {
 		return err
 	}
+
+	return nil
 }
-func (c *Process) close() (err error) {
+func (c *Process) Close() (err error) {
 	return c.cmd.Wait()
 }

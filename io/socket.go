@@ -7,10 +7,14 @@ import (
 
 type Socket struct {
 	address string
-	conn    *net.Conn
+	conn    net.Conn
 
 	stdin  io.ReadCloser
 	stdout io.WriteCloser
+}
+
+func NewSocket(address string) *Socket {
+	return &Socket{address: address}
 }
 
 func (s *Socket) start() (err error) {
@@ -52,6 +56,6 @@ func (s *Socket) run() (err error) {
 
 	return nil
 }
-func (s *Socket) close() (err error) {
+func (s *Socket) Close() (err error) {
 	return s.conn.Close()
 }
