@@ -1,6 +1,7 @@
 package io
 
 import (
+	"fmt"
 	"io"
 )
 
@@ -29,6 +30,28 @@ func piping(input io.ReadCloser, output io.WriteCloser, layers ...Pipeable) (err
 			r, w := io.Pipe()
 			layers[i].setStdout(w)
 			layers[i+1].setStdin(r)
+		}
+	}
+
+	return nil
+}
+
+func run(layers ...RunCloser) (err error) {
+	// prepare all layers (preRun hook)
+	fmt.Println("\n---> PREPARE")
+	for _, layer := range layers {
+		if err := layer.preRun(); err != nil {
+			return err
+		}
+	}
+
+	fmt.Println("\n---> RUN")
+	// Run pipeline
+	for _, layer := range layers {
+		defer layer.Close()
+
+		if err := layer.Run(); err != nil {
+			return err
 		}
 	}
 

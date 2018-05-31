@@ -10,7 +10,8 @@ type Pipeable interface {
 }
 
 type RunCloser interface {
-	run() (err error)
+	preRun() (err error)
+	Run() (err error)
 	io.Closer
 }
 

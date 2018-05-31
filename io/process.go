@@ -51,10 +51,6 @@ func (p *Process) Run() error {
 	return nil
 }
 
-func (p *Process) postRun() error {
-	return nil
-}
-
 func (p *Process) Close() error {
 	return nil
 }
