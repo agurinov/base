@@ -18,36 +18,51 @@ func NewProcess(name string, arg ...string) *Process {
 	return &Process{name: name, arg: arg}
 }
 
-func (c *Process) start() (err error) {
-	if c.cmd == nil {
-		c.cmd = exec.Command(c.name, c.arg...)
+func (p *Process) preRun() error {
+	if p.cmd == nil {
+		p.cmd = exec.Command(p.name, p.arg...)
 	}
 
-	c.cmd.Stdin = c.stdin
-	c.cmd.Stdout = c.stdout
+	p.cmd.Stdin = p.stdin
+	p.cmd.Stdout = p.stdout
 
-	if c.cmd.Process == nil {
-		if err = c.cmd.Start(); err != nil {
+	if p.cmd.Process == nil {
+		if err := p.cmd.Start(); err != nil {
 			return err
 		}
 	}
 
 	return nil
 }
-func (c *Process) setStdin(reader io.ReadCloser) {
-	c.stdin = reader
-}
-func (c *Process) setStdout(writer io.WriteCloser) {
-	c.stdout = writer
-}
-func (c *Process) run() (err error) {
-	// check cmd associated and exists
-	if err = c.start(); err != nil {
+
+func (p *Process) Run() error {
+	if err := p.cmd.Wait(); err != nil {
+		return err
+	}
+
+	if err := p.stdin.Close(); err != nil {
+		return err
+	}
+
+	if err := p.stdout.Close(); err != nil {
 		return err
 	}
 
 	return nil
 }
-func (c *Process) Close() (err error) {
-	return c.cmd.Wait()
+
+func (p *Process) postRun() error {
+	return nil
+}
+
+func (p *Process) Close() error {
+	return nil
+}
+
+func (p *Process) setStdin(reader io.ReadCloser) {
+	p.stdin = reader
+}
+
+func (p *Process) setStdout(writer io.WriteCloser) {
+	p.stdout = writer
 }
