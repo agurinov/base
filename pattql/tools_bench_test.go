@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestBracketString(t *testing.T) {
+func BenchmarkBracketString(b *testing.B) {
 	tableTests := []struct {
 		source string // source
 		out    string // expected value of String() method
@@ -16,23 +16,15 @@ func TestBracketString(t *testing.T) {
 	}
 
 	for i, tt := range tableTests {
-		bracket := Bracket{tt.source}
-
-		t.Run(fmt.Sprintf("%d.String()", i), func(t *testing.T) {
-			if bracket.String() != tt.out {
-				t.Errorf("Expected %q, got %q", tt.out, bracket.String())
-			}
-		})
-
-		t.Run(fmt.Sprintf("fmt.Sprint(%d)", i), func(t *testing.T) {
-			if fmt.Sprint(bracket) != tt.out {
-				t.Errorf("Expected %q, got %q", tt.out, fmt.Sprint(bracket))
+		b.Run(fmt.Sprintf("%d.String()", i), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				Bracket{tt.source}.String()
 			}
 		})
 	}
 }
 
-func TestBracketFromSource(t *testing.T) {
+func BenchmarkBracketFromSource(b *testing.B) {
 	tableTests := []struct {
 		source string // source
 		out    string // expected value of String() method
@@ -44,17 +36,15 @@ func TestBracketFromSource(t *testing.T) {
 	}
 
 	for i, tt := range tableTests {
-		bracket := bracketFromSource(tt.source)
-
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			if bracket.source != tt.out {
-				t.Errorf("Expected %q, got %q", tt.out, bracket.source)
+		b.Run(fmt.Sprintf("%d", i), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				bracketFromSource(tt.source)
 			}
 		})
 	}
 }
 
-func TestGetRegexp(t *testing.T) {
+func BenchmarkGetRegexp(b *testing.B) {
 	tableTests := []struct {
 		pattern string // source
 		out     string // expected value of String() method
@@ -67,11 +57,9 @@ func TestGetRegexp(t *testing.T) {
 	}
 
 	for i, tt := range tableTests {
-		finalExpr := getRegexp(tt.pattern).String()
-
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			if finalExpr != tt.out {
-				t.Errorf("Expected %q, got %q", tt.out, finalExpr)
+		b.Run(fmt.Sprintf("%d", i), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				getRegexp(tt.pattern)
 			}
 		})
 	}
