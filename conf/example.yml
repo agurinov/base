@@ -1,0 +1,35 @@
+pattern: /{data|static}/*.{jpg|png|jpeg}?crop
+io:
+	process: "node resize.js"
+
+pattern: *
+pipeline:
+	- socket: "s3.amazonaws.com"
+	- process: "echo 'FOOBAR'"
+
+
+-> s3								IO
+"node resize.js"		IO
+
+
+
+
+
+
+
+#webp
+pattern: /myip
+io:
+	socket: "geoip.domain.com"
+
+pattern: *
+io:
+	process: "echo 'miscuzi'"
+
+
+
+
+# geoip
+pattern: /myip
+io:
+	process: "sh getmyip.sh"

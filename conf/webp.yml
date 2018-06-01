@@ -1,0 +1,15 @@
+fork:
+
+  - case:
+    pattern: "myip"
+    pipeline:
+      - socket:
+        address: hostname
+      - process:
+        name: "echo -n 192.168.1.1"
+
+  - case:
+    pattern: "*"
+    pipeline:
+      - process:
+        name: "echo -n 'No answer'"
