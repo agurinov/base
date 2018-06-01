@@ -7,7 +7,7 @@ import (
 // piping establishes pipe connections between IO processes (Layer)
 // the first layer accepts as stdin the input buffer
 // the last layer puts into output buffer his stdout
-func piping(input io.ReadCloser, output io.WriteCloser, layers ...Pipeable) (err error) {
+func piping(input io.ReadCloser, output io.WriteCloser, layers ...Pipeable) error {
 	// main logic that create pairs of (io.ReadCloser, io.WriteCloser)
 	// but with offset to another layer
 	// for example
@@ -35,7 +35,7 @@ func piping(input io.ReadCloser, output io.WriteCloser, layers ...Pipeable) (err
 	return nil
 }
 
-func run(layers ...RunCloser) (err error) {
+func run(layers ...RunCloser) error {
 	// prepare all layers (preRun hook)
 	for _, layer := range layers {
 		if err := layer.preRun(); err != nil {
