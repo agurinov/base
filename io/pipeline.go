@@ -2,35 +2,27 @@ package io
 
 import (
 	"io"
-	// "io/ioutil"
-	// "fmt"
-	// "log"
-	"os/exec"
-	// "bytes"
 )
 
-type Pipeline []*Layer
-
-func (p *Pipeline) Run() (err error) {
-	if err := piping(); err != nil {
-		return err
-	}
-
-	if err := start(); err != nil {
-		return err
-	}
-
-	if err := run(); err != nil {
-		return err
-	}
+type Pipeline struct {
+	layers []PipeLayer
 }
 
-// start the pipeline
-// if err := start(layers); err != nil {
-// 	return err
-// }
+// connect binds all layers of the Pipeline using io.Pipe objects
+func (p *Pipeline) connect(input io.ReadCloser, output io.WriteCloser) error {
+	return piping(input, output, p.layers.([]Pipeable)...)
+}
 
-// run execution and chaining
-// return run(layers, pipeWriters)
+func (p *Pipeline) run() error {
+	return run(p.layers.([]RunCloser)...)
+}
 
-// io.ReadWriter
+func (p *Pipeline) Run(input io.ReadCloser, output io.WriteCloser) error {
+	// Stage 1 - piping
+	if err := p.connect(input, output); err != nil {
+		return err
+	}
+
+	// Stage 2 - run
+	return p.run()
+}
