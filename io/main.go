@@ -9,9 +9,15 @@ type Pipeable interface {
 	setStdout(writer io.WriteCloser)
 }
 
+type Checker interface {
+	check() error
+}
+
+// TODO rename
 type RunCloser interface {
-	preRun() (err error)
-	Run() (err error)
+	preRun() error
+	Run() error
+	// Checker
 	io.Closer
 }
 

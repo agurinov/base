@@ -19,6 +19,10 @@ func NewProcess(name string, arg ...string) *Process {
 }
 
 func (p *Process) preRun() error {
+	// if p.stdin == nil || p.stdout == nil {
+	// 	return "Process not piped"
+	// }
+
 	if p.cmd == nil {
 		p.cmd = exec.Command(p.name, p.arg...)
 	}

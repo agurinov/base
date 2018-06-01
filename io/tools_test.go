@@ -87,14 +87,15 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("sockets", func(t *testing.T) {
-		input := readCloser{bytes.NewBuffer([]byte("GET / HTTP/1.0"))}
+		input := readCloser{bytes.NewBuffer([]byte("HEAD / HTTP/1.0\r\n\r\n"))}
 		output := writeCloser{bytes.NewBuffer([]byte{})}
 
 		process := NewProcess("cat", "/dev/stdin") // read simple http request from stdin
-		socket := NewSocket("golang.org:80")       // and pass to golang.org via socket
+		// process := NewProcess("echo", "HEAD / HTTP/1.0\r\n\r\n") // read simple http request from stdin
+		socket := NewSocket("golang.org:80") // and pass to golang.org via socket
 
-		layers1 := []Pipeable{process, socket}
-		layers2 := []RunCloser{process, socket}
+		layers1 := []Pipeable{socket, process}
+		layers2 := []RunCloser{socket, process}
 
 		if err := piping(input, output, layers1...); err != nil {
 			t.Error(err)
