@@ -1,4 +1,4 @@
-package io
+package pipeline
 
 import (
 	"bytes"
@@ -70,8 +70,8 @@ func TestRun(t *testing.T) {
 		process3 := NewProcess("grep", "-o", "raboof") // grep reversed (must be 1 match)
 		process4 := NewProcess("wc", "-l")             // count matches
 
-		layers1 := []Pipeable{process1, process2, process3, process4}
-		layers2 := []RunCloser{process1, process2, process3, process4}
+		layers1 := []Able{process1, process2, process3, process4}
+		layers2 := []Exec{process1, process2, process3, process4}
 
 		if err := piping(input, output, layers1...); err != nil {
 			t.Error(err)
@@ -94,8 +94,8 @@ func TestRun(t *testing.T) {
 		// process := NewProcess("echo", "HEAD / HTTP/1.0\r\n\r\n") // read simple http request from stdin
 		socket := NewSocket("golang.org:80") // and pass to golang.org via socket
 
-		layers1 := []Pipeable{socket, process}
-		layers2 := []RunCloser{socket, process}
+		layers1 := []Able{socket, process}
+		layers2 := []Exec{socket, process}
 
 		if err := piping(input, output, layers1...); err != nil {
 			t.Error(err)
