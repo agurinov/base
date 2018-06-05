@@ -16,9 +16,11 @@ func BenchmarkBracketString(b *testing.B) {
 	}
 
 	for i, tt := range tableTests {
+		bracket := bracketFromSource(tt.source)
+
 		b.Run(fmt.Sprintf("%d.String()", i), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				Bracket{tt.source}.String()
+				bracket.String()
 			}
 		})
 	}
