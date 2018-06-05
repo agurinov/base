@@ -11,12 +11,26 @@ type Pipeline struct {
 // connect binds all layers of the Pipeline using io.Pipe objects
 // connect calls private api's piping method
 func (p *Pipeline) connect(input io.ReadCloser, output io.WriteCloser) error {
-	return piping(input, output, p.layers.([]Able)...)
+	// convert Layer -> Able
+	layers := make([]Able, len(p.layers))
+	// creating []Able with same pointers as p.layers
+	for i, layer := range p.layers {
+		layers[i] = layer.(Able)
+	}
+
+	return piping(input, output, layers...)
 }
 
 // run calls private api's piping method
 func (p *Pipeline) run() error {
-	return run(p.layers.([]Exec)...)
+	// convert Layer -> Exec
+	layers := make([]Exec, len(p.layers))
+	// creating []Exec with same pointers as p.layers
+	for i, layer := range p.layers {
+		layers[i] = layer.(Exec)
+	}
+
+	return run(layers...)
 }
 
 func (p *Pipeline) Run(input io.ReadCloser, output io.WriteCloser) error {
