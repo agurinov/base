@@ -59,11 +59,11 @@ func TestGetRegexp(t *testing.T) {
 		pattern string // source
 		out     string // expected value of String() method
 	}{
-		{"", "^/"},
-		{"^/{data|static}/{*}.{jpg|png|jpeg}", "^/(?:data|static)/(?:.*).(?:jpg|png|jpeg)"},
-		{"/{data|static}/{*}.{jpg|png|jpeg}", "^/(?:data|static)/(?:.*).(?:jpg|png|jpeg)"},
-		{"^{data|static}/{*}.{jpg|png|jpeg}", "^/(?:data|static)/(?:.*).(?:jpg|png|jpeg)"},
-		{"{data|static}/{*}.{jpg|png|jpeg}", "^/(?:data|static)/(?:.*).(?:jpg|png|jpeg)"},
+		{"", "^/?"},
+		{"^/{data|static}/{*}.{jpg|png|jpeg}", "^/?(?:data|static)/(?:.*).(?:jpg|png|jpeg)"},
+		{"/{data|static}/{*}.{jpg|png|jpeg}", "^/?(?:data|static)/(?:.*).(?:jpg|png|jpeg)"},
+		{"^{data|static}/{*}.{jpg|png|jpeg}", "^/?(?:data|static)/(?:.*).(?:jpg|png|jpeg)"},
+		{"{data|static}/{*}.{jpg|png|jpeg}", "^/?(?:data|static)/(?:.*).(?:jpg|png|jpeg)"},
 	}
 
 	for i, tt := range tableTests {

@@ -38,7 +38,7 @@ func getRegexp(pattern string) *regexp.Regexp {
 	})
 
 	expr = strings.TrimLeft(expr, "/^") // trim from left all special regex chars
-	expr = fmt.Sprintf("^/%s", expr)
+	expr = fmt.Sprintf("^/?%s", expr)   // string begin with non required leading /
 
 	return regexp.MustCompile(expr)
 }
