@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"io"
+	"sync"
 )
 
 // piping establishes pipe connections between IO processes (Layer)
@@ -36,21 +37,30 @@ func piping(input io.ReadCloser, output io.WriteCloser, layers ...Able) error {
 }
 
 func run(layers ...Exec) error {
+	var wg sync.WaitGroup
+
+	// TODO join this 2 cycles with one and defer!
+	// TODO test with fails
 	// prepare all layers (preRun hook)
 	for _, layer := range layers {
 		if err := layer.preRun(); err != nil {
 			return err
 		}
+
+		wg.Add(1)
 	}
 
 	// Run pipeline
 	for _, layer := range layers {
-		defer layer.Close()
+		go func(layer Exec) {
+			defer layer.Close()
+			defer wg.Done()
 
-		if err := layer.Run(); err != nil {
-			return err
-		}
+			layer.Run()
+		}(layer)
 	}
+
+	wg.Wait()
 
 	return nil
 }

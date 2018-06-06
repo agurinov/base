@@ -18,11 +18,9 @@ func NewProcess(name string, arg ...string) *Process {
 	return &Process{name: name, arg: arg}
 }
 
-func (p *Process) preRun() error {
-	// if p.stdin == nil || p.stdout == nil {
-	// 	return "Process not piped"
-	// }
+func (p *Process) check() bool { return true }
 
+func (p *Process) preRun() error {
 	if p.cmd == nil {
 		p.cmd = exec.Command(p.name, p.arg...)
 	}
@@ -40,22 +38,22 @@ func (p *Process) preRun() error {
 }
 
 func (p *Process) Run() error {
-	if err := p.cmd.Wait(); err != nil {
-		return err
-	}
+	return p.cmd.Wait()
+}
 
+func (p *Process) Close() error {
+	// close standart input
+	// for start layer run and write to stdout
 	if err := p.stdin.Close(); err != nil {
 		return err
 	}
 
+	// close standart output
+	// for next layer can complete read from their stdin
 	if err := p.stdout.Close(); err != nil {
 		return err
 	}
 
-	return nil
-}
-
-func (p *Process) Close() error {
 	return nil
 }
 

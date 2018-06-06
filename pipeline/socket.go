@@ -17,7 +17,10 @@ func NewSocket(address string) *Socket {
 	return &Socket{address: address}
 }
 
+func (s *Socket) check() bool { return true }
+
 func (s *Socket) preRun() (err error) {
+	// TODO resolve address only
 	if s.conn == nil {
 		conn, err := net.Dial("tcp", s.address)
 		if err != nil {
@@ -30,12 +33,9 @@ func (s *Socket) preRun() (err error) {
 }
 
 func (s *Socket) Run() error {
-	// check socket exists
 	// just write to open socket from stdin
+	// completes when previous layers stdout closed
 	if _, err := io.Copy(s.conn, s.stdin); err != nil {
-		return err
-	}
-	if err := s.stdin.Close(); err != nil {
 		return err
 	}
 
@@ -44,28 +44,23 @@ func (s *Socket) Run() error {
 		return err
 	}
 
+	return nil
+}
+
+func (s *Socket) Close() error {
+	// close standart input
+	// for start layer run and write to stdout
+	if err := s.stdin.Close(); err != nil {
+		return err
+	}
+
+	// close standart output
+	// for next layer can complete read from their stdin
 	if err := s.stdout.Close(); err != nil {
 		return err
 	}
 
-	return nil
-}
-
-// func (s *Socket) preRun() error {
-// 	if s.addr == nil {
-// 		// trying to resolve TCP address
-// 		addr, err := net.ResolveTCPAddr("tcp", s.address)
-// 		if err != nil {
-// 			return err
-// 		}
-// 		s.addr = addr
-// 	}
-//
-// 	fmt.Println("net.ResolveTCPAddr()", s.addr)
-// 	return nil
-// }
-
-func (s *Socket) Close() error {
+	// close connection
 	if s.conn != nil {
 		return s.conn.Close()
 	}
