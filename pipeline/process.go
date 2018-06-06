@@ -18,7 +18,7 @@ func NewProcess(name string, arg ...string) *Process {
 	return &Process{name: name, arg: arg}
 }
 
-func (p *Process) check() bool { return true }
+func (p *Process) check() error { return nil }
 
 func (p *Process) preRun() error {
 	if p.cmd == nil {
