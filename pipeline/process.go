@@ -20,7 +20,7 @@ func NewProcess(name string, arg ...string) *Process {
 
 func (p *Process) check() error { return nil }
 
-func (p *Process) preRun() error {
+func (p *Process) prepare() error {
 	if p.cmd == nil {
 		p.cmd = exec.Command(p.name, p.arg...)
 	}

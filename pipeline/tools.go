@@ -41,9 +41,9 @@ func run(layers ...Exec) error {
 
 	// TODO join this 2 cycles with one and defer!
 	// TODO test with fails
-	// prepare all layers (preRun hook)
+	// prepare all layers (prepare hook)
 	for _, layer := range layers {
-		if err := layer.preRun(); err != nil {
+		if err := layer.prepare(); err != nil {
 			return err
 		}
 

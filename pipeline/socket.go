@@ -19,7 +19,7 @@ func NewSocket(address string) *Socket {
 
 func (s *Socket) check() error { return nil }
 
-func (s *Socket) preRun() (err error) {
+func (s *Socket) prepare() (err error) {
 	// TODO resolve address only
 	if s.conn == nil {
 		conn, err := net.Dial("tcp", s.address)

@@ -13,7 +13,7 @@ type Able interface {
 // Exec interface describes objects that can be self checked and can be executable by Pipeline
 type Exec interface {
 	check() error
-	preRun() error
+	prepare() error
 	Run() error
 	io.Closer
 }
