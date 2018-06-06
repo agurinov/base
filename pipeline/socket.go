@@ -17,7 +17,7 @@ func NewSocket(address string) *Socket {
 	return &Socket{address: address}
 }
 
-func (s *Socket) check() bool { return true }
+func (s *Socket) check() error { return nil }
 
 func (s *Socket) preRun() (err error) {
 	// TODO resolve address only
