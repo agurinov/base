@@ -2,8 +2,6 @@ package pipeline
 
 import (
 	"os/exec"
-
-	"gopkg.in/yaml.v2"
 )
 
 type Process struct {
@@ -14,24 +12,11 @@ type Process struct {
 	stdio
 }
 
-func ProcessFromYAML(yml []byte) (*Process, error) {
-	var p Process
-
-	err := yaml.Unmarshal(yml, &p)
-	if err != nil {
-		return nil, err
-	}
-
-	return &p, nil
-}
-
 func NewProcess(name string, arg ...string) *Process {
 	return &Process{name: name, arg: arg}
 }
 
-func (p *Process) check() error {
-	return nil
-}
+func (p *Process) check() error { return nil }
 
 func (p *Process) prepare() error {
 	if p.cmd == nil {
