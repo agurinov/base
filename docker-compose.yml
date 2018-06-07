@@ -18,7 +18,7 @@ services:
         volumes:
             - src-vol:/go/src/app
         working_dir: /go/src/app
-        command: sh -c "go-wrapper download; go test ./... -v -cover"
+        command: sh -c "go get -v -d -t ./...; go test ./... -v -cover"
 
     bench:
         image: golang
