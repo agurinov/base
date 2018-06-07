@@ -1,7 +1,6 @@
 package pipeline
 
 import (
-	"io"
 	"os/exec"
 )
 
@@ -10,8 +9,7 @@ type Process struct {
 	arg  []string
 	cmd  *exec.Cmd
 
-	stdin  io.ReadCloser
-	stdout io.WriteCloser
+	stdio
 }
 
 func NewProcess(name string, arg ...string) *Process {
@@ -42,25 +40,5 @@ func (p *Process) Run() error {
 }
 
 func (p *Process) Close() error {
-	// close standart input
-	// for start layer run and write to stdout
-	if err := p.stdin.Close(); err != nil {
-		return err
-	}
-
-	// close standart output
-	// for next layer can complete read from their stdin
-	if err := p.stdout.Close(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (p *Process) setStdin(reader io.ReadCloser) {
-	p.stdin = reader
-}
-
-func (p *Process) setStdout(writer io.WriteCloser) {
-	p.stdout = writer
+	return p.closeStdio()
 }
