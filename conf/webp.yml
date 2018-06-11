@@ -1,4 +1,23 @@
-fork:
+urlconf:
+
+  /myip:
+    - type: socket
+      address: tcp://geoiphost/foo/bar
+
+  *:
+    - type: process:
+      name: "echo -n 'No answer'"
+      foo: bar
+
+
+
+
+======
+
+
+
+
+urlconf:
 
   - case:
     pattern: "myip"
