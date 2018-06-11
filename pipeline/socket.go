@@ -3,25 +3,40 @@ package pipeline
 import (
 	"io"
 	"net"
+
+	"gopkg.in/yaml.v2"
 )
 
 type Socket struct {
-	address string
+	Address string `yaml:"address,omitempty"`
 	conn    net.Conn
 
 	stdio
 }
 
-func NewSocket(address string) *Socket {
-	return &Socket{address: address}
+func SocketFromYAML(yml []byte) (*Socket, error) {
+	var s Socket
+
+	err := yaml.Unmarshal(yml, &s)
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
 }
 
-func (s *Socket) check() error { return nil }
+func NewSocket(address string) *Socket {
+	return &Socket{Address: address}
+}
 
-func (s *Socket) prepare() (err error) {
+func (s *Socket) check() error {
+	return nil
+}
+
+func (s *Socket) prepare() error {
 	// TODO resolve address only
 	if s.conn == nil {
-		conn, err := net.Dial("tcp", s.address)
+		conn, err := net.Dial("tcp", s.Address)
 		if err != nil {
 			return err
 		}
