@@ -46,7 +46,7 @@ func BenchmarkBracketFromSource(b *testing.B) {
 	}
 }
 
-func BenchmarkGetRegexp(b *testing.B) {
+func BenchmarkRegexp(b *testing.B) {
 	tableTests := []struct {
 		pattern string // source
 		out     string // expected value of String() method
@@ -61,7 +61,7 @@ func BenchmarkGetRegexp(b *testing.B) {
 	for i, tt := range tableTests {
 		b.Run(fmt.Sprintf("%d", i), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				getRegexp(tt.pattern)
+				Regexp(tt.pattern)
 			}
 		})
 	}
