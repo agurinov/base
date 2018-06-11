@@ -28,11 +28,11 @@ func (b Bracket) String() string {
 	).Replace(b.source))
 }
 
-// getRegexp returns complex regex for incoming pattern
+// Regexp returns complex regex for incoming pattern
 // some several bases
 // 1. expression will always starts with ^/
 // 2. bracket source will be replaced by some condition (look at Bracket.String())
-func getRegexp(pattern string) *regexp.Regexp {
+func Regexp(pattern string) *regexp.Regexp {
 	expr := bracketsRegexp.ReplaceAllStringFunc(pattern, func(source string) string {
 		return bracketFromSource(source).String()
 	})
