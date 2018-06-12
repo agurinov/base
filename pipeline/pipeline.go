@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"errors"
 	"io"
 )
 
@@ -41,4 +42,27 @@ func (p *Pipeline) Run(input io.ReadCloser, output io.WriteCloser) error {
 
 	// Stage 2 - run
 	return p.run()
+}
+
+func (p *Pipeline) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	// inner struct for accepting strings
+	var pipeline []struct{ Type string }
+
+	if err := unmarshal(&pipeline); err != nil {
+		return err
+	}
+
+	// sequece successfully translated, create layers from data
+	for _, layer := range pipeline {
+		switch layer.Type {
+		case "socket":
+			p.layers = append(p.layers, NewSocket("golang.org"))
+		case "process":
+			p.layers = append(p.layers, NewProcess("echo", "FOOBAR"))
+		default:
+			return errors.New("pipeline: Unknown layer.Type")
+		}
+	}
+
+	return nil
 }
