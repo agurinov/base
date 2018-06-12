@@ -3,40 +3,27 @@ package pipeline
 import (
 	"io"
 	"net"
-
-	"gopkg.in/yaml.v2"
 )
 
 type Socket struct {
-	Address string `yaml:"address,omitempty"`
+	address string
 	conn    net.Conn
 
-	stdio
-}
 
-func SocketFromYAML(yml []byte) (*Socket, error) {
-	var s Socket
-
-	err := yaml.Unmarshal(yml, &s)
-	if err != nil {
-		return nil, err
-	}
-
-	return &s, nil
+	stdin  io.ReadCloser
+	stdout io.WriteCloser
 }
 
 func NewSocket(address string) *Socket {
-	return &Socket{Address: address}
+	return &Socket{address: address}
 }
 
-func (s *Socket) check() error {
-	return nil
-}
+func (s *Socket) check() bool { return true }
 
-func (s *Socket) prepare() error {
+func (s *Socket) preRun() (err error) {
 	// TODO resolve address only
 	if s.conn == nil {
-		conn, err := net.Dial("tcp", s.Address)
+		conn, err := net.Dial("tcp", s.address)
 		if err != nil {
 			return err
 		}
@@ -62,7 +49,15 @@ func (s *Socket) Run() error {
 }
 
 func (s *Socket) Close() error {
-	if err := s.closeStdio(); err != nil {
+	// close standart input
+	// for start layer run and write to stdout
+	if err := s.stdin.Close(); err != nil {
+		return err
+	}
+
+	// close standart output
+	// for next layer can complete read from their stdin
+	if err := s.stdout.Close(); err != nil {
 		return err
 	}
 
@@ -72,4 +67,11 @@ func (s *Socket) Close() error {
 	}
 
 	return nil
+}
+
+func (s *Socket) setStdin(reader io.ReadCloser) {
+	s.stdin = reader
+}
+func (s *Socket) setStdout(writer io.WriteCloser) {
+	s.stdout = writer
 }
