@@ -46,7 +46,7 @@ func (p *Pipeline) Run(input io.ReadCloser, output io.WriteCloser) error {
 
 func (p *Pipeline) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	// inner struct for accepting strings
-	var pipeline []struct{ Type string }
+	var pipeline []map[string]interface{}
 
 	if err := unmarshal(&pipeline); err != nil {
 		return err
@@ -54,10 +54,13 @@ func (p *Pipeline) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 	// sequece successfully translated, create layers from data
 	for _, layer := range pipeline {
-		switch layer.Type {
-		case "socket":
+		// get required 'type' key
+		switch t, ok := layer["type"]; {
+		case !ok:
+			return errors.New("pipeline: Missing layer.Type")
+		case t == "socket":
 			p.layers = append(p.layers, NewSocket("golang.org"))
-		case "process":
+		case t == "process":
 			p.layers = append(p.layers, NewProcess("echo", "FOOBAR"))
 		default:
 			return errors.New("pipeline: Unknown layer.Type")
