@@ -9,6 +9,43 @@ urlconf:
       name: "echo -n 'No answer'"
       foo: bar
 
+=======
+
+
+
+collection:
+
+  # Route
+  - pattern: "/foo/bar"
+    pipeline:
+
+      - type: socket
+        address: tcp://geoiphost/foo/bar
+
+  # Route
+  - pattern: ""
+    pipeline:
+
+      - type: socket
+        address: tcp://geoiphost
+
+      - type: process
+        name: "echo -n 'No answer'"
+        foo: bar
+
+
+
+
+
+  /myip:
+        - type: socket
+          address: tcp://geoiphost/foo/bar
+
+      *:
+        - type: process:
+          name: "echo -n 'No answer'"
+          foo: bar
+
 
 
 
@@ -20,12 +57,12 @@ urlconf:
 urlconf:
 
   - case:
-    pattern: "myip"
+    pattern: "/?{options}"
     pipeline:
-      - socket:
-        address: hostname
       - process:
-        name: "echo -n 192.168.1.1"
+        name: geo.py
+      - spcket:
+        name: geo.py
 
   - case:
     pattern: "*"
