@@ -55,10 +55,10 @@ func (p *process) check() error {
 	return nil
 }
 
-func (p *Process) run() error {
+func (p *process) run() error {
 	return p.cmd.Wait()
 }
 
-func (p *Process) close() error {
+func (p *process) close() error {
 	return p.closeStdio()
 }
