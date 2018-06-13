@@ -12,6 +12,7 @@ type Socket struct {
 	stdio
 }
 
+
 func NewSocket(address string) *Socket {
 	return &Socket{address: address}
 }
