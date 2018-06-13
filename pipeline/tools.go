@@ -5,31 +5,31 @@ import (
 	"sync"
 )
 
-// piping establishes pipe connections between IO processes (Layer)
-// the first layer accepts as stdin the input buffer
-// the last layer puts into output buffer his stdout
-func piping(input io.ReadCloser, output io.WriteCloser, layers ...Able) error {
+// piping establishes pipe connections between IO processes (Able)
+// the first obj accepts as stdin the input buffer
+// the last obj puts into output buffer his stdout
+func piping(input io.ReadCloser, output io.WriteCloser, objs ...Able) error {
 	// main logic that create pairs of (io.ReadCloser, io.WriteCloser)
-	// but with offset to another layer
+	// but with offset to another obj
 	// for example
-	// layer 1: (input, io.WriteCloser 1)
-	// layer 2: (io.ReadCloser 1, io.WriteCloser 2)
-	// layer 3: (io.ReadCloser 2, io.WriteCloser 3)
-	// layer 4: (io.ReadCloser 3, output)
-	// and call each layer's .pipe() method
-	for i := 0; i < len(layers); i++ {
+	// obj 1: (input, io.WriteCloser 1)
+	// obj 2: (io.ReadCloser 1, io.WriteCloser 2)
+	// obj 3: (io.ReadCloser 2, io.WriteCloser 3)
+	// obj 4: (io.ReadCloser 3, output)
+	// and call each obj's .pipe() method
+	for i := 0; i < len(objs); i++ {
 		if i == 0 {
-			// case this layer first
-			layers[i].setStdin(input)
+			// case this obj first
+			objs[i].setStdin(input)
 		}
-		if i == len(layers)-1 {
-			// case this layer last
-			layers[i].setStdout(output)
+		if i == len(objs)-1 {
+			// case this obj last
+			objs[i].setStdout(output)
 		} else {
-			// this is intermediate layer, need piping
+			// this is intermediate obj, need piping
 			r, w := io.Pipe()
-			layers[i].setStdout(w)
-			layers[i+1].setStdin(r)
+			objs[i].setStdout(w)
+			objs[i+1].setStdin(r)
 		}
 	}
 
