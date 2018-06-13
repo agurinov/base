@@ -1,39 +1,59 @@
 package pipeline
 
 import (
+	"errors"
 	"io"
 	"net"
 )
 
-type Socket struct {
+type socket struct {
 	address string
-	conn    net.Conn
+
+	addr *net.TCPAddr
+	conn *net.TCPConn
 
 	stdio
 }
 
-func NewSocket(address string) *Socket {
-	return &Socket{address: address}
+func NewSocket(address string) *socket {
+	return &socket{address: address}
 }
 
-func (s *Socket) check() error {
-	return nil
-}
-
-func (s *Socket) prepare() error {
-	// TODO resolve address only
-	if s.conn == nil {
-		conn, err := net.Dial("tcp", s.address)
-		if err != nil {
-			return err
-		}
-		s.conn = conn
+func (s *socket) prepare() error {
+	// try to resolve remote address
+	if s.addr, err = net.ResolveTCPAddr("tcp", s.address); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (s *Socket) Run() error {
+// check method guarantees that the object can be launched at any time
+// socket is piped
+// remote address resolvable
+func (s *socket) check() error {
+	// check layer piped
+	if err := s.checkStdio(); err != nil {
+		return errors.New("pipeline: Socket not piped")
+	}
+
+	// schek socket have real address
+	if s.addr == nil {
+		return errors.New("pipeline: Socket without address")
+	}
+
+	// socket ready for run
+	return nil
+}
+
+func (s *socket) run() error {
+	// establish socket
+	if s.conn == nil {
+		if s.conn, err = net.DialTCP("tcp", nil, s.addr); err != nil {
+			return err
+		}
+	}
+
 	// just write to open socket from stdin
 	// completes when previous layers stdout closed
 	if _, err := io.Copy(s.conn, s.stdin); err != nil {
@@ -48,7 +68,7 @@ func (s *Socket) Run() error {
 	return nil
 }
 
-func (s *Socket) Close() error {
+func (s *socket) close() error {
 	if err := s.closeStdio(); err != nil {
 		return err
 	}
