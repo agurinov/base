@@ -41,7 +41,7 @@ func run(objs ...Exec) error {
 
 	// TODO join this 2 cycles with one and defer!
 	// TODO test with fails
-	// prepare all layers (prepare hook)
+	// prepare all objs (prepare hook)
 	for _, obj := range objs {
 		if err := obj.prepare(); err != nil {
 			return err

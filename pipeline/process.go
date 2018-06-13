@@ -16,9 +16,9 @@ type process struct {
 }
 
 func NewProcess(cmd string) *process {
-	command := strings.Split(cmd, " ")
+	parts := strings.Split(cmd, " ")
 
-	return &process{name: command[0], arg: command[1:]}
+	return &process{name: parts[0], arg: parts[1:]}
 }
 
 func (p *process) prepare() error {
@@ -29,11 +29,11 @@ func (p *process) prepare() error {
 	p.cmd.Stdin = p.stdin
 	p.cmd.Stdout = p.stdout
 
-	// if p.cmd.Process == nil {
-	// 	if err := p.cmd.Start(); err != nil {
-	// 		return err
-	// 	}
-	// }
+	if p.cmd.Process == nil {
+		if err := p.cmd.Start(); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
