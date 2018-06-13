@@ -21,14 +21,26 @@ type Pipeline struct {
 // connect binds all layers of the Pipeline using io.Pipe objects
 // connect calls private api's piping method
 func (p *Pipeline) prepare() error {
+	// Stage 1. Pipeline prepare -> piping
 	// convert Layer -> Able
 	layers := make([]Able, len(p.layers))
 	// creating []Able with same pointers as p.layers
 	for i, layer := range p.layers {
 		layers[i] = layer.(Able)
 	}
+	if err := piping(p.stdin, p.stdout, layers...); err != nil {
+		return err
+	}
 
-	return piping(p.stdin, p.stdout, layers...)
+	// Stage 2. Prepare all layers
+	// invoke all layer's .prepare method
+	for _, layer := range p.layers {
+		if err := layer.prepare(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // check checks all layers can be launched by .Run() at any moment
