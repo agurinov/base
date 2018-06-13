@@ -13,10 +13,9 @@ import (
 // 		3. run
 // 		4. close (close stdio and clear all layer's sensitive data for reuse this pipeline)
 type Pipeline struct {
-	input  io.ReadCloser
-	output io.WriteCloser
-
 	layers []Layer
+
+	stdio
 }
 
 // connect binds all layers of the Pipeline using io.Pipe objects
@@ -29,7 +28,7 @@ func (p *Pipeline) prepare() error {
 		layers[i] = layer.(Able)
 	}
 
-	return piping(p.input, p.output, layers...)
+	return piping(p.stdin, p.stdout, layers...)
 }
 
 // check checks all layers can be launched by .Run() at any moment
@@ -63,9 +62,11 @@ func (p *Pipeline) close() error {
 }
 
 func (p *Pipeline) Run(input io.ReadCloser, output io.WriteCloser) error {
-	// save request and response to inner data for prepare and piping
-	p.input = input
-	p.output = output
+	// Piping this Able with input and output
+	// save request and response to inner data for prepare and piping internal layers
+	if err := piping(input, output, p); err != nil {
+		return err
+	}
 
 	// run this Exec throw tool
 	return run(p)
