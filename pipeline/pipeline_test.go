@@ -44,7 +44,7 @@ func TestPipelineRun(t *testing.T) {
 			t.Error(err)
 		}
 
-		t.Log(output)
+		// t.Log(output)
 		// if outputString := fmt.Sprint(output); outputString != "{1\n}" {
 		// 	t.Errorf("Expected %q, got %q", "{1\n}", outputString)
 		// }
