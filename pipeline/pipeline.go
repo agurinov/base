@@ -13,12 +13,15 @@ import (
 // 		3. run
 // 		4. close (close stdio and clear all layer's sensitive data for reuse this pipeline)
 type Pipeline struct {
+	input  io.ReadCloser
+	output io.WriteCloser
+
 	layers []Layer
 }
 
 // connect binds all layers of the Pipeline using io.Pipe objects
 // connect calls private api's piping method
-func (p *Pipeline) prepare(input io.ReadCloser, output io.WriteCloser) error {
+func (p *Pipeline) prepare() error {
 	// convert Layer -> Able
 	layers := make([]Able, len(p.layers))
 	// creating []Able with same pointers as p.layers
@@ -26,7 +29,7 @@ func (p *Pipeline) prepare(input io.ReadCloser, output io.WriteCloser) error {
 		layers[i] = layer.(Able)
 	}
 
-	return piping(input, output, layers...)
+	return piping(p.input, p.output, layers...)
 }
 
 // check checks all layers can be launched by .Run() at any moment
@@ -51,6 +54,7 @@ func (p *Pipeline) run() error {
 		layers[i] = layer.(Exec)
 	}
 
+	// run this layers (Execs) throw tool
 	return run(layers...)
 }
 
@@ -59,21 +63,12 @@ func (p *Pipeline) close() error {
 }
 
 func (p *Pipeline) Run(input io.ReadCloser, output io.WriteCloser) error {
-	// Stage 1 - piping
-	if err := p.prepare(input, output); err != nil {
-		return err
-	}
+	// save request and response to inner data for prepare and piping
+	p.input = input
+	p.output = output
 
-	// Stage 2 - check
-	if err := p.check(); err != nil {
-		return err
-	}
-
-	// Stage 3 - run
-	// before this stage there is nothing to clean, so we close after
-	defer p.close()
-
-	return p.run()
+	// run this Exec throw tool
+	return run(p)
 }
 
 func (p *Pipeline) UnmarshalYAML(unmarshal func(interface{}) error) error {

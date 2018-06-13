@@ -36,14 +36,14 @@ func piping(input io.ReadCloser, output io.WriteCloser, layers ...Able) error {
 	return nil
 }
 
-func run(layers ...Exec) error {
+func run(objs ...Exec) error {
 	var wg sync.WaitGroup
 
 	// TODO join this 2 cycles with one and defer!
 	// TODO test with fails
 	// prepare all layers (prepare hook)
-	for _, layer := range layers {
-		if err := layer.prepare(); err != nil {
+	for _, obj := range objs {
+		if err := obj.prepare(); err != nil {
 			return err
 		}
 
@@ -51,49 +51,16 @@ func run(layers ...Exec) error {
 	}
 
 	// Run pipeline
-	for _, layer := range layers {
-		go func(layer Exec) {
-			defer layer.Close()
+	for _, obj := range objs {
+		go func(obj Exec) {
+			defer obj.close()
 			defer wg.Done()
 
-			layer.Run()
-		}(layer)
+			obj.run()
+		}(obj)
 	}
 
 	wg.Wait()
 
 	return nil
 }
-
-// // start invokes the layer's .Start() method in the order of the queue
-// func start(layers []*exec.Cmd) (err error) {
-// 	// start the pipeline
-// 	for _, layer := range layers {
-// 		if err := layer.Start(); err != nil {
-// 			return err
-// 		}
-// 	}
-//
-// 	return nil
-// }
-//
-// // run causes processes in turn
-// // waiting for the previous stdout layer and picks it into the next one
-// func run(layers []*exec.Cmd, pipeWriters []*io.PipeWriter) (err error) {
-// 	// original idea:
-// 	// https://gist.github.com/tyndyll/89fbb2c2273f83a074dc
-// 	for i, layer := range layers {
-// 		if err := layer.Wait(); err != nil {
-// 			return err
-// 		}
-//
-// 		// if next layers in queue exists -> close pipe
-// 		if i < len(layers)-1 {
-// 			if err := pipeWriters[i].Close(); err != nil {
-// 				return err
-// 			}
-// 		}
-// 	}
-//
-// 	return nil
-// }
