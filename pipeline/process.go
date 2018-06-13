@@ -48,7 +48,12 @@ func (p *process) check() error {
 
 	// check command is valid and ready
 	if p.cmd == nil {
-		return errors.New("pipeline: Process without exec.Cmd")
+		return errors.New("pipeline: Process without underlying exec.Cmd")
+	}
+
+	// check cmd stdio
+	if p.cmd.Stdin == nil || p.cmd.Stdout == nil {
+		return errors.New("pipeline: Process's underlying exec.Cmd not piped")
 	}
 
 	// process ready for run
