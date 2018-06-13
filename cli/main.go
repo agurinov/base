@@ -34,8 +34,9 @@ func Run() {
 	app.Usage = USAGE
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
-			Name:   "strict",
-			Value:  true,
+			Name: "strict",
+			// TODO deal with it
+			// Value:  true,
 			Usage:  strictFlagUsage,
 			EnvVar: "BMP_STRICT_MODE",
 		},
