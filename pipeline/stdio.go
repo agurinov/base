@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"errors"
 	"io"
 )
 
@@ -17,6 +18,17 @@ func (obj *stdio) setStdin(reader io.ReadCloser) {
 }
 func (obj *stdio) setStdout(writer io.WriteCloser) {
 	obj.stdout = writer
+}
+func (obj *stdio) checkStdio() error {
+	if obj.stdin == nil {
+		return errors.New("pipeline: Able without stdin (Not piped)")
+	}
+
+	if obj.stdout == nil {
+		return errors.New("pipeline: Able without stdout (Not piped)")
+	}
+
+	return nil
 }
 func (obj *stdio) closeStdio() error {
 	// close standart input
