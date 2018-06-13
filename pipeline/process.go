@@ -1,26 +1,27 @@
 package pipeline
 
 import (
+	"errors"
 	"os/exec"
+	"strings"
 )
 
-type Process struct {
+type process struct {
 	name string
 	arg  []string
-	cmd  *exec.Cmd
+
+	cmd *exec.Cmd
 
 	stdio
 }
 
-func NewProcess(name string, arg ...string) *Process {
-	return &Process{name: name, arg: arg}
+func NewProcess(cmd string) *process {
+	command := strings.Split(cmd, " ")
+
+	return &process{name: command[0], arg: command[1:]}
 }
 
-func (p *Process) check() error {
-	return nil
-}
-
-func (p *Process) prepare() error {
+func (p *process) prepare() error {
 	if p.cmd == nil {
 		p.cmd = exec.Command(p.name, p.arg...)
 	}
@@ -28,19 +29,36 @@ func (p *Process) prepare() error {
 	p.cmd.Stdin = p.stdin
 	p.cmd.Stdout = p.stdout
 
-	if p.cmd.Process == nil {
-		if err := p.cmd.Start(); err != nil {
-			return err
-		}
-	}
+	// if p.cmd.Process == nil {
+	// 	if err := p.cmd.Start(); err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }
 
-func (p *Process) Run() error {
+// check method guarantees that the object can be launched at any time
+// process is piped
+func (p *process) check() error {
+	// check layer piped
+	if err := p.checkStdio(); err != nil {
+		return errors.New("pipeline: Process not piped")
+	}
+
+	// check command is valid and ready
+	if p.cmd == nil {
+		return errors.New("pipeline: Process without exec.Cmd")
+	}
+
+	// process ready for run
+	return nil
+}
+
+func (p *Process) run() error {
 	return p.cmd.Wait()
 }
 
-func (p *Process) Close() error {
+func (p *Process) close() error {
 	return p.closeStdio()
 }
