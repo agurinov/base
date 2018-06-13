@@ -89,23 +89,13 @@ func (p *Pipeline) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		// get required 'type' key
 		switch t := layer["type"]; t {
 		case "socket":
-			socket, err := NewSocket(layer["address"].(string))
-			// socket creating errors
-			if err != nil {
-				return err
-			}
-			p.layers = append(p.layers, socket)
+			p.layers = append(p.layers, NewSocket(layer["address"].(string)))
 
 		case "process":
-			process, err := NewProcess("echo FOOBAR")
-			// process creating errors
-			if err != nil {
-				return err
-			}
-			p.layers = append(p.layers, process)
+			p.layers = append(p.layers, NewProcess(layer["cmd"].(string)))
 
 		default:
-			return errors.New("pipeline: Unknown layer.Type")
+			return errors.New("pipeline: Unknown layer type")
 		}
 	}
 

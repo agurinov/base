@@ -20,6 +20,8 @@ func NewSocket(address string) *socket {
 }
 
 func (s *socket) prepare() error {
+	var err error
+
 	// try to resolve remote address
 	if s.addr, err = net.ResolveTCPAddr("tcp", s.address); err != nil {
 		return err
@@ -47,6 +49,8 @@ func (s *socket) check() error {
 }
 
 func (s *socket) run() error {
+	var err error
+
 	// establish socket
 	if s.conn == nil {
 		if s.conn, err = net.DialTCP("tcp", nil, s.addr); err != nil {
@@ -56,12 +60,12 @@ func (s *socket) run() error {
 
 	// just write to open socket from stdin
 	// completes when previous layers stdout closed
-	if _, err := io.Copy(s.conn, s.stdin); err != nil {
+	if _, err = io.Copy(s.conn, s.stdin); err != nil {
 		return err
 	}
 
 	// and receive data as response -> read from connection
-	if _, err := io.Copy(s.stdout, s.conn); err != nil {
+	if _, err = io.Copy(s.stdout, s.conn); err != nil {
 		return err
 	}
 
