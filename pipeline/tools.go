@@ -16,7 +16,6 @@ func piping(input io.ReadCloser, output io.WriteCloser, objs ...Able) error {
 	// obj 2: (io.ReadCloser 1, io.WriteCloser 2)
 	// obj 3: (io.ReadCloser 2, io.WriteCloser 3)
 	// obj 4: (io.ReadCloser 3, output)
-	// and call each obj's .pipe() method
 	for i := 0; i < len(objs); i++ {
 		if i == 0 {
 			// case this obj first
@@ -41,9 +40,14 @@ func run(objs ...Exec) error {
 
 	// TODO join this 2 cycles with one and defer!
 	// TODO test with fails
-	// prepare all objs (prepare hook)
 	for _, obj := range objs {
+		// prepare obj
 		if err := obj.prepare(); err != nil {
+			return err
+		}
+
+		// final obj's healthcheck
+		if err := obj.check(); err != nil {
 			return err
 		}
 
