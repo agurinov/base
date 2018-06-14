@@ -23,7 +23,7 @@ collection:
         address: tcp://geoiphost/foo/bar
 
   # Route
-  - pattern: ""
+  - pattern: "{*}"
     pipeline:
 
       - type: socket

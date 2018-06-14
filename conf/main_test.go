@@ -27,7 +27,7 @@ const YAML = `collection:
   pipeline:
 
     - type: tcp
-      address: tcp://geoiphost/foo/bar
+      address: geoiphost:100500
 
 # Route
 - pattern: "/data/{*}.jpg"
@@ -40,15 +40,23 @@ const YAML = `collection:
       address: golang.org:80
 
     - type: process
-      cmd: "cat /dev/stdin"`
+      cmd: "cat /dev/stdin"
+
+# Route
+- pattern: "{*}"
+  pipeline:
+
+    - type: process
+      cmd: "echo 'nobody home...'"`
 
 func TestRouteUnmarshalYAML(t *testing.T) {
-	var rc RouteCollection
+	var rc Router
 
 	if err := yaml.Unmarshal([]byte(YAML), &rc); err != nil {
 		t.Fatal(err)
 	}
 
+	// exist url
 	route, err := rc.Match("data/foobar.jpg")
 	if err != nil {
 		t.Fatal(err)
@@ -63,5 +71,20 @@ func TestRouteUnmarshalYAML(t *testing.T) {
 	}
 
 	// t.Log(output)
+
+	// default route
+	route, err = rc.Match("/foobar/bar/baz")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	input = readCloser{bytes.NewBuffer([]byte{})}
+	output = writeCloser{bytes.NewBuffer([]byte{})}
+
+	err = route.pipeline.Run(input, output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(output)
 
 }
