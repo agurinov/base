@@ -20,7 +20,7 @@ type Exec interface {
 	prepare() error
 	check() error
 	run() error
-	close() error
+	close() error // TODO look at priority order errors
 }
 
 // Layer interface describes complex type of object that can be a part of Pipeline

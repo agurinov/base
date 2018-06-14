@@ -65,5 +65,13 @@ func (p *process) run() error {
 }
 
 func (p *process) close() error {
-	return p.closeStdio()
+	// reset the command
+	// TODO look for better solution
+	p.cmd = nil
+
+	if err := p.closeStdio(); err != nil {
+		return err
+	}
+
+	return nil
 }
