@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
 
 	"github.com/boomfunc/log"
@@ -42,9 +43,21 @@ func NewTCP(ip net.IP, port int, filename string) (*TCPServer, error) {
 }
 
 func (s *TCPServer) handle(conn net.Conn) {
-	log.Infof("VIEW")
+	uri, err := ioutil.ReadAll(conn)
+	if err != nil {
+		log.Error(err)
+	}
 
-	fmt.Fprintf(conn, "received")
+	route, err := s.router.Match(string(uri))
+	if err != nil {
+		log.Error(err)
+	}
+
+	if err := route.Run(conn, conn); err != nil {
+		log.Error(err)
+	}
+
+	log.Info("ANSWERED")
 	conn.Close()
 }
 
