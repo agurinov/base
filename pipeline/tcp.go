@@ -23,6 +23,7 @@ func (s *tcp) prepare() error {
 	var err error
 
 	// try to resolve remote address
+	// TODO too much time
 	if s.addr, err = net.ResolveTCPAddr("tcp", s.address); err != nil {
 		return err
 	}

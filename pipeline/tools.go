@@ -37,7 +37,7 @@ func piping(input io.ReadCloser, output io.WriteCloser, objs ...Able) error {
 
 // TODO out of place
 func execute(obj Exec) error {
-	defer obj.close()
+	defer obj.close() // TODO must call in any way!!!
 
 	if err := obj.run(); err != nil {
 		return err
