@@ -21,11 +21,11 @@ func TestPipelineRun(t *testing.T) {
 		pipeline := Pipeline{layers: layers}
 
 		if err := pipeline.Run(input, output); err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		if outputString := fmt.Sprint(output); outputString != "{1\n}" {
-			t.Errorf("Expected %q, got %q", "{1\n}", outputString)
+			t.Fatalf("Expected %q, got %q", "{1\n}", outputString)
 		}
 	})
 
@@ -34,19 +34,19 @@ func TestPipelineRun(t *testing.T) {
 		output := writeCloser{bytes.NewBuffer([]byte{})}
 
 		process := NewProcess("cat /dev/stdin") // read simple http request from process stdin
-		socket := NewSocket("golang.org:80")    // and pass to golang.org via socket
+		socket := NewTCPSocket("golang.org:80") // and pass to golang.org via socket
 
 		layers := []Layer{process, socket}
 
 		pipeline := Pipeline{layers: layers}
 
 		if err := pipeline.Run(input, output); err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 
 		// t.Log(output)
 		// if outputString := fmt.Sprint(output); outputString != "{1\n}" {
-		// 	t.Errorf("Expected %q, got %q", "{1\n}", outputString)
+		// 	t.Fatalf("Expected %q, got %q", "{1\n}", outputString)
 		// }
 	})
 }

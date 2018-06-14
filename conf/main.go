@@ -4,8 +4,8 @@ import (
 	"errors"
 	"regexp"
 
+	"app/pattql"
 	"app/pipeline"
-	"github.com/boomfunc/app/pattql"
 )
 
 // TODO look at Pipeline.UnmarshalYAML and remake this to type []Route

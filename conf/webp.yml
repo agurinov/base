@@ -30,7 +30,7 @@ collection:
         address: tcp://geoiphost
 
       - type: process
-        name: "echo -n 'No answer'"
+        cmd: "echo -n 'No answer'"
         foo: bar
 
 

@@ -1,11 +1,24 @@
 package conf
 
 import (
-	"fmt"
+	"bytes"
+	"io"
 	"testing"
 
 	"gopkg.in/yaml.v2"
 )
+
+type readCloser struct {
+	io.Reader
+}
+
+func (readCloser) Close() error { return nil }
+
+type writeCloser struct {
+	io.Writer
+}
+
+func (writeCloser) Close() error { return nil }
 
 const YAML = `collection:
 
@@ -13,27 +26,42 @@ const YAML = `collection:
 - pattern: "/foo/bar"
   pipeline:
 
-    - type: socket
+    - type: tcp
       address: tcp://geoiphost/foo/bar
 
 # Route
 - pattern: "/data/{*}.jpg"
   pipeline:
 
-    - type: socket
-      address: tcp://geoiphost
+    - type: process
+      cmd: "echo 'HEAD / HTTP/1.1\r\n\r\n'"
+
+    - type: tcp
+      address: golang.org:80
 
     - type: process
-      name: "echo -n 'No answer'"
-      foo: bar`
+      cmd: "cat /dev/stdin"`
 
 func TestRouteUnmarshalYAML(t *testing.T) {
 	var rc RouteCollection
 
 	if err := yaml.Unmarshal([]byte(YAML), &rc); err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
-	fmt.Printf("GHJKHGHJK   %+v\n", rc.Collection[0])
+	route, err := rc.Match("data/foobar.jpg")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	input := readCloser{bytes.NewBuffer([]byte("foobar"))}
+	output := writeCloser{bytes.NewBuffer([]byte{})}
+
+	err = route.pipeline.Run(input, output)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// t.Log(output)
 
 }

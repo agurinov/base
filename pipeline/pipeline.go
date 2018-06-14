@@ -96,8 +96,8 @@ func (p *Pipeline) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	for _, layer := range pipeline {
 		// get required 'type' key
 		switch t := layer["type"]; t {
-		case "socket":
-			p.layers = append(p.layers, NewSocket(layer["address"].(string)))
+		case "tcp":
+			p.layers = append(p.layers, NewTCPSocket(layer["address"].(string)))
 
 		case "process":
 			p.layers = append(p.layers, NewProcess(layer["cmd"].(string)))
