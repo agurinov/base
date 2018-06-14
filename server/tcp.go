@@ -42,7 +42,10 @@ func NewTCP(ip net.IP, port int, filename string) (*TCPServer, error) {
 }
 
 func (s *TCPServer) handle(conn net.Conn) {
+	log.Infof("VIEW")
 
+	fmt.Fprintf(conn, "received")
+	conn.Close()
 }
 
 func (s *TCPServer) Serve() {
