@@ -19,14 +19,14 @@ collection:
   - pattern: "/foo/bar"
     pipeline:
 
-      - type: socket
-        address: tcp://geoiphost/foo/bar
+      - type: tcp
+        address: geoiphost:8080
 
   # Route
   - pattern: "{*}"
     pipeline:
 
-      - type: socket
+      - type: http
         address: tcp://geoiphost
 
       - type: process
