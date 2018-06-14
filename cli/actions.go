@@ -2,6 +2,7 @@ package cli
 
 import (
 	"net"
+	"os"
 
 	"github.com/boomfunc/log"
 	"github.com/urfave/cli"
@@ -21,16 +22,14 @@ var (
 func runCommandAction(c *cli.Context) {
 	log.SetDebug(c.GlobalBool("debug"))
 
-	log.Info("Info")
-	log.Debug("Debug")
-
 	server, err := server.NewTCP(
 		net.ParseIP("0.0.0.0"),
 		8080,
-		"../conf/test.yml",
+		"./conf/test.yml",
 	)
 	if err != nil {
 		log.Error(err)
+		os.Exit(1)
 	}
 
 	server.Serve()
