@@ -1,8 +1,12 @@
 package cli
 
 import (
+	"net"
+
 	"github.com/boomfunc/log"
 	"github.com/urfave/cli"
+
+	"app/server"
 )
 
 var (
@@ -19,4 +23,15 @@ func runCommandAction(c *cli.Context) {
 
 	log.Info("Info")
 	log.Debug("Debug")
+
+	server, err := server.NewTCP(
+		net.ParseIP("0.0.0.0"),
+		8080,
+		"../conf/test.yml",
+	)
+	if err != nil {
+		log.Error(err)
+	}
+
+	server.Serve()
 }
