@@ -53,12 +53,14 @@ func (s *TCPServer) handle(conn net.Conn) {
 		log.Error(err)
 	}
 
+	log.Debug("------------->>>>")
+	// important!
+	// input and output is io.ReadCloser and io.WriteCloser
+	// after route.Run completion they will be closed
 	if err := route.Run(conn, conn); err != nil {
 		log.Error(err)
 	}
-
-	log.Info("ANSWERED")
-	conn.Close()
+	log.Debug("<<<<-------------")
 }
 
 func (s *TCPServer) Serve() {

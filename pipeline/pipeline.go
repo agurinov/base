@@ -70,7 +70,7 @@ func (p *Pipeline) run() error {
 }
 
 func (p *Pipeline) close() error {
-	return nil
+	return p.closeStdio()
 }
 
 func (p *Pipeline) Run(input io.ReadCloser, output io.WriteCloser) error {
