@@ -35,6 +35,17 @@ func piping(input io.ReadCloser, output io.WriteCloser, objs ...Able) error {
 	return nil
 }
 
+// TODO out of place
+func execute(obj Exec) error {
+	defer obj.close()
+
+	if err := obj.run(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func run(objs ...Exec) error {
 	var wg sync.WaitGroup
 
@@ -54,14 +65,30 @@ func run(objs ...Exec) error {
 		wg.Add(1)
 	}
 
-	// Run pipeline
+	// Run objects (layers) in order
+	// TODO make new runner interface and add
+	// .run for internal running
+	// .Run for public run
+	// .execute - ??? something with separate goroutine, err channels and context logic ???
+
+	errch := make(chan error, 1)
+
 	for _, obj := range objs {
+
 		go func(obj Exec) {
-			defer obj.close()
 			defer wg.Done()
 
-			obj.run()
+			errch <- execute(obj)
 		}(obj)
+
+	}
+
+	select {
+	case err := <-errch:
+		if err != nil {
+			// TODO cancel from context
+			return err
+		}
 	}
 
 	wg.Wait()
