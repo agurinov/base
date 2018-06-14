@@ -50,14 +50,14 @@ const YAML = `collection:
       cmd: "echo 'nobody home...'"`
 
 func TestRouteUnmarshalYAML(t *testing.T) {
-	var rc Router
+	var router Router
 
-	if err := yaml.Unmarshal([]byte(YAML), &rc); err != nil {
+	if err := yaml.Unmarshal([]byte(YAML), &router); err != nil {
 		t.Fatal(err)
 	}
 
 	// exist url
-	route, err := rc.Match("data/foobar.jpg")
+	route, err := router.Match("data/foobar.jpg")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func TestRouteUnmarshalYAML(t *testing.T) {
 	// t.Log(output)
 
 	// default route
-	route, err = rc.Match("/foobar/bar/baz")
+	route, err = router.Match("/foobar/bar/baz")
 	if err != nil {
 		t.Fatal(err)
 	}

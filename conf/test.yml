@@ -1,0 +1,15 @@
+collection:
+
+  # Route
+  - pattern: "/foo/bar"
+    pipeline:
+
+      - type: tcp
+        address: geoiphost:8080
+
+  # Route
+  - pattern: "{*}"
+    pipeline:
+
+      - type: process
+        cmd: "echo -n 'Nobody home'"

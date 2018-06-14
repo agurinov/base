@@ -2,6 +2,7 @@ package conf
 
 import (
 	"errors"
+	"io"
 	"regexp"
 
 	"app/pattql"
@@ -15,7 +16,7 @@ type Router struct {
 
 func (rc *Router) Match(uri string) (*Route, error) {
 	for _, route := range rc.Collection {
-		if route.Match(uri) {
+		if route.match(uri) {
 			return &route, nil
 		}
 	}
@@ -28,8 +29,12 @@ type Route struct {
 	pipeline *pipeline.Pipeline
 }
 
-func (r *Route) Match(uri string) bool {
+func (r *Route) match(uri string) bool {
 	return r.regexp.MatchString(uri)
+}
+
+func (r *Route) Run(input io.ReadCloser, output io.WriteCloser) error {
+	return r.pipeline.Run(input, output)
 }
 
 func (r *Route) UnmarshalYAML(unmarshal func(interface{}) error) error {
