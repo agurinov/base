@@ -43,6 +43,8 @@ func NewTCP(ip net.IP, port int, filename string) (*TCPServer, error) {
 }
 
 func (s *TCPServer) handle(conn net.Conn) {
+	// TODO some layer -> separate uri from request body
+	// TODO need some internal style of requests
 	uri, err := ioutil.ReadAll(conn)
 	if err != nil {
 		log.Error(err)

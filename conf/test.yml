@@ -5,11 +5,11 @@ collection:
     pipeline:
 
       - type: tcp
-        address: geoiphost:8080
+        address: golang.org:80
 
   # Route
   - pattern: "{*}"
     pipeline:
 
       - type: process
-        cmd: "echo -n 'Nobody home'"
+        cmd: whoami

@@ -70,7 +70,7 @@ func TestRouteUnmarshalYAML(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// t.Log(output)
+	t.Log(output)
 
 	// default route
 	route, err = router.Match("/foobar/bar/baz")

@@ -45,6 +45,11 @@ func (p *Pipeline) prepare() error {
 
 // check checks all layers can be launched by .Run() at any moment
 func (p *Pipeline) check() error {
+	// check layer piped
+	if err := p.checkStdio(); err != nil {
+		return errors.New("pipeline: Pipeline not piped")
+	}
+
 	// invoke all layer's .check method
 	for _, layer := range p.layers {
 		if err := layer.check(); err != nil {

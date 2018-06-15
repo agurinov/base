@@ -49,29 +49,36 @@ func execute(obj Exec) error {
 func run(objs ...Exec) error {
 	var wg sync.WaitGroup
 
-	// TODO join this 2 cycles with one and defer!
-	// TODO test with fails
-	for _, obj := range objs {
-		// prepare obj
-		if err := obj.prepare(); err != nil {
+	// Phase 1. PREPARING
+	for i, obj := range objs {
+		err := obj.prepare()
+		if err != nil {
+			// undo previous and current
+			for _, o := range objs[:i+1] {
+				o.close()
+			}
 			return err
 		}
-
 		// final obj's healthcheck
-		if err := obj.check(); err != nil {
+		err = obj.check()
+		if err != nil {
+			// undo previous and current
+			for _, o := range objs[:i+1] {
+				o.close()
+			}
 			return err
 		}
 
 		wg.Add(1)
 	}
 
+	// Phase 2. running
 	// Run objects (layers) in order
 	// TODO make new runner interface and add
 	// .run for internal running
 	// .Run for public run
 	// .execute - ??? something with separate goroutine, err channels and context logic ???
-
-	errch := make(chan error, 1)
+	errch := make(chan error)
 
 	for _, obj := range objs {
 
@@ -95,3 +102,13 @@ func run(objs ...Exec) error {
 
 	return nil
 }
+
+
+
+
+
+
+// https://play.golang.org/p/SEXBheyHnt6
+// https://play.golang.org/p/Zy7BpvwLlqg
+// func parallel(fs ...func() error) error {
+// }
