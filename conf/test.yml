@@ -12,4 +12,4 @@ collection:
     pipeline:
 
       - type: process
-        cmd: whoami
+        cmd: python ttt.py

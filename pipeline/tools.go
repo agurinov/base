@@ -53,6 +53,7 @@ func prepare(objs ...Exec) (err error) {
 		if err != nil {
 			// need to backwards
 			for ; i >= 0; i-- {
+				// TODO error handling
 				objs[i].close()
 			}
 		}
@@ -83,33 +84,37 @@ func run(objs ...Exec) error {
 	// Phase 2. running. Here ALL objs ready and checked
 	var wg sync.WaitGroup
 	wg.Add(len(objs))
-	ch := make(chan error)
+	// ch := make(chan error)
 
 	for _, obj := range objs {
 
 		go func(obj Exec) {
+			defer obj.close()
 			defer wg.Done()
 
-			ch <- execute(obj)
+			obj.run()
 		}(obj)
 
+		// go func(obj Exec) {
+		// 	defer wg.Done()
+		//
+		// 	ch <- execute(obj)
+		// }(obj)
+
 	}
 
-	select {
-	case err := <-ch:
-		if err != nil {
-			return err
-		}
-	}
+	// // Problem is Here!
+	// select {
+	// case err := <-ch:
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	wg.Wait()
 
 	return nil
 }
-
-
-
-
 
 // https://play.golang.org/p/Djv52XGnbur
 // https://play.golang.org/p/SEXBheyHnt6

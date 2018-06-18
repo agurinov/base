@@ -4,8 +4,6 @@ import (
 	"errors"
 	"os/exec"
 	"strings"
-
-	"github.com/boomfunc/log"
 )
 
 type process struct {
@@ -24,7 +22,6 @@ func NewProcess(cmd string) *process {
 }
 
 func (p *process) prepare() error {
-	log.Debug("PROCESS PREPARE")
 	if p.cmd == nil {
 		p.cmd = exec.Command(p.name, p.arg...)
 	}
@@ -44,7 +41,6 @@ func (p *process) prepare() error {
 // check method guarantees that the object can be launched at any time
 // process is piped
 func (p *process) check() error {
-	log.Debug("PROCESS CHECK")
 	// check layer piped
 	if err := p.checkStdio(); err != nil {
 		return errors.New("pipeline: Process not piped")
@@ -69,12 +65,9 @@ func (p *process) run() error {
 }
 
 func (p *process) close() error {
-	log.Debug("PROCESS CLOSING")
-	p.closeStdio()
-	// TODO
-	// if err := ; err != nil {
-	// 	return err
-	// }
+	if err := p.closeStdio(); err != nil {
+		return err
+	}
 
 	// reset the command
 	// TODO look for better solution
