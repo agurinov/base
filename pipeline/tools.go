@@ -35,9 +35,8 @@ func piping(input io.ReadCloser, output io.WriteCloser, objs ...Able) error {
 	return nil
 }
 
-// TODO out of place
 func execute(obj Exec) error {
-	defer obj.close() // TODO must call in any way!!!
+	defer obj.close()
 
 	if err := obj.run(); err != nil {
 		return err
@@ -46,54 +45,59 @@ func execute(obj Exec) error {
 	return nil
 }
 
-func run(objs ...Exec) error {
-	var wg sync.WaitGroup
+func prepare(objs ...Exec) (err error) {
+	var i int
 
-	// Phase 1. PREPARING
-	for i, obj := range objs {
-		err := obj.prepare()
+	// backwards closing and resetting if error exists
+	defer func() {
 		if err != nil {
-			// undo previous and current
-			for _, o := range objs[:i+1] {
-				o.close()
+			// need to backwards
+			for ; i >= 0; i-- {
+				objs[i].close()
 			}
-			return err
+		}
+	}()
+
+	// iterate over layers
+	for ; i < len(objs); i++ {
+		// try to prepare obj
+		if err = objs[i].prepare(); err != nil {
+			return
 		}
 		// final obj's healthcheck
-		err = obj.check()
-		if err != nil {
-			// undo previous and current
-			for _, o := range objs[:i+1] {
-				o.close()
-			}
-			return err
+		if err = objs[i].check(); err != nil {
+			return
 		}
-
-		wg.Add(1)
 	}
 
-	// Phase 2. running
-	// Run objects (layers) in order
-	// TODO make new runner interface and add
-	// .run for internal running
-	// .Run for public run
-	// .execute - ??? something with separate goroutine, err channels and context logic ???
-	errch := make(chan error)
+	return
+}
+
+func run(objs ...Exec) error {
+	// Phase 1. PREPARING
+	// in case of error it will be rolled back to initial incoming state
+	if err := prepare(objs...); err != nil {
+		return err
+	}
+
+	// Phase 2. running. Here ALL objs ready and checked
+	var wg sync.WaitGroup
+	wg.Add(len(objs))
+	ch := make(chan error)
 
 	for _, obj := range objs {
 
 		go func(obj Exec) {
 			defer wg.Done()
 
-			errch <- execute(obj)
+			ch <- execute(obj)
 		}(obj)
 
 	}
 
 	select {
-	case err := <-errch:
+	case err := <-ch:
 		if err != nil {
-			// TODO cancel from context
 			return err
 		}
 	}
@@ -107,7 +111,7 @@ func run(objs ...Exec) error {
 
 
 
-
+// https://play.golang.org/p/Djv52XGnbur
 // https://play.golang.org/p/SEXBheyHnt6
 // https://play.golang.org/p/Zy7BpvwLlqg
 // func parallel(fs ...func() error) error {
