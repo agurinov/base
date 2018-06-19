@@ -45,3 +45,9 @@ func (obj *stdio) closeStdio() error {
 
 	return nil
 }
+func (obj *stdio) resetStdio() error {
+	obj.stdin = nil
+	obj.stdout = nil
+
+	return nil
+}
