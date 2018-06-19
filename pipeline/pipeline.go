@@ -78,10 +78,14 @@ func (p *Pipeline) close() error {
 	return p.closeStdio()
 }
 
-func (p *Pipeline) Run(input io.ReadCloser, output io.WriteCloser) error {
+func (p *Pipeline) Run(input io.Reader, output io.Writer) error {
+	// Convert io.Reader and io.Writer to io.ReadCloser and io.WriteCloser
+	inputCloser := toReadCloser(input)
+	outputCloser := toWriteCloser(output)
+
 	// Piping this Able with input and output
 	// save request and response to inner data for prepare and piping internal layers
-	if err := piping(input, output, p); err != nil {
+	if err := piping(inputCloser, outputCloser, p); err != nil {
 		return err
 	}
 

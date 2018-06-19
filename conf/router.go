@@ -33,7 +33,7 @@ func (r *Route) match(uri string) bool {
 	return r.regexp.MatchString(uri)
 }
 
-func (r *Route) Run(input io.ReadCloser, output io.WriteCloser) error {
+func (r *Route) Run(input io.Reader, output io.Writer) error {
 	return r.pipeline.Run(input, output)
 }
 

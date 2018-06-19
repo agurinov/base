@@ -1,22 +1,10 @@
 package pipeline
 
 import (
-	// "bytes"
-	"io"
-	// "testing"
+// "bytes"
+// "io"
+// "testing"
 )
-
-type readCloser struct {
-	io.Reader
-}
-
-func (readCloser) Close() error { return nil }
-
-type writeCloser struct {
-	io.Writer
-}
-
-func (writeCloser) Close() error { return nil }
 
 // func TestPiping(t *testing.T) {
 // 	t.Run("len(layers)==1", func(t *testing.T) {

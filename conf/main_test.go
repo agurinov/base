@@ -2,23 +2,10 @@ package conf
 
 import (
 	"bytes"
-	"io"
 	"testing"
 
 	"gopkg.in/yaml.v2"
 )
-
-type readCloser struct {
-	io.Reader
-}
-
-func (readCloser) Close() error { return nil }
-
-type writeCloser struct {
-	io.Writer
-}
-
-func (writeCloser) Close() error { return nil }
 
 const YAML = `collection:
 
@@ -62,8 +49,8 @@ func TestRouteUnmarshalYAML(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	input := readCloser{bytes.NewBuffer([]byte("foobar"))}
-	output := writeCloser{bytes.NewBuffer([]byte{})}
+	input := bytes.NewBuffer([]byte("foobar"))
+	output := bytes.NewBuffer([]byte{})
 
 	err = route.pipeline.Run(input, output)
 	if err != nil {
@@ -78,8 +65,8 @@ func TestRouteUnmarshalYAML(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	input = readCloser{bytes.NewBuffer([]byte{})}
-	output = writeCloser{bytes.NewBuffer([]byte{})}
+	input = bytes.NewBuffer([]byte{})
+	output = bytes.NewBuffer([]byte{})
 
 	err = route.pipeline.Run(input, output)
 	if err != nil {

@@ -46,6 +46,7 @@ func NewTCP(ip net.IP, port int, filename string) (*TCPServer, error) {
 func (s *TCPServer) handle(conn net.Conn) {
 	// TODO some layer -> separate uri from request body
 	// TODO need some internal style of requests
+	// TODO separate uri and request body
 	uri, err := ioutil.ReadAll(conn)
 	if err != nil {
 		log.Error(err)
@@ -60,11 +61,20 @@ func (s *TCPServer) handle(conn net.Conn) {
 	// input and output is io.ReadCloser and io.WriteCloser
 	// after route.Run completion they will be closed
 	input := bytes.NewBuffer([]byte("HEAD / HTTP/1.0\r\n\r\n"))
+	// output := bytes.NewBuffer([]byte{})
+
+	var status string
+
+	defer func() {
+		// log ANY kind result
+		log.Infof("%s\t%s", uri, status)
+	}()
+
 	if err := route.Run(input, conn); err != nil {
 		log.Error(err)
-		log.Infof("%s\tERROR\t1234", uri)
+		status = "ERROR"
 	} else {
-		log.Infof("%s\tSUCCESS\t1234", uri)
+		status = "SUCCESS"
 	}
 }
 

@@ -62,6 +62,7 @@ func (s *tcp) run() error {
 
 	// just write to open tcp socket from stdin
 	// completes when previous layers stdout closed
+	// TODO handle empty input here
 	if _, err = io.Copy(s.conn, s.stdin); err != nil {
 		return err
 	}

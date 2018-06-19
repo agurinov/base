@@ -3,6 +3,8 @@ package pipeline
 import (
 	"errors"
 	"io"
+
+	"github.com/boomfunc/log"
 )
 
 // stdio struct is base struct to something that can have input/output
@@ -31,6 +33,14 @@ func (obj *stdio) checkStdio() error {
 	return nil
 }
 func (obj *stdio) closeStdio() error {
+
+	defer func() {
+		obj.stdin = nil
+		obj.stdout = nil
+	}()
+
+	log.Debug("obj.stdin.Close()", obj, obj.stdin, obj.stdout)
+
 	// close standart input
 	// for start layer run and write to stdout
 	if err := obj.stdin.Close(); err != nil {
@@ -42,12 +52,6 @@ func (obj *stdio) closeStdio() error {
 	if err := obj.stdout.Close(); err != nil {
 		return err
 	}
-
-	return nil
-}
-func (obj *stdio) resetStdio() error {
-	obj.stdin = nil
-	obj.stdout = nil
 
 	return nil
 }
