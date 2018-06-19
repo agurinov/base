@@ -42,10 +42,12 @@ func (s *tcp) check() error {
 		return errors.New("pipeline: TCP socket not piped")
 	}
 
-	// schek tcp socket have real address
+	// check tcp socket have real address
 	if s.addr == nil {
 		return errors.New("pipeline: TCP socket without address")
 	}
+
+	// TODO check empty input
 
 	// tcp socket ready for run
 	return nil
