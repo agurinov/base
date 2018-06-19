@@ -65,6 +65,7 @@ func (s *TCPServer) handle(conn net.Conn) {
 
 	var status string
 
+	// TODO recover panics to stderr
 	defer func() {
 		// log ANY kind result
 		log.Infof("%s\t%s", uri, status)
