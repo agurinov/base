@@ -75,13 +75,13 @@ func prepare(objs ...Exec) (err error) {
 }
 
 func run(objs ...Exec) error {
-	// Phase 1. PREPARING
+	// Phase 1. PREPARE AND CHECK
 	// in case of error it will be rolled back to initial incoming state
 	if err := prepare(objs...); err != nil {
 		return err
 	}
 
-	// Phase 2. running. Here ALL objs ready and checked
+	// Phase 2. RUN. Here ALL objs ready and checked
 	var wg sync.WaitGroup
 	wg.Add(len(objs))
 	// ch := make(chan error)
