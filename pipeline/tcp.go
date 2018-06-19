@@ -75,10 +75,8 @@ func (s *tcp) run() error {
 }
 
 func (s *tcp) close() error {
-	if err := s.closeStdio(); err != nil {
-		return err
-	}
-
+	// LIFO reverse order of piping and prepare
+	// UNPREPARE
 	// close connection
 	if s.conn != nil {
 		// TODO error returning here
@@ -86,5 +84,7 @@ func (s *tcp) close() error {
 		s.conn = nil
 	}
 
-	return nil
+	// UNPIPING
+	// stdio close and reset
+	return s.closeStdio()
 }

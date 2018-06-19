@@ -65,13 +65,13 @@ func (p *process) run() error {
 }
 
 func (p *process) close() error {
-	if err := p.closeStdio(); err != nil {
-		return err
-	}
-
+	// LIFO reverse order of piping and prepare
+	// UNPREPARE
 	// reset the command
 	// TODO look for better solution
 	p.cmd = nil
 
-	return nil
+	// UNPIPING
+	// stdio close and reset
+	return p.closeStdio()
 }

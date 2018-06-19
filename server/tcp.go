@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -58,8 +59,12 @@ func (s *TCPServer) handle(conn net.Conn) {
 	// important!
 	// input and output is io.ReadCloser and io.WriteCloser
 	// after route.Run completion they will be closed
-	if err := route.Run(conn, conn); err != nil {
+	input := bytes.NewBuffer([]byte("HEAD / HTTP/1.0\r\n\r\n"))
+	if err := route.Run(input, conn); err != nil {
 		log.Error(err)
+		log.Infof("%s\tERROR\t1234", uri)
+	} else {
+		log.Infof("%s\tSUCCESS\t1234", uri)
 	}
 }
 
