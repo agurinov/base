@@ -1,10 +1,10 @@
 FROM golang
 
-RUN mkdir -p /bmp/src
+RUN mkdir -p /go/src/app
 
-ADD . /bmp/src
+ADD . /go/src/app
 
-WORKDIR /bmp/src
+WORKDIR /go/src/app
 
 RUN set -ex \
 		&& go get -v -d ./... \
