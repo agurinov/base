@@ -1,17 +1,18 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 goBinDir='/go/bin'
 
-CMD="${@:2}"
+# CMD="${@:2}"
 
 # if [ -z "$BMP_DEBUG_MODE" ] ; then
 # 	BMP_DEBUG_MODE="--debug"
 # fi
 
-echo "-->> ${goBinDir}/app ${CMD}"
+# echo "-->> ${goBinDir}/app ${CMD}"
 
-exec "${goBinDir}/app ${CMD}"
+# exec "${goBinDir}/app ${CMD}"
+exec "${goBinDir}/app run tcp"
 
 
 # exec "$JAVA" $JAVA_OPTS \
