@@ -38,6 +38,8 @@ func NewTCP(ip net.IP, port int, filename string) (*TCPServer, error) {
 	}
 
 	log.Infof("TCP server up and running on %s", log.Wrap(fmt.Sprintf("%s", tcpAddr), log.Bold, log.Blink))
+	log.Infof("Spawned config file: %s", log.Wrap(filename, log.Bold))
+	log.Debugf("Enabled %s mode", log.Wrap("DEBUG", log.Bold, log.Blink))
 
 	server := &TCPServer{listener: tcpListener, router: router}
 	return server, nil
