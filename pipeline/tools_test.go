@@ -10,10 +10,12 @@ import (
 type execObj struct {
 	prepared bool
 	checked  bool
+	runned   bool
 	closed   bool
 
 	failPrepare bool
 	failCheck   bool
+	failRun     bool
 }
 
 func (o *execObj) prepare() error {
@@ -33,6 +35,11 @@ func (o *execObj) check() error {
 	return nil
 }
 func (o *execObj) run() error {
+	o.runned = true
+
+	if o.failRun {
+		return errors.New("run failed")
+	}
 	return nil
 }
 func (o *execObj) close() error {
@@ -356,6 +363,42 @@ func TestPrepare(t *testing.T) {
 				}
 			}
 		})
+	})
+}
+
+func TestExecute(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		obj := &execObj{}
+
+		if err := execute(obj); err != nil {
+			t.Fatal(err)
+		}
+
+		if obj.runned != true {
+			t.Fatalf("obj.runned: expected \"%t\", got \"%t\"", true, obj.runned)
+		}
+		if obj.closed != true {
+			t.Fatalf("obj.closed: expected \"%t\", got \"%t\"", true, obj.closed)
+		}
+	})
+
+	t.Run("error", func(t *testing.T) {
+		obj := &execObj{failRun: true}
+
+		err := execute(obj)
+		if err == nil {
+			t.Fatal("Expected error, got nil")
+		}
+		if err.Error() != "run failed" {
+			t.Fatalf("Unexpected error, got %q", err.Error())
+		}
+
+		if obj.runned != true {
+			t.Fatalf("obj.runned: expected \"%t\", got \"%t\"", true, obj.runned)
+		}
+		if obj.closed != true {
+			t.Fatalf("obj.closed: expected \"%t\", got \"%t\"", true, obj.closed)
+		}
 	})
 }
 
