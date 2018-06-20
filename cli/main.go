@@ -44,6 +44,20 @@ func Run() {
 			Name:   "run",
 			Usage:  runCommandUsage,
 			Action: runCommandAction,
+			Flags: []cli.Flag{
+				cli.IntFlag{
+					Name:   "port",
+					Usage:  portFlagUsage,
+					EnvVar: "BMP_PORT",
+					Value:  8080,
+				},
+				cli.StringFlag{
+					Name:   "config",
+					Usage:  configFlagUsage,
+					EnvVar: "BMP_CONFIG",
+					Value:  "/bmp/conf.yml",
+				},
+			},
 		},
 	}
 	// configure sorting for help

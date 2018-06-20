@@ -15,8 +15,8 @@ var (
 	runCommandUsage = "Run application server"
 	// Flags
 	debugFlagUsage  = "Debugging mode"
-	strictFlagUsage = `Strict mode. If any of the following conditions is not satisfied there will be an error
-	1. Config is invalid yaml`
+	portFlagUsage   = "Port on which the listener will be"
+	configFlagUsage = "Path to config file"
 )
 
 func runCommandAction(c *cli.Context) {
@@ -24,8 +24,8 @@ func runCommandAction(c *cli.Context) {
 
 	server, err := server.NewTCP(
 		net.ParseIP("0.0.0.0"),
-		8080,
-		"./conf/test.yml",
+		c.Int("port"),
+		c.String("config"),
 	)
 	if err != nil {
 		log.Error(err)
