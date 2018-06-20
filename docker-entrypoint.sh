@@ -3,7 +3,7 @@ set -e
 
 goBinDir='/go/bin'
 
-ACTION="$0"
+ACTION="$1"
 
 if [ -z "$BMP_DEBUG_MODE" ] ; then
 	BMP_DEBUG_MODE="--debug"

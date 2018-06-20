@@ -4,9 +4,9 @@
 .gitignore
 
 .dockerignore
-docker-compose.yml
 Dockerfile
+docker-compose.yml
 
 README.md
 
-*_test.go
+**/*_test.go
