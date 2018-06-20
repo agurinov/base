@@ -1,4 +1,4 @@
-FROM golang:alpine
+FROM golang
 
 RUN mkdir -p /bmp/src
 
@@ -8,8 +8,7 @@ WORKDIR /bmp/src
 
 RUN set -ex \
 		&& go get -v -d ./... \
-		&& go install -v ./... \
-			-o app
+		&& go install -v ./...
 
 COPY docker-entrypoint.sh /usr/local/bin/
 
