@@ -41,9 +41,8 @@ func Run() {
 	}
 	app.Commands = []cli.Command{
 		{
-			Name:   "run",
-			Usage:  runCommandUsage,
-			Action: runCommandAction,
+			Name:  "run",
+			Usage: runCommandUsage,
 			Flags: []cli.Flag{
 				cli.IntFlag{
 					Name:   "port",
@@ -56,6 +55,23 @@ func Run() {
 					Usage:  configFlagUsage,
 					EnvVar: "BMP_CONFIG",
 					Value:  "/bmp/conf.yml",
+				},
+			},
+			Subcommands: []cli.Command{
+				{
+					Name:   "udp",
+					Usage:  runUDPCommandUsage,
+					Action: runTCPCommandAction,
+				},
+				{
+					Name:   "tcp",
+					Usage:  runTCPCommandUsage,
+					Action: runTCPCommandAction,
+				},
+				{
+					Name:   "http",
+					Usage:  runHTTPCommandUsage,
+					Action: runTCPCommandAction,
 				},
 			},
 		},
