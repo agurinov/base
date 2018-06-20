@@ -14,4 +14,4 @@ RUN set -ex \
 		&& chmod +x /usr/local/bin/docker-entrypoint.sh
 
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["run tcp"]
+CMD ["run", "tcp"]
