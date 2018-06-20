@@ -21,14 +21,14 @@ func toReadCloser(reader io.Reader) io.ReadCloser {
 	if rc, ok := reader.(io.ReadCloser); ok {
 		return rc
 	}
-	return readCloser{reader}
+	return &readCloser{reader}
 }
 
 func toWriteCloser(writer io.Writer) io.WriteCloser {
 	if wc, ok := writer.(io.WriteCloser); ok {
 		return wc
 	}
-	return writeCloser{writer}
+	return &writeCloser{writer}
 }
 
 // piping establishes pipe connections between IO processes (Able)
