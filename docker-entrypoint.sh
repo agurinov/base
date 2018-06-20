@@ -9,7 +9,7 @@ fi
 
 echo "$BMP_DEBUG_MODE $ACTION"
 
-exec go-wrapper run \
+exec ./app \
 	--debug run
 
 
