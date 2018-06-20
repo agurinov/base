@@ -1,15 +1,17 @@
 #!/bin/sh
 set -e
 
+goBinDir='/go/bin'
+
 ACTION="$0"
 
 if [ -z "$BMP_DEBUG_MODE" ] ; then
 	BMP_DEBUG_MODE="--debug"
 fi
 
-echo "$BMP_DEBUG_MODE $ACTION"
+echo "$goBinDir/app $BMP_DEBUG_MODE $ACTION"
 
-exec ./app \
+exec "$goBinDir/app" \
 	--debug run
 
 
