@@ -3,16 +3,15 @@ set -e
 
 goBinDir='/go/bin'
 
-ACTION="$1"
+CMD="${@:2}"
 
-if [ -z "$BMP_DEBUG_MODE" ] ; then
-	BMP_DEBUG_MODE="--debug"
-fi
+# if [ -z "$BMP_DEBUG_MODE" ] ; then
+# 	BMP_DEBUG_MODE="--debug"
+# fi
 
-echo "$goBinDir/app $BMP_DEBUG_MODE $ACTION"
+echo "-->> ${goBinDir}/app ${CMD}"
 
-exec "$goBinDir/app" \
-	--debug run
+exec "${goBinDir}/app ${CMD}"
 
 
 # exec "$JAVA" $JAVA_OPTS \
