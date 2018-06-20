@@ -2,9 +2,47 @@ package pipeline
 
 import (
 	"bytes"
+	"errors"
 	"reflect"
 	"testing"
 )
+
+type execObj struct {
+	prepared bool
+	checked  bool
+	closed   bool
+
+	failPrepare bool
+	failCheck   bool
+}
+
+func (o *execObj) prepare() error {
+	o.prepared = true
+
+	if o.failPrepare {
+		return errors.New("prepare failed")
+	}
+	return nil
+}
+func (o *execObj) check() error {
+	o.checked = true
+
+	if o.failCheck {
+		return errors.New("check failed")
+	}
+	return nil
+}
+func (o *execObj) run() error {
+	return nil
+}
+func (o *execObj) close() error {
+	o.closed = true
+	// backwards state to initial
+	o.prepared = false
+	o.checked = false
+
+	return nil
+}
 
 func TestToCloser(t *testing.T) {
 	noCloser := bytes.NewBuffer([]byte{})
@@ -214,6 +252,108 @@ func TestPiping(t *testing.T) {
 			// }
 			if stdout3Ptr != outputPtr {
 				t.Fatal("layers[2]: unexpected stdout")
+			}
+		})
+	})
+}
+
+func TestPrepare(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		layers := []Exec{
+			&execObj{},
+			&execObj{},
+			&execObj{},
+		}
+
+		if err := prepare(layers...); err != nil {
+			t.Fatal(err)
+		}
+
+		// all wright - all flags (prepared and checked) set to true
+		for i, obj := range layers {
+			if obj.(*execObj).prepared != true {
+				t.Fatalf("layers[%d].prepared: expected \"%t\", got \"%t\"", i, true, obj.(*execObj).prepared)
+			}
+			if obj.(*execObj).checked != true {
+				t.Fatalf("layers[%d].checked: expected \"%t\", got \"%t\"", i, true, obj.(*execObj).checked)
+			}
+			// no .close() method invokes
+			if obj.(*execObj).closed != false {
+				t.Fatalf("layers[%d].closed: expected \"%t\", got \"%t\"", i, false, obj.(*execObj).closed)
+			}
+		}
+	})
+
+	t.Run("error", func(t *testing.T) {
+		t.Run("prepare", func(t *testing.T) {
+			layers := []Exec{
+				&execObj{},
+				&execObj{failPrepare: true}, // backwards from here. i == 1
+				&execObj{},
+			}
+
+			err := prepare(layers...)
+			if err == nil {
+				t.Fatal("Expected error, got nil")
+			}
+			if err.Error() != "prepare failed" {
+				t.Fatalf("Unexpected error, got %q", err.Error())
+			}
+
+			// prepare error - all flags (prepared and checked) set to false
+			for i, obj := range layers {
+				if obj.(*execObj).prepared != false {
+					t.Fatalf("layers[%d].prepared: expected \"%t\", got \"%t\"", i, false, obj.(*execObj).prepared)
+				}
+				if obj.(*execObj).checked != false {
+					t.Fatalf("layers[%d].checked: expected \"%t\", got \"%t\"", i, false, obj.(*execObj).checked)
+				}
+				// detect .close() has been invoked (for 0 and 1 element only)
+				if i < 2 {
+					if obj.(*execObj).closed != true {
+						t.Fatalf("layers[%d].closed: expected \"%t\", got \"%t\"", i, true, obj.(*execObj).closed)
+					}
+				} else {
+					if obj.(*execObj).closed != false {
+						t.Fatalf("layers[%d].closed: expected \"%t\", got \"%t\"", i, false, obj.(*execObj).closed)
+					}
+				}
+			}
+		})
+
+		t.Run("check", func(t *testing.T) {
+			layers := []Exec{
+				&execObj{},
+				&execObj{failCheck: true}, // backwards from here. i == 1
+				&execObj{failPrepare: true},
+			}
+
+			err := prepare(layers...)
+			if err == nil {
+				t.Fatal("Expected error, got nil")
+			}
+			if err.Error() != "check failed" {
+				t.Fatalf("Unexpected error, got %q", err.Error())
+			}
+
+			// prepare error - all flags (prepared and checked) set to false
+			for i, obj := range layers {
+				if obj.(*execObj).prepared != false {
+					t.Fatalf("layers[%d].prepared: expected \"%t\", got \"%t\"", i, false, obj.(*execObj).prepared)
+				}
+				if obj.(*execObj).checked != false {
+					t.Fatalf("layers[%d].checked: expected \"%t\", got \"%t\"", i, false, obj.(*execObj).checked)
+				}
+				// detect .close() has been invoked (for 0 and 1 element only)
+				if i < 2 {
+					if obj.(*execObj).closed != true {
+						t.Fatalf("layers[%d].closed: expected \"%t\", got \"%t\"", i, true, obj.(*execObj).closed)
+					}
+				} else {
+					if obj.(*execObj).closed != false {
+						t.Fatalf("layers[%d].closed: expected \"%t\", got \"%t\"", i, false, obj.(*execObj).closed)
+					}
+				}
 			}
 		})
 	})
