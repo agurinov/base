@@ -7,8 +7,8 @@ ADD . /bmp/src
 WORKDIR /bmp/src
 
 RUN set -ex \
-		&& go get -v -d \
-		&& go install -v \
+		&& go get -v -d ./... \
+		&& go install -v ./... \
 			-o app
 
 COPY docker-entrypoint.sh /usr/local/bin/

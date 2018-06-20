@@ -4,7 +4,7 @@ set -e
 ACTION="$0"
 
 if [ -z "$BMP_DEBUG_MODE" ] ; then
-    BMP_DEBUG_MODE="--debug"
+	BMP_DEBUG_MODE="--debug"
 fi
 
 echo "$BMP_DEBUG_MODE $ACTION"
