@@ -3,35 +3,32 @@ package server
 import (
 	"bufio"
 	"io"
-
-	"github.com/boomfunc/log"
 )
 
 type request struct {
-	url *string
-
+	url    string
 	reader io.Reader
 }
 
-func NewRequest(reader io.Reader) *request {
-	return &request{reader: reader}
-}
+func NewRequest(r io.Reader) (*request, error) {
+	reader := bufio.NewReader(r)
 
-func (r *request) Url() (string, error) {
-	if r.url == nil {
-		// not parsed -> get first line
-		scanner := bufio.NewScanner(r.reader)
-		scanner.Scan()
-		if err := scanner.Err(); err != nil {
-			return "", err
-		}
-
-		url := scanner.Text()
-		log.Debug(url)
-		r.url = &url
+	// url
+	url, _, err := reader.ReadLine()
+	if err != nil {
+		return nil, err
 	}
 
-	return *r.url, nil
+	req := request{
+		url:    string(url),
+		reader: reader,
+	}
+
+	return &req, nil
+}
+
+func (r *request) Url() string {
+	return r.url
 }
 
 func (r *request) Reader() io.Reader {

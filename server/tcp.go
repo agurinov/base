@@ -1,9 +1,7 @@
 package server
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"runtime/debug"
 
@@ -47,28 +45,32 @@ func NewTCP(ip net.IP, port int, filename string) (*TCPServer, error) {
 }
 
 func (s *TCPServer) handle(conn net.Conn) {
+	var url string
+	var status = "SUCCESS"
+
 	// logging and error handling block
 	defer func() {
-		status := "SUCCESS"
-
 		if err := recover(); err != nil {
 			log.Errorf("%s\n%s", err, debug.Stack())
 			status = "ERROR"
 			conn.Close()
 		}
 		// log ANY kind result
-		log.Info(status)
+		log.Infof("%s\t-\t%s", url, status)
 	}()
 
 	// TODO some layer -> separate uri from request body
 	// TODO need some internal style of requests
 	// TODO separate uri and request body
-	uri, err := ioutil.ReadAll(conn)
+	// TODO timeoutDuration := 5 * time.Second
+	request, err := NewRequest(conn)
 	if err != nil {
 		panic(err)
 	}
 
-	route, err := s.router.Match(string(uri))
+	url = request.Url()
+
+	route, err := s.router.Match(url)
 	if err != nil {
 		panic(err)
 	}
@@ -76,9 +78,7 @@ func (s *TCPServer) handle(conn net.Conn) {
 	// important!
 	// input and output is io.ReadCloser and io.WriteCloser
 	// after route.Run completion they will be closed
-	input := bytes.NewBuffer([]byte("HEAD / HTTP/1.0\r\n\r\n"))
-	// output := bytes.NewBuffer([]byte{})
-	if err := route.Run(input, conn); err != nil {
+	if err := route.Run(request.Reader(), conn); err != nil {
 		panic(err)
 	}
 }
