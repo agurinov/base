@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"runtime/debug"
 
 	"github.com/boomfunc/log"
 
@@ -46,17 +47,30 @@ func NewTCP(ip net.IP, port int, filename string) (*TCPServer, error) {
 }
 
 func (s *TCPServer) handle(conn net.Conn) {
+	// logging and error handling block
+	defer func() {
+		status := "SUCCESS"
+
+		if err := recover(); err != nil {
+			log.Errorf("%s\n%s", err, debug.Stack())
+			status = "ERROR"
+			conn.Close()
+		}
+		// log ANY kind result
+		log.Info(status)
+	}()
+
 	// TODO some layer -> separate uri from request body
 	// TODO need some internal style of requests
 	// TODO separate uri and request body
 	uri, err := ioutil.ReadAll(conn)
 	if err != nil {
-		log.Error(err)
+		panic(err)
 	}
 
 	route, err := s.router.Match(string(uri))
 	if err != nil {
-		log.Error(err)
+		panic(err)
 	}
 
 	// important!
@@ -64,20 +78,8 @@ func (s *TCPServer) handle(conn net.Conn) {
 	// after route.Run completion they will be closed
 	input := bytes.NewBuffer([]byte("HEAD / HTTP/1.0\r\n\r\n"))
 	// output := bytes.NewBuffer([]byte{})
-
-	var status string
-
-	// TODO recover panics to stderr
-	defer func() {
-		// log ANY kind result
-		log.Infof("%s\t%s", uri, status)
-	}()
-
 	if err := route.Run(input, conn); err != nil {
-		log.Error(err)
-		status = "ERROR"
-	} else {
-		status = "SUCCESS"
+		panic(err)
 	}
 }
 
