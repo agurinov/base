@@ -64,14 +64,13 @@ func piping(input io.ReadCloser, output io.WriteCloser, objs ...Able) error {
 }
 
 func execute(obj Exec) error {
-	defer obj.close()
+	defer func() {
+		log.Debugf("%v ----->>>> obj.run()", obj)
+		obj.close()
+	}()
 
-	if err := obj.run(); err != nil {
-		log.Debug("obj.execute.run()", err)
-		return err
-	}
-
-	return nil
+	log.Debugf("%v ----->>>> obj.run()", obj)
+	return obj.run()
 }
 
 func prepare(objs ...Exec) (err error) {
@@ -83,9 +82,8 @@ func prepare(objs ...Exec) (err error) {
 			// need to backwards
 			for ; i >= 0; i-- {
 				// TODO error handling
+				log.Debugf("----->>>> objs[%d].close()", i)
 				if r := objs[i].close(); r != nil {
-					log.Debugf("objs[%d].close() -> err", i)
-					log.Debug(r)
 				}
 			}
 		}
@@ -94,15 +92,13 @@ func prepare(objs ...Exec) (err error) {
 	// iterate over layers
 	for ; i < len(objs); i++ {
 		// try to prepare obj
+		log.Debugf("----->>>> objs[%d].prepare()", i)
 		if err = objs[i].prepare(); err != nil {
-			log.Debugf("objs[%d].prepare() -> err", i)
-			log.Debug(err)
 			return
 		}
 		// final obj's healthcheck
+		log.Debugf("----->>>> objs[%d].check()", i)
 		if err = objs[i].check(); err != nil {
-			log.Debugf("objs[%d].check() -> err", i)
-			log.Debug(err)
 			return
 		}
 	}
