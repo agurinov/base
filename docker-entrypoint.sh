@@ -12,7 +12,7 @@ goBinDir='/go/bin'
 # echo "-->> ${goBinDir}/app ${CMD}"
 
 # exec "${goBinDir}/app ${CMD}"
-exec "${goBinDir}/app run tcp"
+exec "${goBinDir}/app" "run" "tcp"
 
 
 # exec "$JAVA" $JAVA_OPTS \

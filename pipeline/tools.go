@@ -3,6 +3,8 @@ package pipeline
 import (
 	"io"
 	"sync"
+
+	"github.com/boomfunc/log"
 )
 
 type readCloser struct {
@@ -80,7 +82,10 @@ func prepare(objs ...Exec) (err error) {
 			// need to backwards
 			for ; i >= 0; i-- {
 				// TODO error handling
-				objs[i].close()
+				if r := objs[i].close(); r != nil {
+					log.Debugf("objs[%d].close() -> err", i)
+					log.Debug(r)
+				}
 			}
 		}
 	}()
@@ -89,10 +94,14 @@ func prepare(objs ...Exec) (err error) {
 	for ; i < len(objs); i++ {
 		// try to prepare obj
 		if err = objs[i].prepare(); err != nil {
+			log.Debugf("objs[%d].prepare() -> err", i)
+			log.Debug(err)
 			return
 		}
 		// final obj's healthcheck
 		if err = objs[i].check(); err != nil {
+			log.Debugf("objs[%d].check() -> err", i)
+			log.Debug(err)
 			return
 		}
 	}
@@ -118,7 +127,9 @@ func run(objs ...Exec) error {
 			defer obj.close()
 			defer wg.Done()
 
-			obj.run()
+			if err := obj.run(); err != nil {
+				log.Debug("obj.run()", err)
+			}
 		}(obj)
 
 		// go func(obj Exec) {

@@ -1,35 +1,11 @@
-pattern: /{data|static}/*.{jpg|png|jpeg}?crop
-io:
-	process: "node resize.js"
+collection:
 
-pattern: *
-pipeline:
-	- socket: "s3.amazonaws.com"
-	- process: "echo 'FOOBAR'"
+  # Route
+  - pattern: "{*}"
+    pipeline:
 
+      - type: process
+        cmd: python geo.py
 
--> s3								IO
-"node resize.js"		IO
-
-
-
-
-
-
-
-#webp
-pattern: /myip
-io:
-	socket: "geoip.domain.com"
-
-pattern: *
-io:
-	process: "echo 'miscuzi'"
-
-
-
-
-# geoip
-pattern: /myip
-io:
-	process: "sh getmyip.sh"
+      # - type: tcp
+      #   address: domain.com:80
