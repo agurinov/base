@@ -87,6 +87,10 @@ func prepare(objs ...Exec) (err error) {
 			// need to backwards
 			for ; i >= 0; i-- {
 				// TODO error handling
+				// TODO error handling
+				// TODO error handling
+				// TODO error handling
+				// TODO like in execute()
 				log.Debugf("----->>>> objs[%d].close()", i)
 				if r := objs[i].close(); r != nil {
 				}

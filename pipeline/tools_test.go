@@ -285,6 +285,7 @@ func TestPrepare(t *testing.T) {
 			[]int{1, 1, 0, 0},
 		}
 
+		// common errors
 		if err := prepare(layers...); err != nil {
 			t.Fatal(err)
 		}
@@ -486,53 +487,261 @@ func TestExecute(t *testing.T) {
 	})
 }
 
-// func TestRun(t *testing.T) {
-// 	t.Run("processes", func(t *testing.T) {
-// 		input := readCloser{bytes.NewBuffer([]byte("foobar"))}
-// 		output := writeCloser{bytes.NewBuffer([]byte{})}
-//
-// 		process1 := NewProcess("cat", "/dev/stdin")    // read 'foobar' from stdin
-// 		process2 := NewProcess("rev")                  // reverse -> raboof
-// 		process3 := NewProcess("grep", "-o", "raboof") // grep reversed (must be 1 match)
-// 		process4 := NewProcess("wc", "-l")             // count matches
-//
-// 		layers1 := []Able{process1, process2, process3, process4}
-// 		layers2 := []Exec{process1, process2, process3, process4}
-//
-// 		if err := piping(input, output, layers1...); err != nil {
-// 			t.Error(err)
-// 		}
-// 		if err := run(layers2...); err != nil {
-// 			t.Error(err)
-// 		}
-// 		// TODO
-// 		t.Log(output)
-// 		// if output.(*Buffer) != "1" {
-// 		// 	t.Errorf("Expected \"%d\", got \"%d\"", "1", string(output))
-// 		// }
-// 	})
-//
-// 	t.Run("sockets", func(t *testing.T) {
-// 		input := readCloser{bytes.NewBuffer([]byte("HEAD / HTTP/1.0\r\n\r\n"))}
-// 		output := writeCloser{bytes.NewBuffer([]byte{})}
-//
-// 		// process := NewProcess("cat", "/dev/stdin") // read simple http request from stdin
-// 		// process := NewProcess("echo", "HEAD / HTTP/1.0\r\n\r\n") // read simple http request from stdin
-// 		socket := NewTCSocket("golang.org:80") // and pass to golang.org via socket
-//
-// 		layers1 := []Able{socket}
-// 		layers2 := []Exec{socket}
-//
-// 		if err := piping(input, output, layers1...); err != nil {
-// 			t.Error(err)
-// 		}
-// 		if err := run(layers2...); err != nil {
-// 			t.Error(err)
-// 		}
-// 		// TODO
-// 		t.Log(output)
-// 		// if output.(*Buffer) != "1" {
-// 		// 	t.Errorf("Expected \"%d\", got \"%d\"", "1", string(output))
-// 		// }
-// 	})
-// }
+func TestRun(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		t.Run("len==1", func(t *testing.T) {
+			layers := []Exec{
+				&execObj{},
+			}
+			// digits - count of invokes functions
+			// digits from left to right:
+			// countPrepare, countCheck, countRun, countClose
+			flags := [][]int{
+				[]int{1, 1, 1, 1},
+			}
+
+			// common errors
+			if err := run(layers...); err != nil {
+				t.Fatal(err)
+			}
+
+			// table tests
+			for i, obj := range layers {
+				if obj.(*execObj).countPrepare != flags[i][0] {
+					t.Fatalf("layers[%d].countPrepare: expected \"%d\", got \"%d\"", i, flags[i][0], obj.(*execObj).countPrepare)
+				}
+				if obj.(*execObj).countCheck != flags[i][1] {
+					t.Fatalf("layers[%d].countCheck: expected \"%d\", got \"%d\"", i, flags[i][1], obj.(*execObj).countCheck)
+				}
+				if obj.(*execObj).countRun != flags[i][2] {
+					t.Fatalf("layers[%d].countRun: expected \"%d\", got \"%d\"", i, flags[i][2], obj.(*execObj).countRun)
+				}
+				if obj.(*execObj).countClose != flags[i][3] {
+					t.Fatalf("layers[%d].countClose: expected \"%d\", got \"%d\"", i, flags[i][3], obj.(*execObj).countClose)
+				}
+			}
+		})
+
+		t.Run("len==3", func(t *testing.T) {
+			layers := []Exec{
+				&execObj{},
+				&execObj{},
+				&execObj{},
+			}
+			// digits - count of invokes functions
+			// digits from left to right:
+			// countPrepare, countCheck, countRun, countClose
+			flags := [][]int{
+				[]int{1, 1, 1, 1},
+				[]int{1, 1, 1, 1},
+				[]int{1, 1, 1, 1},
+			}
+
+			// common errors
+			if err := run(layers...); err != nil {
+				t.Fatal(err)
+			}
+
+			// table tests
+			for i, obj := range layers {
+				if obj.(*execObj).countPrepare != flags[i][0] {
+					t.Fatalf("layers[%d].countPrepare: expected \"%d\", got \"%d\"", i, flags[i][0], obj.(*execObj).countPrepare)
+				}
+				if obj.(*execObj).countCheck != flags[i][1] {
+					t.Fatalf("layers[%d].countCheck: expected \"%d\", got \"%d\"", i, flags[i][1], obj.(*execObj).countCheck)
+				}
+				if obj.(*execObj).countRun != flags[i][2] {
+					t.Fatalf("layers[%d].countRun: expected \"%d\", got \"%d\"", i, flags[i][2], obj.(*execObj).countRun)
+				}
+				if obj.(*execObj).countClose != flags[i][3] {
+					t.Fatalf("layers[%d].countClose: expected \"%d\", got \"%d\"", i, flags[i][3], obj.(*execObj).countClose)
+				}
+			}
+		})
+	})
+
+	t.Run("error", func(t *testing.T) {
+		t.Run("prepare", func(t *testing.T) {
+			layers := []Exec{
+				&execObj{},
+				&execObj{},
+				&execObj{
+					mockFailPrepare: true, mockFailCheck: true,
+					mockFailRun: true, mockFailClose: true,
+				},
+			}
+			// digits - count of invokes functions
+			// digits from left to right:
+			// countPrepare, countCheck, countRun, countClose
+			flags := [][]int{
+				[]int{1, 1, 0, 1},
+				[]int{1, 1, 0, 1},
+				[]int{1, 0, 0, 1},
+			}
+
+			// common errors
+			err := run(layers...)
+			if err == nil {
+				t.Fatal("Expected error, got nil")
+			}
+			if err.Error() != "prepare failed" {
+				t.Fatalf("Unexpected error, got %q", err.Error())
+			}
+
+			// table tests
+			for i, obj := range layers {
+				if obj.(*execObj).countPrepare != flags[i][0] {
+					t.Fatalf("layers[%d].countPrepare: expected \"%d\", got \"%d\"", i, flags[i][0], obj.(*execObj).countPrepare)
+				}
+				if obj.(*execObj).countCheck != flags[i][1] {
+					t.Fatalf("layers[%d].countCheck: expected \"%d\", got \"%d\"", i, flags[i][1], obj.(*execObj).countCheck)
+				}
+				if obj.(*execObj).countRun != flags[i][2] {
+					t.Fatalf("layers[%d].countRun: expected \"%d\", got \"%d\"", i, flags[i][2], obj.(*execObj).countRun)
+				}
+				if obj.(*execObj).countClose != flags[i][3] {
+					t.Fatalf("layers[%d].countClose: expected \"%d\", got \"%d\"", i, flags[i][3], obj.(*execObj).countClose)
+				}
+			}
+		})
+
+		t.Run("check", func(t *testing.T) {
+			layers := []Exec{
+				&execObj{mockFailCheck: true},
+				&execObj{},
+				&execObj{
+					mockFailPrepare: true, mockFailCheck: true,
+					mockFailRun: true, mockFailClose: true,
+				},
+			}
+			// digits - count of invokes functions
+			// digits from left to right:
+			// countPrepare, countCheck, countRun, countClose
+			flags := [][]int{
+				[]int{1, 1, 0, 1},
+				[]int{0, 0, 0, 0},
+				[]int{0, 0, 0, 0},
+			}
+
+			// common errors
+			err := run(layers...)
+			if err == nil {
+				t.Fatal("Expected error, got nil")
+			}
+			if err.Error() != "check failed" {
+				t.Fatalf("Unexpected error, got %q", err.Error())
+			}
+
+			// table tests
+			for i, obj := range layers {
+				if obj.(*execObj).countPrepare != flags[i][0] {
+					t.Fatalf("layers[%d].countPrepare: expected \"%d\", got \"%d\"", i, flags[i][0], obj.(*execObj).countPrepare)
+				}
+				if obj.(*execObj).countCheck != flags[i][1] {
+					t.Fatalf("layers[%d].countCheck: expected \"%d\", got \"%d\"", i, flags[i][1], obj.(*execObj).countCheck)
+				}
+				if obj.(*execObj).countRun != flags[i][2] {
+					t.Fatalf("layers[%d].countRun: expected \"%d\", got \"%d\"", i, flags[i][2], obj.(*execObj).countRun)
+				}
+				if obj.(*execObj).countClose != flags[i][3] {
+					t.Fatalf("layers[%d].countClose: expected \"%d\", got \"%d\"", i, flags[i][3], obj.(*execObj).countClose)
+				}
+			}
+		})
+
+		t.Run("run", func(t *testing.T) {
+			layers := []Exec{
+				&execObj{},
+				&execObj{mockFailRun: true},
+				&execObj{},
+			}
+			// digits - count of invokes functions
+			// digits from left to right:
+			// countPrepare, countCheck, countRun, countClose
+			flags := [][]int{
+				[]int{1, 1, 1, 1},
+				[]int{1, 1, 1, 1},
+				[]int{1, 1, 1, 1},
+			}
+
+			// common errors
+			err := run(layers...)
+			if err == nil {
+				t.Fatal("Expected error, got nil")
+			}
+			if err.Error() != "run failed" {
+				t.Fatalf("Unexpected error, got %q", err.Error())
+			}
+
+			// table tests
+			for i, obj := range layers {
+				if obj.(*execObj).countPrepare != flags[i][0] {
+					t.Fatalf("layers[%d].countPrepare: expected \"%d\", got \"%d\"", i, flags[i][0], obj.(*execObj).countPrepare)
+				}
+				if obj.(*execObj).countCheck != flags[i][1] {
+					t.Fatalf("layers[%d].countCheck: expected \"%d\", got \"%d\"", i, flags[i][1], obj.(*execObj).countCheck)
+				}
+				if obj.(*execObj).countRun != flags[i][2] {
+					t.Fatalf("layers[%d].countRun: expected \"%d\", got \"%d\"", i, flags[i][2], obj.(*execObj).countRun)
+				}
+				if obj.(*execObj).countClose != flags[i][3] {
+					t.Fatalf("layers[%d].countClose: expected \"%d\", got \"%d\"", i, flags[i][3], obj.(*execObj).countClose)
+				}
+			}
+		})
+
+		t.Run("close", func(t *testing.T) {
+			layers := []Exec{
+				&execObj{},
+				&execObj{mockFailClose: true},
+				&execObj{},
+			}
+			// digits - count of invokes functions
+			// digits from left to right:
+			// countPrepare, countCheck, countRun, countClose
+			flags := [][]int{
+				[]int{1, 1, 1, 1},
+				[]int{1, 1, 1, 1},
+				[]int{1, 1, 1, 1},
+			}
+
+			// common errors
+			err := run(layers...)
+			if err == nil {
+				t.Fatal("Expected error, got nil")
+			}
+			if err.Error() != "run failed" {
+				t.Fatalf("Unexpected error, got %q", err.Error())
+			}
+
+			// table tests
+			for i, obj := range layers {
+				if obj.(*execObj).countPrepare != flags[i][0] {
+					t.Fatalf("layers[%d].countPrepare: expected \"%d\", got \"%d\"", i, flags[i][0], obj.(*execObj).countPrepare)
+				}
+				if obj.(*execObj).countCheck != flags[i][1] {
+					t.Fatalf("layers[%d].countCheck: expected \"%d\", got \"%d\"", i, flags[i][1], obj.(*execObj).countCheck)
+				}
+				if obj.(*execObj).countRun != flags[i][2] {
+					t.Fatalf("layers[%d].countRun: expected \"%d\", got \"%d\"", i, flags[i][2], obj.(*execObj).countRun)
+				}
+				if obj.(*execObj).countClose != flags[i][3] {
+					t.Fatalf("layers[%d].countClose: expected \"%d\", got \"%d\"", i, flags[i][3], obj.(*execObj).countClose)
+				}
+			}
+		})
+	})
+
+	t.Run("pipeline", func(t *testing.T) {
+		t.Run("fake", func(t *testing.T) {
+
+		})
+
+		t.Run("real", func(t *testing.T) {
+			// process1 := NewProcess("cat", "/dev/stdin")    // read 'foobar' from stdin
+			// 	process2 := NewProcess("rev")                  // reverse -> raboof
+			// 	process3 := NewProcess("grep", "-o", "raboof") // grep reversed (must be 1 match)
+			// 	process4 := NewProcess("wc", "-l")             // count matches
+		})
+	})
+}
