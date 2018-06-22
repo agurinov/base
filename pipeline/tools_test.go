@@ -8,45 +8,50 @@ import (
 )
 
 type execObj struct {
-	prepared bool
-	checked  bool
-	runned   bool
-	closed   bool
+	countPrepare int
+	countCheck   int
+	countRun     int
+	countClose   int
 
-	failPrepare bool
-	failCheck   bool
-	failRun     bool
+	mockFailPrepare bool
+	mockFailCheck   bool
+	mockFailRun     bool
+	mockFailClose   bool
 }
 
 func (o *execObj) prepare() error {
-	o.prepared = true
+	o.countPrepare++
 
-	if o.failPrepare {
+	if o.mockFailPrepare {
 		return errors.New("prepare failed")
 	}
+
 	return nil
 }
 func (o *execObj) check() error {
-	o.checked = true
+	o.countCheck++
 
-	if o.failCheck {
+	if o.mockFailCheck {
 		return errors.New("check failed")
 	}
+
 	return nil
 }
 func (o *execObj) run() error {
-	o.runned = true
+	o.countRun++
 
-	if o.failRun {
+	if o.mockFailRun {
 		return errors.New("run failed")
 	}
+
 	return nil
 }
 func (o *execObj) close() error {
-	o.closed = true
-	// backwards state to initial
-	o.prepared = false
-	o.checked = false
+	o.countClose++
+
+	if o.mockFailClose {
+		return errors.New("close failed")
+	}
 
 	return nil
 }
@@ -271,22 +276,32 @@ func TestPrepare(t *testing.T) {
 			&execObj{},
 			&execObj{},
 		}
+		// digits - count of invokes functions
+		// digits from left to right:
+		// countPrepare, countCheck, countRun, countClose
+		flags := [][]int{
+			[]int{1, 1, 0, 0},
+			[]int{1, 1, 0, 0},
+			[]int{1, 1, 0, 0},
+		}
 
 		if err := prepare(layers...); err != nil {
 			t.Fatal(err)
 		}
 
-		// all wright - all flags (prepared and checked) set to true
+		// table tests
 		for i, obj := range layers {
-			if obj.(*execObj).prepared != true {
-				t.Fatalf("layers[%d].prepared: expected \"%t\", got \"%t\"", i, true, obj.(*execObj).prepared)
+			if obj.(*execObj).countPrepare != flags[i][0] {
+				t.Fatalf("layers[%d].countPrepare: expected \"%d\", got \"%d\"", i, flags[i][0], obj.(*execObj).countPrepare)
 			}
-			if obj.(*execObj).checked != true {
-				t.Fatalf("layers[%d].checked: expected \"%t\", got \"%t\"", i, true, obj.(*execObj).checked)
+			if obj.(*execObj).countCheck != flags[i][1] {
+				t.Fatalf("layers[%d].countCheck: expected \"%d\", got \"%d\"", i, flags[i][1], obj.(*execObj).countCheck)
 			}
-			// no .close() method invokes
-			if obj.(*execObj).closed != false {
-				t.Fatalf("layers[%d].closed: expected \"%t\", got \"%t\"", i, false, obj.(*execObj).closed)
+			if obj.(*execObj).countRun != flags[i][2] {
+				t.Fatalf("layers[%d].countRun: expected \"%d\", got \"%d\"", i, flags[i][2], obj.(*execObj).countRun)
+			}
+			if obj.(*execObj).countClose != flags[i][3] {
+				t.Fatalf("layers[%d].countClose: expected \"%d\", got \"%d\"", i, flags[i][3], obj.(*execObj).countClose)
 			}
 		}
 	})
@@ -295,10 +310,19 @@ func TestPrepare(t *testing.T) {
 		t.Run("prepare", func(t *testing.T) {
 			layers := []Exec{
 				&execObj{},
-				&execObj{failPrepare: true}, // backwards from here. i == 1
+				&execObj{mockFailPrepare: true}, // backwards from here. i == 1
 				&execObj{},
 			}
+			// digits - count of invokes functions
+			// digits from left to right:
+			// countPrepare, countCheck, countRun, countClose
+			flags := [][]int{
+				[]int{1, 1, 0, 1},
+				[]int{1, 0, 0, 1},
+				[]int{0, 0, 0, 0},
+			}
 
+			// common errors
 			err := prepare(layers...)
 			if err == nil {
 				t.Fatal("Expected error, got nil")
@@ -307,23 +331,19 @@ func TestPrepare(t *testing.T) {
 				t.Fatalf("Unexpected error, got %q", err.Error())
 			}
 
-			// prepare error - all flags (prepared and checked) set to false
+			// table tests
 			for i, obj := range layers {
-				if obj.(*execObj).prepared != false {
-					t.Fatalf("layers[%d].prepared: expected \"%t\", got \"%t\"", i, false, obj.(*execObj).prepared)
+				if obj.(*execObj).countPrepare != flags[i][0] {
+					t.Fatalf("layers[%d].countPrepare: expected \"%d\", got \"%d\"", i, flags[i][0], obj.(*execObj).countPrepare)
 				}
-				if obj.(*execObj).checked != false {
-					t.Fatalf("layers[%d].checked: expected \"%t\", got \"%t\"", i, false, obj.(*execObj).checked)
+				if obj.(*execObj).countCheck != flags[i][1] {
+					t.Fatalf("layers[%d].countCheck: expected \"%d\", got \"%d\"", i, flags[i][1], obj.(*execObj).countCheck)
 				}
-				// detect .close() has been invoked (for 0 and 1 element only)
-				if i < 2 {
-					if obj.(*execObj).closed != true {
-						t.Fatalf("layers[%d].closed: expected \"%t\", got \"%t\"", i, true, obj.(*execObj).closed)
-					}
-				} else {
-					if obj.(*execObj).closed != false {
-						t.Fatalf("layers[%d].closed: expected \"%t\", got \"%t\"", i, false, obj.(*execObj).closed)
-					}
+				if obj.(*execObj).countRun != flags[i][2] {
+					t.Fatalf("layers[%d].countRun: expected \"%d\", got \"%d\"", i, flags[i][2], obj.(*execObj).countRun)
+				}
+				if obj.(*execObj).countClose != flags[i][3] {
+					t.Fatalf("layers[%d].countClose: expected \"%d\", got \"%d\"", i, flags[i][3], obj.(*execObj).countClose)
 				}
 			}
 		})
@@ -331,10 +351,19 @@ func TestPrepare(t *testing.T) {
 		t.Run("check", func(t *testing.T) {
 			layers := []Exec{
 				&execObj{},
-				&execObj{failCheck: true}, // backwards from here. i == 1
-				&execObj{failPrepare: true},
+				&execObj{mockFailCheck: true}, // backwards from here. i == 1
+				&execObj{mockFailPrepare: true},
+			}
+			// digits - count of invokes functions
+			// digits from left to right:
+			// countPrepare, countCheck, countRun, countClose
+			flags := [][]int{
+				[]int{1, 1, 0, 1},
+				[]int{1, 1, 0, 1},
+				[]int{0, 0, 0, 0},
 			}
 
+			// common errors
 			err := prepare(layers...)
 			if err == nil {
 				t.Fatal("Expected error, got nil")
@@ -343,23 +372,19 @@ func TestPrepare(t *testing.T) {
 				t.Fatalf("Unexpected error, got %q", err.Error())
 			}
 
-			// prepare error - all flags (prepared and checked) set to false
+			// table tests
 			for i, obj := range layers {
-				if obj.(*execObj).prepared != false {
-					t.Fatalf("layers[%d].prepared: expected \"%t\", got \"%t\"", i, false, obj.(*execObj).prepared)
+				if obj.(*execObj).countPrepare != flags[i][0] {
+					t.Fatalf("layers[%d].countPrepare: expected \"%d\", got \"%d\"", i, flags[i][0], obj.(*execObj).countPrepare)
 				}
-				if obj.(*execObj).checked != false {
-					t.Fatalf("layers[%d].checked: expected \"%t\", got \"%t\"", i, false, obj.(*execObj).checked)
+				if obj.(*execObj).countCheck != flags[i][1] {
+					t.Fatalf("layers[%d].countCheck: expected \"%d\", got \"%d\"", i, flags[i][1], obj.(*execObj).countCheck)
 				}
-				// detect .close() has been invoked (for 0 and 1 element only)
-				if i < 2 {
-					if obj.(*execObj).closed != true {
-						t.Fatalf("layers[%d].closed: expected \"%t\", got \"%t\"", i, true, obj.(*execObj).closed)
-					}
-				} else {
-					if obj.(*execObj).closed != false {
-						t.Fatalf("layers[%d].closed: expected \"%t\", got \"%t\"", i, false, obj.(*execObj).closed)
-					}
+				if obj.(*execObj).countRun != flags[i][2] {
+					t.Fatalf("layers[%d].countRun: expected \"%d\", got \"%d\"", i, flags[i][2], obj.(*execObj).countRun)
+				}
+				if obj.(*execObj).countClose != flags[i][3] {
+					t.Fatalf("layers[%d].countClose: expected \"%d\", got \"%d\"", i, flags[i][3], obj.(*execObj).countClose)
 				}
 			}
 		})
@@ -370,35 +395,94 @@ func TestExecute(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		obj := &execObj{}
 
+		// digits - count of invokes functions
+		// digits from left to right:
+		// countPrepare, countCheck, countRun, countClose
+		flags := []int{0, 0, 1, 1}
+
+		// common errors
 		if err := execute(obj); err != nil {
 			t.Fatal(err)
 		}
 
-		if obj.runned != true {
-			t.Fatalf("obj.runned: expected \"%t\", got \"%t\"", true, obj.runned)
+		if obj.countPrepare != flags[0] {
+			t.Fatalf("obj.countPrepare: expected \"%d\", got \"%d\"", flags[0], obj.countPrepare)
 		}
-		if obj.closed != true {
-			t.Fatalf("obj.closed: expected \"%t\", got \"%t\"", true, obj.closed)
+		if obj.countCheck != flags[1] {
+			t.Fatalf("obj.countCheck: expected \"%d\", got \"%d\"", flags[1], obj.countCheck)
+		}
+		if obj.countRun != flags[2] {
+			t.Fatalf("obj.countRun: expected \"%d\", got \"%d\"", flags[2], obj.countRun)
+		}
+		if obj.countClose != flags[3] {
+			t.Fatalf("obj.countClose: expected \"%d\", got \"%d\"", flags[3], obj.countClose)
 		}
 	})
 
 	t.Run("error", func(t *testing.T) {
-		obj := &execObj{failRun: true}
+		t.Run("run", func(t *testing.T) {
+			obj := &execObj{mockFailRun: true, mockFailClose: true}
 
-		err := execute(obj)
-		if err == nil {
-			t.Fatal("Expected error, got nil")
-		}
-		if err.Error() != "run failed" {
-			t.Fatalf("Unexpected error, got %q", err.Error())
-		}
+			// digits - count of invokes functions
+			// digits from left to right:
+			// countPrepare, countCheck, countRun, countClose
+			flags := []int{0, 0, 1, 1}
 
-		if obj.runned != true {
-			t.Fatalf("obj.runned: expected \"%t\", got \"%t\"", true, obj.runned)
-		}
-		if obj.closed != true {
-			t.Fatalf("obj.closed: expected \"%t\", got \"%t\"", true, obj.closed)
-		}
+			// common errors
+			err := execute(obj)
+			if err == nil {
+				t.Fatal("Expected error, got nil")
+			}
+			if err.Error() != "run failed" {
+				t.Fatalf("Unexpected error, got %q", err.Error())
+			}
+
+			// table tests
+			if obj.countPrepare != flags[0] {
+				t.Fatalf("obj.countPrepare: expected \"%d\", got \"%d\"", flags[0], obj.countPrepare)
+			}
+			if obj.countCheck != flags[1] {
+				t.Fatalf("obj.countCheck: expected \"%d\", got \"%d\"", flags[1], obj.countCheck)
+			}
+			if obj.countRun != flags[2] {
+				t.Fatalf("obj.countRun: expected \"%d\", got \"%d\"", flags[2], obj.countRun)
+			}
+			if obj.countClose != flags[3] {
+				t.Fatalf("obj.countClose: expected \"%d\", got \"%d\"", flags[3], obj.countClose)
+			}
+		})
+
+		t.Run("close", func(t *testing.T) {
+			obj := &execObj{mockFailClose: true}
+
+			// digits - count of invokes functions
+			// digits from left to right:
+			// countPrepare, countCheck, countRun, countClose
+			flags := []int{0, 0, 1, 1}
+
+			// common errors
+			err := execute(obj)
+			if err == nil {
+				t.Fatal("Expected error, got nil")
+			}
+			if err.Error() != "close failed" {
+				t.Fatalf("Unexpected error, got %q", err.Error())
+			}
+
+			// table tests
+			if obj.countPrepare != flags[0] {
+				t.Fatalf("obj.countPrepare: expected \"%d\", got \"%d\"", flags[0], obj.countPrepare)
+			}
+			if obj.countCheck != flags[1] {
+				t.Fatalf("obj.countCheck: expected \"%d\", got \"%d\"", flags[1], obj.countCheck)
+			}
+			if obj.countRun != flags[2] {
+				t.Fatalf("obj.countRun: expected \"%d\", got \"%d\"", flags[2], obj.countRun)
+			}
+			if obj.countClose != flags[3] {
+				t.Fatalf("obj.countClose: expected \"%d\", got \"%d\"", flags[3], obj.countClose)
+			}
+		})
 	})
 }
 
@@ -424,7 +508,7 @@ func TestExecute(t *testing.T) {
 // 		// TODO
 // 		t.Log(output)
 // 		// if output.(*Buffer) != "1" {
-// 		// 	t.Errorf("Expected %q, got %q", "1", string(output))
+// 		// 	t.Errorf("Expected \"%d\", got \"%d\"", "1", string(output))
 // 		// }
 // 	})
 //
@@ -448,7 +532,7 @@ func TestExecute(t *testing.T) {
 // 		// TODO
 // 		t.Log(output)
 // 		// if output.(*Buffer) != "1" {
-// 		// 	t.Errorf("Expected %q, got %q", "1", string(output))
+// 		// 	t.Errorf("Expected \"%d\", got \"%d\"", "1", string(output))
 // 		// }
 // 	})
 // }
