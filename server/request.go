@@ -6,9 +6,8 @@ import (
 )
 
 type request struct {
-	url  string
-	body string
-	// reader io.Reader
+	url    string
+	reader io.Reader
 }
 
 func NewRequest(r io.Reader) (*request, error) {
