@@ -63,14 +63,19 @@ func piping(input io.ReadCloser, output io.WriteCloser, objs ...Able) error {
 	return nil
 }
 
-func execute(obj Exec) error {
+func execute(obj Exec) (err error) {
 	defer func() {
 		log.Debugf("%v ----->>>> obj.run()", obj)
-		obj.close()
+		if err != nil {
+			obj.close()
+		} else {
+			err = obj.close()
+		}
 	}()
 
 	log.Debugf("%v ----->>>> obj.run()", obj)
-	return obj.run()
+	err = obj.run()
+	return
 }
 
 func prepare(objs ...Exec) (err error) {
