@@ -3,6 +3,8 @@ package pipeline
 import (
 	"errors"
 	"io"
+
+	"github.com/boomfunc/log"
 )
 
 // stdio struct is base struct to something that can have input/output
@@ -36,6 +38,8 @@ func (obj *stdio) closeStdio() error {
 		obj.stdin = nil
 		obj.stdout = nil
 	}()
+
+	log.Debug("obj.closeStdio()", obj.stdin, obj.stdout)
 
 	// close standart input
 	// for start layer run and write to stdout

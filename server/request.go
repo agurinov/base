@@ -3,15 +3,15 @@ package server
 import (
 	"bufio"
 	"io"
-	"strings"
 	"io/ioutil"
+	"strings"
 
 	"github.com/boomfunc/log"
 )
 
 type request struct {
-	url    string
-	body    string
+	url  string
+	body string
 	// reader io.Reader
 }
 
@@ -29,7 +29,7 @@ func NewRequest(r io.Reader) (*request, error) {
 	log.Debug(string(body))
 
 	req := request{
-		url:    string(url),
+		url:  string(url),
 		body: string(body),
 		// reader: reader,
 	}

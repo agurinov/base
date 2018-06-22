@@ -4,6 +4,8 @@ import (
 	"errors"
 	"os/exec"
 	"strings"
+
+	"github.com/boomfunc/log"
 )
 
 type process struct {
@@ -65,6 +67,7 @@ func (p *process) run() error {
 }
 
 func (p *process) close() error {
+	log.Debug("process.close()", p.stdin, p.stdout, p.cmd)
 	// LIFO reverse order of piping and prepare
 	// UNPREPARE
 	// reset the command

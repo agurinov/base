@@ -67,6 +67,7 @@ func execute(obj Exec) error {
 	defer obj.close()
 
 	if err := obj.run(); err != nil {
+		log.Debug("obj.execute.run()", err)
 		return err
 	}
 
@@ -124,12 +125,9 @@ func run(objs ...Exec) error {
 	for _, obj := range objs {
 
 		go func(obj Exec) {
-			defer obj.close()
 			defer wg.Done()
 
-			if err := obj.run(); err != nil {
-				log.Debug("obj.run()", err)
-			}
+			execute(obj)
 		}(obj)
 
 		// go func(obj Exec) {
