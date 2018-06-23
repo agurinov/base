@@ -8,6 +8,31 @@ import (
 	"testing"
 )
 
+func checkObjsByMatrixState(t *testing.T, matrix [][]int, objs []interface{}) {
+	t.Log(len(matrix), len(objs))
+	// check sizes
+	if len(matrix) != len(objs) {
+		t.Fatalf("CheckByMatrix: inappropriate sizes, len(matrix)==%d != len(objs)==%d", len(matrix), len(objs))
+	}
+
+	// table tests
+	for i, obj := range objs {
+		if obj.(*execObj).countPrepare != matrix[i][0] {
+			t.Fatalf("objs[%d].countPrepare: expected \"%d\", got \"%d\"", i, matrix[i][0], obj.(*execObj).countPrepare)
+		}
+		if obj.(*execObj).countCheck != matrix[i][1] {
+			t.Fatalf("objs[%d].countCheck: expected \"%d\", got \"%d\"", i, matrix[i][1], obj.(*execObj).countCheck)
+		}
+		if obj.(*execObj).countRun != matrix[i][2] {
+			t.Fatalf("objs[%d].countRun: expected \"%d\", got \"%d\"", i, matrix[i][2], obj.(*execObj).countRun)
+		}
+		if obj.(*execObj).countClose != matrix[i][3] {
+			t.Fatalf("objs[%d].countClose: expected \"%d\", got \"%d\"", i, matrix[i][3], obj.(*execObj).countClose)
+		}
+	}
+}
+
+// execObj is special `fake` Layer
 type execObj struct {
 	countPrepare int
 	countCheck   int
