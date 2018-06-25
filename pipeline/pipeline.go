@@ -18,6 +18,10 @@ type Pipeline struct {
 	stdio
 }
 
+func New(layers []Layer) *Pipeline {
+	return &Pipeline{layers: layers}
+}
+
 // connect binds all layers of the Pipeline using io.Pipe objects
 // connect calls private api's piping method
 func (p *Pipeline) prepare() error {
@@ -34,11 +38,11 @@ func (p *Pipeline) prepare() error {
 
 	// Stage 2. Prepare all layers
 	// invoke all layer's .prepare method
-	for _, layer := range p.layers {
-		if err := layer.prepare(); err != nil {
-			return err
-		}
-	}
+	// for _, layer := range p.layers {
+	// 	if err := layer.prepare(); err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }
@@ -47,15 +51,15 @@ func (p *Pipeline) prepare() error {
 func (p *Pipeline) check() error {
 	// check layer piped
 	if err := p.checkStdio(); err != nil {
-		return errors.New("pipeline: Pipeline not piped")
+		return err
 	}
 
 	// invoke all layer's .check method
-	for _, layer := range p.layers {
-		if err := layer.check(); err != nil {
-			return err
-		}
-	}
+	// for _, layer := range p.layers {
+	// 	if err := layer.check(); err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	// all layers is OK and ready for launching
 	return nil

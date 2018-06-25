@@ -3,8 +3,6 @@ package pipeline
 import (
 	"io"
 	"sync"
-
-	"github.com/boomfunc/log"
 )
 
 type readCloser struct {
@@ -65,7 +63,6 @@ func piping(input io.ReadCloser, output io.WriteCloser, objs ...Able) error {
 
 func execute(obj Exec) (err error) {
 	defer func() {
-		log.Debugf("%v ----->>>> obj.run()", obj)
 		if err != nil {
 			obj.close()
 		} else {
@@ -73,7 +70,6 @@ func execute(obj Exec) (err error) {
 		}
 	}()
 
-	log.Debugf("%v ----->>>> obj.run()", obj)
 	err = obj.run()
 	return
 }
@@ -91,7 +87,6 @@ func prepare(objs ...Exec) (err error) {
 				// TODO error handling
 				// TODO error handling
 				// TODO like in execute()
-				log.Debugf("----->>>> objs[%d].close()", i)
 				if r := objs[i].close(); r != nil {
 				}
 			}
@@ -101,12 +96,10 @@ func prepare(objs ...Exec) (err error) {
 	// iterate over layers
 	for ; i < len(objs); i++ {
 		// try to prepare obj
-		log.Debugf("----->>>> objs[%d].prepare()", i)
 		if err = objs[i].prepare(); err != nil {
 			return
 		}
 		// final obj's healthcheck
-		log.Debugf("----->>>> objs[%d].check()", i)
 		if err = objs[i].check(); err != nil {
 			return
 		}
@@ -115,7 +108,7 @@ func prepare(objs ...Exec) (err error) {
 	return
 }
 
-func run(objs ...Exec) error {
+func run(objs ...Exec) (err error) {
 	// Phase 1. PREPARE AND CHECK
 	// in case of error it will be rolled back to initial incoming state
 	if err := prepare(objs...); err != nil {
@@ -132,7 +125,7 @@ func run(objs ...Exec) error {
 		go func(obj Exec) {
 			defer wg.Done()
 
-			execute(obj)
+			err = execute(obj)
 		}(obj)
 
 		// go func(obj Exec) {
@@ -153,7 +146,7 @@ func run(objs ...Exec) error {
 
 	wg.Wait()
 
-	return nil
+	return
 }
 
 // https://play.golang.org/p/Djv52XGnbur
