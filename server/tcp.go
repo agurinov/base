@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net"
 	"runtime/debug"
 
@@ -47,16 +49,24 @@ func NewTCP(ip net.IP, port int, filename string) (*TCPServer, error) {
 func (s *TCPServer) handle(conn net.Conn) {
 	var url string
 	var status = "SUCCESS"
+	var written int64
 
 	// logging and error handling block
+	// this defer must be invoked last (first in) for recovering all available panics and errors
 	defer func() {
 		if err := recover(); err != nil {
 			log.Errorf("%s\n%s", err, debug.Stack())
 			status = "ERROR"
-			conn.Close()
 		}
 		// log ANY kind result
-		log.Infof("%s\t-\t%s", url, status)
+		log.Infof("%s\t-\t%s\t-\t%d", url, status, written)
+	}()
+
+	// Firstly - close connection
+	defer func() {
+		if err := conn.Close(); err != nil {
+			panic(err)
+		}
 	}()
 
 	// TODO some layer -> separate uri from request body
@@ -75,10 +85,15 @@ func (s *TCPServer) handle(conn net.Conn) {
 		panic(err)
 	}
 
-	// important!
-	// input and output is io.ReadCloser and io.WriteCloser
-	// after route.Run completion they will be closed
-	if err := route.Run(request.Reader(), conn); err != nil {
+	output := bytes.NewBuffer([]byte{})
+
+	if err := route.Run(request.Reader(), output); err != nil {
+		panic(err)
+	}
+
+	// write answer to channel
+	written, err = io.Copy(conn, output)
+	if err != nil {
 		panic(err)
 	}
 }
