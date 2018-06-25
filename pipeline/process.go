@@ -4,8 +4,6 @@ import (
 	"errors"
 	"os/exec"
 	"strings"
-
-	"github.com/boomfunc/log"
 )
 
 type process struct {
@@ -45,7 +43,7 @@ func (p *process) prepare() error {
 func (p *process) check() error {
 	// check layer piped
 	if err := p.checkStdio(); err != nil {
-		return errors.New("pipeline: Process not piped")
+		return err
 	}
 
 	// check command is valid and ready
@@ -66,15 +64,18 @@ func (p *process) run() error {
 	return p.cmd.Wait()
 }
 
-func (p *process) close() error {
-	log.Debug("process.close()", p.stdin, p.stdout, p.cmd)
-	// LIFO reverse order of piping and prepare
-	// UNPREPARE
-	// reset the command
-	// TODO look for better solution
-	p.cmd = nil
+func (p *process) close() (err error) {
+	defer func() {
+		p.cmd = nil
+	}()
 
-	// UNPIPING
-	// stdio close and reset
-	return p.closeStdio()
+	defer func() {
+		if err != nil {
+			p.closeStdio()
+		} else {
+			err = p.closeStdio()
+		}
+	}()
+
+	return
 }

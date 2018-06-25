@@ -39,7 +39,7 @@ func (s *tcp) prepare() error {
 func (s *tcp) check() error {
 	// check layer piped
 	if err := s.checkStdio(); err != nil {
-		return errors.New("pipeline: TCP socket not piped")
+		return err
 	}
 
 	// check tcp socket have real address
@@ -77,17 +77,20 @@ func (s *tcp) run() error {
 	return nil
 }
 
-func (s *tcp) close() error {
-	// LIFO reverse order of piping and prepare
-	// UNPREPARE
-	// close connection
-	if s.conn != nil {
-		// TODO error returning here
-		s.conn.Close()
+func (s *tcp) close() (err error) {
+	defer func() {
 		s.conn = nil
-	}
+	}()
 
-	// UNPIPING
-	// stdio close and reset
-	return s.closeStdio()
+	defer func() {
+		if err != nil {
+			s.closeStdio()
+		} else {
+			err = s.closeStdio()
+		}
+	}()
+
+	// close connection
+	err = s.conn.Close()
+	return
 }
