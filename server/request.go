@@ -3,9 +3,12 @@ package server
 import (
 	"bufio"
 	"io"
+
+	"github.com/google/uuid"
 )
 
 type request struct {
+	uuid   uuid.UUID
 	url    string
 	reader io.Reader
 }
@@ -20,6 +23,7 @@ func NewRequest(r io.Reader) (*request, error) {
 	}
 
 	req := request{
+		uuid:   uuid.New(),
 		url:    string(url),
 		reader: reader,
 	}
@@ -31,6 +35,10 @@ func (r *request) Url() string {
 	return r.url
 }
 
-func (r *request) Reader() io.Reader {
+func (r *request) Body() io.Reader {
 	return r.reader
+}
+
+func (r *request) Id() uuid.UUID {
+	return r.uuid
 }
