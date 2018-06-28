@@ -5,96 +5,28 @@ import (
 	"io"
 )
 
-// Pipeline is set of layers
-// it is something like view, workflow for this request
-// lifecycle:
-// 		1. prepare (piping all layers -> set stdio for each layer)
-// 		2. check (check that all layers piped and can be executed)
-// 		3. run
-// 		4. close (close stdio and clear all layer's sensitive data for reuse this pipeline)
-type Pipeline struct {
-	layers []Layer
+type Pipeline []Layer
 
-	stdio
-}
-
-func New(layers []Layer) *Pipeline {
-	return &Pipeline{layers: layers}
-}
-
-// connect binds all layers of the Pipeline using io.Pipe objects
-// connect calls private api's piping method
-func (p *Pipeline) prepare() error {
-	// Stage 1. Pipeline prepare -> piping
-	// convert Layer -> Able
-	layers := make([]Able, len(p.layers))
-	// creating []Able with same pointers as p.layers
-	for i, layer := range p.layers {
-		layers[i] = layer.(Able)
-	}
-	if err := piping(p.stdin, p.stdout, layers...); err != nil {
-		return err
-	}
-
-	// Stage 2. Prepare all layers
-	// invoke all layer's .prepare method
-	// for _, layer := range p.layers {
-	// 	if err := layer.prepare(); err != nil {
-	// 		return err
-	// 	}
-	// }
-
-	return nil
-}
-
-// check checks all layers can be launched by .Run() at any moment
-func (p *Pipeline) check() error {
-	// check layer piped
-	if err := p.checkStdio(); err != nil {
-		return err
-	}
-
-	// invoke all layer's .check method
-	// for _, layer := range p.layers {
-	// 	if err := layer.check(); err != nil {
-	// 		return err
-	// 	}
-	// }
-
-	// all layers is OK and ready for launching
-	return nil
-}
-
-// run calls private api's run method
-func (p *Pipeline) run() error {
-	// convert Layer -> Exec
-	layers := make([]Exec, len(p.layers))
-	// creating []Exec with same pointers as p.layers
-	for i, layer := range p.layers {
-		layers[i] = layer.(Exec)
-	}
-
-	// run this layers (Execs) throw tool
-	return run(layers...)
-}
-
-func (p *Pipeline) close() error {
-	return p.closeStdio()
-}
-
-func (p *Pipeline) Run(input io.Reader, output io.Writer) error {
+func (p Pipeline) Run(input io.Reader, output io.Writer) error {
 	// Convert io.Reader and io.Writer to io.ReadCloser and io.WriteCloser
 	inputCloser := toReadCloser(input)
 	outputCloser := toWriteCloser(output)
 
-	// Piping this Able with input and output
-	// save request and response to inner data for prepare and piping internal layers
-	if err := piping(inputCloser, outputCloser, p); err != nil {
+	ables := make([]Able, len(p))
+	execs := make([]Exec, len(p))
+
+	for i, layer := range p {
+		newLayer := layer.(Cloneable).copy()
+
+		ables[i] = newLayer.(Able)
+		execs[i] = newLayer.(Exec)
+	}
+
+	if err := piping(inputCloser, outputCloser, ables...); err != nil {
 		return err
 	}
 
-	// run this Exec throw tool
-	return run(p)
+	return run(execs...)
 }
 
 func (p *Pipeline) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -110,10 +42,10 @@ func (p *Pipeline) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		// get required 'type' key
 		switch t := layer["type"]; t {
 		case "tcp":
-			p.layers = append(p.layers, NewTCPSocket(layer["address"].(string)))
+			*p = append(*p, NewTCPSocket(layer["address"].(string)))
 
 		case "process":
-			p.layers = append(p.layers, NewProcess(layer["cmd"].(string)))
+			*p = append(*p, NewProcess(layer["cmd"].(string)))
 
 		default:
 			return errors.New("pipeline: Unknown layer type")
