@@ -50,6 +50,7 @@ func (s *TCPServer) handle(conn net.Conn) {
 	var url string
 	var status = "SUCCESS"
 	var written int64
+	var req *request
 
 	// logging and error handling block
 	// this defer must be invoked last (first in) for recovering all available panics and errors
@@ -59,7 +60,7 @@ func (s *TCPServer) handle(conn net.Conn) {
 			status = "ERROR"
 		}
 		// log ANY kind result
-		log.Infof("%s\t-\t%s\t-\t%d", url, status, written)
+		log.Infof("%s\t-\t%s\t-\t%s\t-\t%d", req.Id(), url, status, written)
 	}()
 
 	// Firstly - close connection
@@ -73,21 +74,22 @@ func (s *TCPServer) handle(conn net.Conn) {
 	// TODO need some internal style of requests
 	// TODO separate uri and request body
 	// TODO timeoutDuration := 5 * time.Second
-	request, err := NewRequest(conn)
+	req, err := NewRequest(conn)
 	if err != nil {
 		panic(err)
 	}
 
-	url = request.Url()
+	url = req.Url()
 
 	route, err := s.router.Match(url)
 	if err != nil {
 		panic(err)
 	}
 
+	input := req.Body()
 	output := bytes.NewBuffer([]byte{})
 
-	if err := route.Run(request.Reader(), output); err != nil {
+	if err := route.Run(input, output); err != nil {
 		panic(err)
 	}
 
@@ -103,6 +105,7 @@ func (s *TCPServer) Serve() {
 	// TODO defer ch.Close()
 	// TODO defer s.conn.Close()
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
+	// https://rcrowley.org/articles/golang-graceful-stop.html
 
 	// Phase 1. Listen infinitely TCP connection for incoming requests
 	for {

@@ -1,7 +1,7 @@
 package pipeline
 
 import (
-	"errors"
+	// "errors"
 	"os/exec"
 	"strings"
 )
@@ -9,8 +9,7 @@ import (
 type process struct {
 	name string
 	arg  []string
-
-	cmd *exec.Cmd
+	// cmd exec.Cmd
 
 	stdio
 }
@@ -21,19 +20,20 @@ func NewProcess(cmd string) *process {
 	return &process{name: parts[0], arg: parts[1:]}
 }
 
+func (p *process) copy() Layer {
+	clone := *p
+	return &clone
+}
+
 func (p *process) prepare() error {
-	if p.cmd == nil {
-		p.cmd = exec.Command(p.name, p.arg...)
-	}
-
-	p.cmd.Stdin = p.stdin
-	p.cmd.Stdout = p.stdout
-
-	if p.cmd.Process == nil {
-		if err := p.cmd.Start(); err != nil {
-			return err
-		}
-	}
+	// p.cmd.Stdin = p.stdin
+	// p.cmd.Stdout = p.stdout
+	//
+	// if p.cmd.Process == nil {
+	// 	if err := p.cmd.Start(); err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }
@@ -46,36 +46,49 @@ func (p *process) check() error {
 		return err
 	}
 
-	// check command is valid and ready
-	if p.cmd == nil {
-		return errors.New("pipeline: Process without underlying exec.Cmd")
-	}
+	// // check command is valid and ready
+	// if p.cmd == nil {
+	// 	return errors.New("pipeline: Process without underlying exec.Cmd")
+	// }
 
 	// check cmd stdio
-	if p.cmd.Stdin == nil || p.cmd.Stdout == nil {
-		return errors.New("pipeline: Process's underlying exec.Cmd not piped")
-	}
+	// if p.cmd.Stdin == nil || p.cmd.Stdout == nil {
+	// 	return errors.New("pipeline: Process's underlying exec.Cmd not piped")
+	// }
 
 	// process ready for run
 	return nil
 }
 
 func (p *process) run() error {
-	return p.cmd.Wait()
+	cmd := exec.Command(p.name, p.arg...)
+
+	cmd.Stdin = p.stdin
+	cmd.Stdout = p.stdout
+
+	if cmd.Process == nil {
+		if err := cmd.Start(); err != nil {
+			return err
+		}
+	}
+
+	return cmd.Wait()
 }
 
-func (p *process) close() (err error) {
-	defer func() {
-		p.cmd = nil
-	}()
+func (p *process) close() error {
+	// defer func() {
+	// 	p.cmd = nil
+	// }()
 
-	defer func() {
-		if err != nil {
-			p.closeStdio()
-		} else {
-			err = p.closeStdio()
-		}
-	}()
+	return p.closeStdio()
 
-	return
+	// defer func() {
+	// 	if err != nil {
+	// 		p.closeStdio()
+	// 	} else {
+	// 		err = p.closeStdio()
+	// 	}
+	// }()
+	//
+	// return
 }

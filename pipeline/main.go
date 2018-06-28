@@ -4,6 +4,10 @@ import (
 	"io"
 )
 
+type Cloneable interface {
+	copy() Layer
+}
+
 // Able interface describes an object that can be associated with other objects by stdio
 type Able interface {
 	setStdin(reader io.ReadCloser)

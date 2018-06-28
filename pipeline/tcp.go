@@ -19,6 +19,11 @@ func NewTCPSocket(address string) *tcp {
 	return &tcp{address: address}
 }
 
+func (s *tcp) copy() Layer {
+	clone := *s
+	return &clone
+}
+
 func (s *tcp) prepare() error {
 	if s.addr == nil {
 		var err error
