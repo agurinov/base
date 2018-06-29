@@ -10,7 +10,7 @@ import (
 
 const (
 	NAME    = "app"
-	VERSION = "0.0.1-beta"
+	VERSION = "1.0.0-rc1"
 	USAGE   = "Boompack service application"
 )
 
