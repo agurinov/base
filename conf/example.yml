@@ -1,11 +1,18 @@
 collection:
 
+  - pattern: "{GET|HEAD} /ping HTTP/1.1"
+    pipeline:
+
+      - type: process
+        cmd: |
+          echo HTTP/1.1 204 No Content
+
   # Route
   - pattern: "{*}"
     pipeline:
 
       - type: process
-        cmd: python geo.py
+        cmd: echo FOOBAR
 
-      # - type: tcp
-      #   address: domain.com:80
+      - type: process
+        cmd: rev

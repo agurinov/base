@@ -1,6 +1,13 @@
 version: "2"
 services:
 
+    geo:
+      image: boomfunc/geo
+      environment:
+        - BMP_DEBUG_MODE=true
+      ports:
+          - "8080:8080"
+
     build:
         image: golang
         volumes:
