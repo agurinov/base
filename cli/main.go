@@ -15,7 +15,6 @@ const (
 )
 
 func Run() {
-
 	// Phase 1. Get cli options, some validation checks and configure working env
 	// errors from this phase must be paniced with traceback and os.exit(1)
 	app := cli.NewApp()
