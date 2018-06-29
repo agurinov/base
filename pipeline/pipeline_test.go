@@ -16,9 +16,7 @@ func TestPipelineRun(t *testing.T) {
 		process3 := NewProcess("grep -o raboof") // grep reversed (must be 1 match)
 		process4 := NewProcess("wc -l")          // count matches
 
-		layers := []Layer{process1, process2, process3, process4}
-
-		pipeline := Pipeline{layers: layers}
+		pipeline := New(process1, process2, process3, process4)
 
 		if err := pipeline.Run(input, output); err != nil {
 			t.Fatal(err)
@@ -36,9 +34,7 @@ func TestPipelineRun(t *testing.T) {
 		process := NewProcess("cat /dev/stdin") // read simple http request from process stdin
 		socket := NewTCPSocket("golang.org:80") // and pass to golang.org via socket
 
-		layers := []Layer{process, socket}
-
-		pipeline := Pipeline{layers: layers}
+		pipeline := New(process, socket)
 
 		if err := pipeline.Run(input, output); err != nil {
 			t.Fatal(err)

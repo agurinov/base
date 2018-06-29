@@ -704,13 +704,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("pipeline", func(t *testing.T) {
 		t.Run("fake", func(t *testing.T) {
-			layers := []Layer{
-				&FakeLayer{},
-			}
-
-			pipeline := &Pipeline{
-				layers: layers,
-			}
+			pipeline := New(&FakeLayer{})
 
 			flags := [][]int{
 				[]int{1, 1, 1, 1},
@@ -722,7 +716,7 @@ func TestRun(t *testing.T) {
 			pipeline.Run(input, output)
 
 			// table tests
-			for i, obj := range layers {
+			for i, obj := range *pipeline {
 				if obj.(*FakeLayer).countPrepare != flags[i][0] {
 					t.Fatalf("layers[%d].countPrepare: expected \"%d\", got \"%d\"", i, flags[i][0], obj.(*FakeLayer).countPrepare)
 				}

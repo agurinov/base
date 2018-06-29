@@ -18,6 +18,11 @@ type FakeLayer struct {
 	mockFailClose   bool
 }
 
+func (o *FakeLayer) copy() Layer {
+	clone := *o
+	return &clone
+}
+
 func (o *FakeLayer) prepare() error {
 	o.countPrepare++
 

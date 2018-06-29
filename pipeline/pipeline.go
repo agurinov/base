@@ -7,6 +7,11 @@ import (
 
 type Pipeline []Layer
 
+func New(layers ...Layer) *Pipeline {
+	p := Pipeline(layers)
+	return &p
+}
+
 func (p Pipeline) Run(input io.Reader, output io.Writer) error {
 	// Convert io.Reader and io.Writer to io.ReadCloser and io.WriteCloser
 	inputCloser := toReadCloser(input)
