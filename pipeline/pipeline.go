@@ -5,43 +5,28 @@ import (
 	"io"
 )
 
-type Pipeline struct {
-	layers []Layer
-}
+type Pipeline []Layer
 
-// connect binds all layers of the Pipeline using io.Pipe objects
-// connect calls private api's piping method
-func (p *Pipeline) connect(input io.ReadCloser, output io.WriteCloser) error {
-	// convert Layer -> Able
-	layers := make([]Able, len(p.layers))
-	// creating []Able with same pointers as p.layers
-	for i, layer := range p.layers {
-		layers[i] = layer.(Able)
+func (p Pipeline) Run(input io.Reader, output io.Writer) error {
+	// Convert io.Reader and io.Writer to io.ReadCloser and io.WriteCloser
+	inputCloser := toReadCloser(input)
+	outputCloser := toWriteCloser(output)
+
+	ables := make([]Able, len(p))
+	execs := make([]Exec, len(p))
+
+	for i, layer := range p {
+		newLayer := layer.(Cloneable).copy()
+
+		ables[i] = newLayer.(Able)
+		execs[i] = newLayer.(Exec)
 	}
 
-	return piping(input, output, layers...)
-}
-
-// run calls private api's piping method
-func (p *Pipeline) run() error {
-	// convert Layer -> Exec
-	layers := make([]Exec, len(p.layers))
-	// creating []Exec with same pointers as p.layers
-	for i, layer := range p.layers {
-		layers[i] = layer.(Exec)
-	}
-
-	return run(layers...)
-}
-
-func (p *Pipeline) Run(input io.ReadCloser, output io.WriteCloser) error {
-	// Stage 1 - piping
-	if err := p.connect(input, output); err != nil {
+	if err := piping(inputCloser, outputCloser, ables...); err != nil {
 		return err
 	}
 
-	// Stage 2 - run
-	return p.run()
+	return run(execs...)
 }
 
 func (p *Pipeline) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -55,15 +40,15 @@ func (p *Pipeline) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	// sequece successfully translated, create layers from data
 	for _, layer := range pipeline {
 		// get required 'type' key
-		switch t, ok := layer["type"]; {
-		case !ok:
-			return errors.New("pipeline: Missing layer.Type")
-		case t == "socket":
-			p.layers = append(p.layers, NewSocket("golang.org"))
-		case t == "process":
-			p.layers = append(p.layers, NewProcess("echo", "FOOBAR"))
+		switch t := layer["type"]; t {
+		case "tcp":
+			*p = append(*p, NewTCPSocket(layer["address"].(string)))
+
+		case "process":
+			*p = append(*p, NewProcess(layer["cmd"].(string)))
+
 		default:
-			return errors.New("pipeline: Unknown layer.Type")
+			return errors.New("pipeline: Unknown layer type")
 		}
 	}
 

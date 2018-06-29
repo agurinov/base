@@ -1,8 +1,12 @@
 package pipeline
 
 import (
+	"errors"
 	"io"
 )
+
+var ErrNoStdin = errors.New("pipeline: Able without stdin (Not piped)")
+var ErrNoStdout = errors.New("pipeline: Able without stdout (Not piped)")
 
 // stdio struct is base struct to something that can have input/output
 // automatically implements pipeline.Able interface
@@ -18,18 +22,39 @@ func (obj *stdio) setStdin(reader io.ReadCloser) {
 func (obj *stdio) setStdout(writer io.WriteCloser) {
 	obj.stdout = writer
 }
-func (obj *stdio) closeStdio() error {
+func (obj *stdio) checkStdio() error {
+	if obj.stdin == nil {
+		return ErrNoStdin
+	}
+
+	if obj.stdout == nil {
+		return ErrNoStdout
+	}
+
+	return nil
+}
+func (obj *stdio) closeStdio() (err error) {
+
+	defer func() {
+		obj.stdin = nil
+		obj.stdout = nil
+	}()
+
 	// close standart input
 	// for start layer run and write to stdout
-	if err := obj.stdin.Close(); err != nil {
-		return err
+	if obj.stdin != nil {
+		err = obj.stdin.Close()
+	} else {
+		err = ErrNoStdin
 	}
 
 	// close standart output
 	// for next layer can complete read from their stdin
-	if err := obj.stdout.Close(); err != nil {
-		return err
+	if obj.stdout != nil {
+		err = obj.stdout.Close()
+	} else {
+		err = ErrNoStdout
 	}
 
-	return nil
+	return
 }

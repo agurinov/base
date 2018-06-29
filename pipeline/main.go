@@ -4,34 +4,8 @@ import (
 	"io"
 )
 
-// StdIO struct is base struct to something that can have input/output
-// automatically implements pipeline.Able interface
-// must be inherited in some objects like Socket and Process
-type stdio struct {
-	stdin  io.ReadCloser
-	stdout io.WriteCloser
-}
-
-func (obj *stdio) setStdin(reader io.ReadCloser) {
-	obj.stdin = reader
-}
-func (obj *stdio) setStdout(writer io.WriteCloser) {
-	obj.stdout = writer
-}
-func (obj *stdio) closeStdio() error {
-	// close standart input
-	// for start layer run and write to stdout
-	if err := obj.stdin.Close(); err != nil {
-		return err
-	}
-
-	// close standart output
-	// for next layer can complete read from their stdin
-	if err := obj.stdout.Close(); err != nil {
-		return err
-	}
-
-	return nil
+type Cloneable interface {
+	copy() Layer
 }
 
 // Able interface describes an object that can be associated with other objects by stdio
@@ -41,14 +15,24 @@ type Able interface {
 }
 
 // Exec interface describes objects that can be self checked and can be executable by Pipeline
+// Common lifecycle is:
+// 		1. prepare (initial preparations)
+// 		2. check (check that object can be executed)
+// 		3. Run
+// 		4. close (clear all object's sensitive data for reuse this object)
 type Exec interface {
-	check() error
 	prepare() error
-	Run() error
-	io.Closer
+	check() error
+	run() error
+	close() error // TODO look at priority order errors
 }
 
 // Layer interface describes complex type of object that can be a part of Pipeline
+// in the Pipeline has the following lifecycle:
+// 		1. prepare (create internal variables (cmd, connection, etc) )
+// 		2. check (check that layer piped and can be executed)
+// 		3. run
+// 		4. Close (close stdio and clear all layer's sensitive data for reuse)
 type Layer interface {
 	Able
 	Exec

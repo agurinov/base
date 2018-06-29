@@ -34,13 +34,6 @@ func Run() {
 	app.Usage = USAGE
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
-			Name: "strict",
-			// TODO deal with it
-			// Value:  true,
-			Usage:  strictFlagUsage,
-			EnvVar: "BMP_STRICT_MODE",
-		},
-		cli.BoolFlag{
 			Name:   "debug",
 			Usage:  debugFlagUsage,
 			EnvVar: "BMP_DEBUG_MODE",
@@ -48,9 +41,39 @@ func Run() {
 	}
 	app.Commands = []cli.Command{
 		{
-			Name:   "run",
-			Usage:  runCommandUsage,
-			Action: runCommandAction,
+			Name:  "run",
+			Usage: runCommandUsage,
+			Flags: []cli.Flag{
+				cli.IntFlag{
+					Name:   "port",
+					Usage:  portFlagUsage,
+					EnvVar: "BMP_PORT",
+					Value:  8080,
+				},
+				cli.StringFlag{
+					Name:   "config",
+					Usage:  configFlagUsage,
+					EnvVar: "BMP_CONFIG",
+					Value:  "/bmp/conf.yml",
+				},
+			},
+			Subcommands: []cli.Command{
+				{
+					Name:   "udp",
+					Usage:  runUDPCommandUsage,
+					Action: runTCPCommandAction,
+				},
+				{
+					Name:   "tcp",
+					Usage:  runTCPCommandUsage,
+					Action: runTCPCommandAction,
+				},
+				{
+					Name:   "http",
+					Usage:  runHTTPCommandUsage,
+					Action: runTCPCommandAction,
+				},
+			},
 		},
 	}
 	// configure sorting for help

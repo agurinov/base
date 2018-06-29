@@ -1,22 +1,39 @@
 package cli
 
 import (
+	"net"
+	"os"
+
 	"github.com/boomfunc/log"
 	"github.com/urfave/cli"
+
+	"app/server"
 )
 
 var (
 	// Actions
-	runCommandUsage = "Run application server"
+	runCommandUsage     = "Run creates concrete type of server and listen for incoming requests. Choose subcommand"
+	runUDPCommandUsage  = "Run UDP application server"
+	runTCPCommandUsage  = "Run TCP application server"
+	runHTTPCommandUsage = "Run HTTP application server"
 	// Flags
 	debugFlagUsage  = "Debugging mode"
-	strictFlagUsage = `Strict mode. If any of the following conditions is not satisfied there will be an error
-	1. Config is invalid yaml`
+	portFlagUsage   = "Port on which the listener will be"
+	configFlagUsage = "Path to config file"
 )
 
-func runCommandAction(c *cli.Context) {
+func runTCPCommandAction(c *cli.Context) {
 	log.SetDebug(c.GlobalBool("debug"))
 
-	log.Info("Info")
-	log.Debug("Debug")
+	server, err := server.NewTCP(
+		net.ParseIP("0.0.0.0"),
+		c.GlobalInt("port"),
+		c.GlobalString("config"),
+	)
+	if err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+
+	server.Serve()
 }

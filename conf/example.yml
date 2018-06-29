@@ -1,35 +1,18 @@
-pattern: /{data|static}/*.{jpg|png|jpeg}?crop
-io:
-	process: "node resize.js"
+collection:
 
-pattern: *
-pipeline:
-	- socket: "s3.amazonaws.com"
-	- process: "echo 'FOOBAR'"
+  - pattern: "{GET|HEAD} /ping HTTP/1.1"
+    pipeline:
 
+      - type: process
+        cmd: |
+          echo HTTP/1.1 204 No Content
 
--> s3								IO
-"node resize.js"		IO
+  # Route
+  - pattern: "{*}"
+    pipeline:
 
+      - type: process
+        cmd: echo FOOBAR
 
-
-
-
-
-
-#webp
-pattern: /myip
-io:
-	socket: "geoip.domain.com"
-
-pattern: *
-io:
-	process: "echo 'miscuzi'"
-
-
-
-
-# geoip
-pattern: /myip
-io:
-	process: "sh getmyip.sh"
+      - type: process
+        cmd: rev

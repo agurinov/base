@@ -5,95 +5,152 @@ import (
 	"sync"
 )
 
-// piping establishes pipe connections between IO processes (Layer)
-// the first layer accepts as stdin the input buffer
-// the last layer puts into output buffer his stdout
-func piping(input io.ReadCloser, output io.WriteCloser, layers ...Able) error {
+type readCloser struct {
+	io.Reader
+}
+
+func (readCloser) Close() error { return nil }
+
+type writeCloser struct {
+	io.Writer
+}
+
+func (writeCloser) Close() error { return nil }
+
+func toReadCloser(reader io.Reader) io.ReadCloser {
+	if rc, ok := reader.(io.ReadCloser); ok {
+		return rc
+	}
+	return &readCloser{reader}
+}
+
+func toWriteCloser(writer io.Writer) io.WriteCloser {
+	if wc, ok := writer.(io.WriteCloser); ok {
+		return wc
+	}
+	return &writeCloser{writer}
+}
+
+// piping establishes pipe connections between IO processes (Able)
+// the first obj accepts as stdin the input buffer
+// the last obj puts into output buffer his stdout
+func piping(input io.ReadCloser, output io.WriteCloser, objs ...Able) error {
 	// main logic that create pairs of (io.ReadCloser, io.WriteCloser)
-	// but with offset to another layer
+	// but with offset to another obj
 	// for example
-	// layer 1: (input, io.WriteCloser 1)
-	// layer 2: (io.ReadCloser 1, io.WriteCloser 2)
-	// layer 3: (io.ReadCloser 2, io.WriteCloser 3)
-	// layer 4: (io.ReadCloser 3, output)
-	// and call each layer's .pipe() method
-	for i := 0; i < len(layers); i++ {
+	// obj 1: (input, io.WriteCloser 1)
+	// obj 2: (io.ReadCloser 1, io.WriteCloser 2)
+	// obj 3: (io.ReadCloser 2, io.WriteCloser 3)
+	// obj 4: (io.ReadCloser 3, output)
+	for i := 0; i < len(objs); i++ {
 		if i == 0 {
-			// case this layer first
-			layers[i].setStdin(input)
+			// case this obj first
+			objs[i].setStdin(input)
 		}
-		if i == len(layers)-1 {
-			// case this layer last
-			layers[i].setStdout(output)
+		if i == len(objs)-1 {
+			// case this obj last
+			objs[i].setStdout(output)
 		} else {
-			// this is intermediate layer, need piping
+			// this is intermediate obj, need piping
 			r, w := io.Pipe()
-			layers[i].setStdout(w)
-			layers[i+1].setStdin(r)
+			objs[i].setStdout(w)
+			objs[i+1].setStdin(r)
 		}
 	}
 
 	return nil
 }
 
-func run(layers ...Exec) error {
-	var wg sync.WaitGroup
-
-	// TODO join this 2 cycles with one and defer!
-	// TODO test with fails
-	// prepare all layers (prepare hook)
-	for _, layer := range layers {
-		if err := layer.prepare(); err != nil {
-			return err
+func execute(obj Exec) (err error) {
+	defer func() {
+		if err != nil {
+			obj.close()
+		} else {
+			err = obj.close()
 		}
+	}()
 
-		wg.Add(1)
+	err = obj.run()
+	return
+}
+
+func prepare(objs ...Exec) (err error) {
+	var i int
+
+	// backwards closing and resetting if error exists
+	defer func() {
+		if err != nil {
+			// need to backwards
+			for ; i >= 0; i-- {
+				// TODO error handling
+				// TODO error handling
+				// TODO error handling
+				// TODO error handling
+				// TODO like in execute()
+				if r := objs[i].close(); r != nil {
+				}
+			}
+		}
+	}()
+
+	// iterate over layers
+	for ; i < len(objs); i++ {
+		// try to prepare obj
+		if err = objs[i].prepare(); err != nil {
+			return
+		}
+		// final obj's healthcheck
+		if err = objs[i].check(); err != nil {
+			return
+		}
 	}
 
-	// Run pipeline
-	for _, layer := range layers {
-		go func(layer Exec) {
-			defer layer.Close()
+	return
+}
+
+func run(objs ...Exec) (err error) {
+	// Phase 1. PREPARE AND CHECK
+	// in case of error it will be rolled back to initial incoming state
+	if err := prepare(objs...); err != nil {
+		return err
+	}
+
+	// Phase 2. RUN. Here ALL objs ready and checked
+	var wg sync.WaitGroup
+	wg.Add(len(objs))
+	// ch := make(chan error)
+
+	for _, obj := range objs {
+
+		go func(obj Exec) {
 			defer wg.Done()
 
-			layer.Run()
-		}(layer)
+			err = execute(obj)
+		}(obj)
+
+		// go func(obj Exec) {
+		// 	defer wg.Done()
+		//
+		// 	ch <- execute(obj)
+		// }(obj)
+
 	}
+
+	// // Problem is Here!
+	// select {
+	// case err := <-ch:
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	wg.Wait()
 
-	return nil
+	return
 }
 
-// // start invokes the layer's .Start() method in the order of the queue
-// func start(layers []*exec.Cmd) (err error) {
-// 	// start the pipeline
-// 	for _, layer := range layers {
-// 		if err := layer.Start(); err != nil {
-// 			return err
-// 		}
-// 	}
-//
-// 	return nil
-// }
-//
-// // run causes processes in turn
-// // waiting for the previous stdout layer and picks it into the next one
-// func run(layers []*exec.Cmd, pipeWriters []*io.PipeWriter) (err error) {
-// 	// original idea:
-// 	// https://gist.github.com/tyndyll/89fbb2c2273f83a074dc
-// 	for i, layer := range layers {
-// 		if err := layer.Wait(); err != nil {
-// 			return err
-// 		}
-//
-// 		// if next layers in queue exists -> close pipe
-// 		if i < len(layers)-1 {
-// 			if err := pipeWriters[i].Close(); err != nil {
-// 				return err
-// 			}
-// 		}
-// 	}
-//
-// 	return nil
+// https://play.golang.org/p/Djv52XGnbur
+// https://play.golang.org/p/SEXBheyHnt6
+// https://play.golang.org/p/Zy7BpvwLlqg
+// func parallel(fs ...func() error) error {
 // }

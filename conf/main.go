@@ -1,51 +1,24 @@
 package conf
 
 import (
-	"errors"
-	"regexp"
+	"io/ioutil"
 
-	"app/pipeline"
-	"github.com/boomfunc/app/pattql"
+	"gopkg.in/yaml.v2"
 )
 
-// TODO look at Pipeline.UnmarshalYAML and remake this to type []Route
-type RouteCollection struct {
-	Collection []Route
-}
-
-func (rc *RouteCollection) Match(uri string) (*Route, error) {
-	for _, route := range rc.Collection {
-		if route.Match(uri) {
-			return &route, nil
-		}
+func LoadFile(filename string) (*Router, error) {
+	// Try to read config file
+	YAML, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, errors.New("conf: Route not found")
-}
+	// config file loaded, try to parse yaml into router
+	var router Router
 
-type Route struct {
-	regexp   *regexp.Regexp
-	pipeline *pipeline.Pipeline
-}
-
-func (r *Route) Match(uri string) bool {
-	return r.regexp.MatchString(uri)
-}
-
-func (r *Route) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	// inner struct for accepting strings
-	var route struct {
-		Pattern  string
-		Pipeline *pipeline.Pipeline
+	if err := yaml.Unmarshal(YAML, &router); err != nil {
+		return nil, err
 	}
 
-	if err := unmarshal(&route); err != nil {
-		return err
-	}
-
-	// yaml valid, transform it
-	r.regexp = pattql.Regexp(route.Pattern)
-	r.pipeline = route.Pipeline
-
-	return nil
+	return &router, nil
 }
