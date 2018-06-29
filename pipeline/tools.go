@@ -111,8 +111,8 @@ func prepare(objs ...Exec) (err error) {
 func run(objs ...Exec) (err error) {
 	// Phase 1. PREPARE AND CHECK
 	// in case of error it will be rolled back to initial incoming state
-	if err := prepare(objs...); err != nil {
-		return err
+	if err = prepare(objs...); err != nil {
+		return
 	}
 
 	// Phase 2. RUN. Here ALL objs ready and checked
@@ -125,6 +125,7 @@ func run(objs ...Exec) (err error) {
 		go func(obj Exec) {
 			defer wg.Done()
 
+			// BUG race condition
 			err = execute(obj)
 		}(obj)
 
