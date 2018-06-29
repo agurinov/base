@@ -16,15 +16,23 @@ type request struct {
 func NewRequest(r io.Reader) (*request, error) {
 	reader := bufio.NewReader(r)
 
+	var url string
+
 	// url
-	url, _, err := reader.ReadLine()
+	buf, _, err := reader.ReadLine()
 	if err != nil {
-		return nil, err
+		if err != io.EOF {
+			return nil, err
+		} else {
+			url = "ping"
+		}
+	} else {
+		url = string(buf)
 	}
 
 	req := request{
 		uuid:   uuid.New(),
-		url:    string(url),
+		url:    url,
 		reader: reader,
 	}
 
