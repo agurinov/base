@@ -30,17 +30,17 @@ workflows:
     jobs:
 
       - test:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+        filters:
+          branches:
+            ignore: /.*/
+          tags:
+            only: /.*/
 
       - build:
-          requires:
-            - test
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+        requires:
+          - test
+        filters:
+          branches:
+            ignore: /.*/
+          tags:
+            only: /.*/
