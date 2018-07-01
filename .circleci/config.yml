@@ -19,50 +19,39 @@ jobs:
 
   build:
     docker:
-      - image: circleci/node:9.11-stretch
+      - image: circleci/golang:1.10
+
+    working_directory: /go/src/github.com/boomfunc/base
+
     steps:
       - checkout
-
-      - restore_cache:
-          keys:
-            - npm
-
       - run:
-          name: Install dependencies
-          command: npm install
-      - save_cache:
-          key: npm
-          paths:
-            - "./node_modules"
-
+        name: Install dependencies
+        command: go get -v -d ./...
       - run:
-          name: Build
-          command: npm run build
-      - persist_to_workspace:
-          root: ./
-          paths:
-            - dist/*
+        name: Build
+        command: go install -v ./...
 
-  deploy:
-    docker:
-      - image: python:2.7-alpine
-    steps:
-
-      - restore_cache:
-          keys:
-            - pip
-      - run: pip install awscli==1.15.4
-      - save_cache:
-          key: pip
-          paths:
-            - "~/.cache/pip"
-
-      - attach_workspace:
-          at: /tmp/workspace
-      - run:
-          name: Deploy Master to AWS bucket
-          command: |
-            aws s3 sync /tmp/workspace/dist s3://com-jetsmarter-web-app/ --acl public-read --delete
+  # deploy:
+  #   docker:
+  #     - image: python:2.7-alpine
+  #   steps:
+  #
+  #     - restore_cache:
+  #         keys:
+  #           - pip
+  #     - run: pip install awscli==1.15.4
+  #     - save_cache:
+  #         key: pip
+  #         paths:
+  #           - "~/.cache/pip"
+  #
+  #     - attach_workspace:
+  #         at: /tmp/workspace
+  #     - run:
+  #         name: Deploy Master to AWS bucket
+  #         command: |
+  #           aws s3 sync /tmp/workspace/dist s3://com-jetsmarter-web-app/ --acl public-read --delete
 
 workflows:
   version: 2
@@ -76,14 +65,14 @@ workflows:
           tags:
             only: /.*/
 
-      # - build:
-      #   requires:
-      #     - test
-      #   filters:
-      #     branches:
-      #       ignore: /.*/
-      #     tags:
-      #       only: /.*/
+      - build:
+        requires:
+          - test
+        filters:
+          branches:
+            ignore: /.*/
+          tags:
+            only: /.*/
       #
       # - deploy:
       #   requires:
