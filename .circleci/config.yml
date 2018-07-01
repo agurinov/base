@@ -9,12 +9,8 @@ jobs:
 
     steps:
       - checkout
-      - run:
-        name: Install dependencies
-        command: go get -v -d -t ./...
-      - run:
-        name: Test
-        command: go test -v -race -cover ./...
+      - run: go get -v -d -t ./...
+      - run: go test -v -race -cover ./...
 
 
   build:
@@ -25,33 +21,8 @@ jobs:
 
     steps:
       - checkout
-      - run:
-        name: Install dependencies
-        command: go get -v -d ./...
-      - run:
-        name: Build
-        command: go install -v ./...
-
-  # deploy:
-  #   docker:
-  #     - image: python:2.7-alpine
-  #   steps:
-  #
-  #     - restore_cache:
-  #         keys:
-  #           - pip
-  #     - run: pip install awscli==1.15.4
-  #     - save_cache:
-  #         key: pip
-  #         paths:
-  #           - "~/.cache/pip"
-  #
-  #     - attach_workspace:
-  #         at: /tmp/workspace
-  #     - run:
-  #         name: Deploy Master to AWS bucket
-  #         command: |
-  #           aws s3 sync /tmp/workspace/dist s3://com-jetsmarter-web-app/ --acl public-read --delete
+      - run: go get -v -d ./...
+      - run: go install -v ./...
 
 workflows:
   version: 2
@@ -73,12 +44,3 @@ workflows:
             ignore: /.*/
           tags:
             only: /.*/
-      #
-      # - deploy:
-      #   requires:
-      #     - build
-      #   filters:
-      #     branches:
-      #       ignore: /.*/
-      #     tags:
-      #       only: /.*/
