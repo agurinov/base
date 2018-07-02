@@ -43,13 +43,13 @@ workflows:
   test-build-deploy:
     jobs:
       - test:
-          filters:
+          # filters:
             # branches:
             #   ignore: /.*/
             # tags:
             #   only: /.*/
       - build:
-          filters:
+          # filters:
             # branches:
             #   ignore: /.*/
             # tags:
@@ -57,7 +57,7 @@ workflows:
           requires:
             - test
       - deploy:
-          filters:
+          # filters:
             # branches:
             #   ignore: /.*/
             # tags:
