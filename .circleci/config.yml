@@ -31,17 +31,20 @@ workflows:
   version: 2
   test-build-deploy:
     jobs:
-      - test
+      - test:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
       - build:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
           requires:
             - test
-
-
-            # filters:
-            #   branches:
-            #     ignore: /.*/
-            #   tags:
-            #     only: /.*/
 
 
 
