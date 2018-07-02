@@ -33,6 +33,8 @@ jobs:
     working_directory: /go/src/github.com/boomfunc/base
 
     steps:
+      - run: pwd
+      - run: ls -lah
       - run: go get github.com/tcnksm/ghr
       - run: ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME --replace `git describe --tags` /go/bin/
 
@@ -42,24 +44,24 @@ workflows:
     jobs:
       - test:
           filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+            # branches:
+            #   ignore: /.*/
+            # tags:
+            #   only: /.*/
       - build:
           filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+            # branches:
+            #   ignore: /.*/
+            # tags:
+            #   only: /.*/
           requires:
             - test
       - deploy:
           filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
+            # branches:
+            #   ignore: /.*/
+            # tags:
+            #   only: /.*/
           requires:
             - build
 
