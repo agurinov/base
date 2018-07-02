@@ -41,7 +41,7 @@ jobs:
       - run: ls -la /go/bin
       - run: go get github.com/tcnksm/ghr
       - attach_workspace:
-        at: /go/bin
+          at: /go/bin
       - run: |
           ghr -t $GITHUB_TOKEN \
               -u $CIRCLE_PROJECT_USERNAME \
