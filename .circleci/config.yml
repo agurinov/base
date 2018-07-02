@@ -28,7 +28,7 @@ jobs:
       - persist_to_workspace:
           root: /go/bin
           paths:
-            - "base-*"
+            - "*"
 
   deploy:
     docker:
@@ -40,13 +40,13 @@ jobs:
       - checkout
       - run: go get github.com/tcnksm/ghr
       - attach_workspace:
-          at: /go/bin
+          at: /tmp/workspace
       - run: |
           ghr -t $GITHUB_TOKEN \
               -u $CIRCLE_PROJECT_USERNAME \
               -r $CIRCLE_PROJECT_REPONAME \
               --prerelease --delete \
-              1.0.0-rc1 /go/bin
+              1.0.0-rc1 /tmp/workspace
       # CIRCLE_TAG
 
 workflows:
