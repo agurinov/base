@@ -9,27 +9,29 @@ jobs:
 
     steps:
       - checkout
+      - run: pwd
+      - run: ls -lah
       - run: go get -v -d -t ./...
       - run: go test -v -race -cover ./...
 
 
-  build:
-    docker:
-      - image: circleci/golang:1.10
-
-    working_directory: /go/src/github.com/boomfunc/base
-
-    steps:
-      - checkout
-      - run: go get -v -d ./...
-      - run: go install -v ./...
+  # build:
+  #   docker:
+  #     - image: circleci/golang:1.10
+  #
+  #   working_directory: /go/src/github.com/boomfunc/base
+  #
+  #   steps:
+  #     - checkout
+  #     - run: go get -v -d ./...
+  #     - run: go install -v ./...
 
 workflows:
   version: 2
   test_build_deploy:
     jobs:
       - test
-      - build
+      # - build
 
 
             # filters:
