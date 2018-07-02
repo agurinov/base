@@ -59,7 +59,7 @@ func Run(VERSION, TIMESTAMP string) {
 					Name:   "config",
 					Usage:  configFlagUsage,
 					EnvVar: "BMP_CONFIG",
-					Value:  "/bmp/conf.yml",
+					Value:  "/boomfunc/app/conf.yml",
 				},
 			},
 			Subcommands: []cli.Command{

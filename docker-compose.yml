@@ -25,7 +25,6 @@ services:
             # - GOBIN=/go/src/bin/app
             - GOOS=darwin
             - GOARCH=amd64
-            - CGO_ENABLED=0
         # command: sh -c "go get -v -d ./...; go install -v ./..."
         command: sh -c "go get -v -d ./...; go build -i -v -ldflags \"-X main.VERSION=local -X main.TIMESTAMP=`date +%s`\" -o /go/bin/base-Darwin-x86_64"
 
