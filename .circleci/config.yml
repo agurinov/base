@@ -26,21 +26,14 @@ jobs:
 
 workflows:
   version: 2
-  test-build-deploy:
+  test_build_deploy:
     jobs:
+      - test
+      - build
 
-      - test:
-        filters:
-          branches:
-            ignore: /.*/
-          tags:
-            only: /.*/
 
-      - build:
-        requires:
-          - test
-        filters:
-          branches:
-            ignore: /.*/
-          tags:
-            only: /.*/
+            # filters:
+            #   branches:
+            #     ignore: /.*/
+            #   tags:
+            #     only: /.*/
