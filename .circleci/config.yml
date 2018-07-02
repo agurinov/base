@@ -27,6 +27,16 @@ jobs:
       # - run: GOOS=darwin GOARCH=amd64 go build -i -v -o /go/bin/base-Darwin-x86_64
       - run: ls -la /go/bin
 
+  deploy:
+    docker:
+      - image: circleci/golang:1.10
+
+    working_directory: /go/src/github.com/boomfunc/base
+
+    steps:
+      - go get github.com/tcnksm/ghr
+      - ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME --replace `git describe --tags` /go/bin/
+
 workflows:
   version: 2
   test-build-deploy:
@@ -45,6 +55,14 @@ workflows:
               only: /.*/
           requires:
             - test
+      - deploy:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
+          requires:
+            - build
 
 
 
