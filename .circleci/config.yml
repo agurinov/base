@@ -46,33 +46,32 @@ jobs:
               -u $CIRCLE_PROJECT_USERNAME \
               -r $CIRCLE_PROJECT_REPONAME \
               --prerelease --delete \
-              1.0.0-rc1 /tmp/workspace
-      # CIRCLE_TAG
+              $CIRCLE_TAG /tmp/workspace
 
 workflows:
   version: 2
   test-build-deploy:
     jobs:
       - test
-          # filters:
-            # branches:
-            #   ignore: /.*/
-            # tags:
-            #   only: /.*/
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
       - build:
-          # filters:
-            # branches:
-            #   ignore: /.*/
-            # tags:
-            #   only: /.*/
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
           requires:
             - test
       - deploy:
-          # filters:
-            # branches:
-            #   ignore: /.*/
-            # tags:
-            #   only: /.*/
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
           requires:
             - build
 
