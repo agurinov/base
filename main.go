@@ -4,6 +4,9 @@ import (
 	"github.com/boomfunc/base/cli"
 )
 
+var VERSION string
+var TIMESTAMP string
+
 func main() {
-	cli.Run()
+	cli.Run(VERSION, TIMESTAMP)
 }

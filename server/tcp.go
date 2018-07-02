@@ -7,8 +7,8 @@ import (
 	"net"
 	"runtime/debug"
 
-	"github.com/boomfunc/log"
 	"github.com/boomfunc/base/conf"
+	"github.com/boomfunc/log"
 )
 
 type TCPServer struct {

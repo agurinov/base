@@ -3,24 +3,29 @@ package cli
 import (
 	"os"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/urfave/cli"
 )
 
 const (
-	NAME    = "app"
-	VERSION = "1.0.0-rc1"
-	USAGE   = "Boompack service application"
+	NAME  = "base"
+	USAGE = "Boompack service application"
 )
 
-func Run() {
+func Run(VERSION, TIMESTAMP string) {
+	// prepare build variables passed through -ldflags
+	ts, err := strconv.ParseInt(TIMESTAMP, 10, 64)
+	if err != nil {
+		panic(err)
+	}
 	// Phase 1. Get cli options, some validation checks and configure working env
 	// errors from this phase must be paniced with traceback and os.exit(1)
 	app := cli.NewApp()
 	app.Name = NAME
 	app.Version = VERSION
-	app.Compiled = time.Now()
+	app.Compiled = time.Unix(ts, 0)
 	app.Authors = []cli.Author{
 		{
 			Name:  "Alexander Gurinov",
