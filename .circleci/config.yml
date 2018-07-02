@@ -36,11 +36,7 @@ jobs:
       - checkout
       - run: go get github.com/tcnksm/ghr
       - run: |
-          ghr -t $GITHUB_TOKEN
-              -u $CIRCLE_PROJECT_USERNAME
-              -r $CIRCLE_PROJECT_REPONAME
-              --prerelease --delete
-              1.0.0-rc1 /go/bin/
+          ghr -t $GITHUB_TOKEN -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME --prerelease --delete 1.0.0-rc1 /go/bin/
       # - run: ghr -u $CIRCLE_PROJECT_USERNAME -r $CIRCLE_PROJECT_REPONAME --replace $CIRCLE_TAG /go/bin/
 
 workflows:
