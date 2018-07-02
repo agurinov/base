@@ -25,7 +25,6 @@ jobs:
       - run: go get -v -d ./...
       - run: GOOS=linux GOARCH=amd64 go build -i -v -o /go/bin/base-Linux-x86_64
       # - run: GOOS=darwin GOARCH=amd64 go build -i -v -o /go/bin/base-Darwin-x86_64
-      - run: ls -la /go/bin
 
   deploy:
     docker:
