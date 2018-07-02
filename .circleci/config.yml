@@ -5,7 +5,7 @@ jobs:
     docker:
       - image: circleci/golang:1.10
 
-    # working_directory: /go/src/github.com/boomfunc/base
+    working_directory: /go/src/github.com/boomfunc/base
 
     steps:
       - checkout

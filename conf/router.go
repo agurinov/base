@@ -5,8 +5,8 @@ import (
 	"io"
 	"regexp"
 
-	"app/pattql"
-	"app/pipeline"
+	"github.com/boomfunc/base/pattql"
+	"github.com/boomfunc/base/pipeline"
 )
 
 // TODO look at Pipeline.UnmarshalYAML and remake this to type []Route

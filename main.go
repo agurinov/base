@@ -1,7 +1,7 @@
 package main
 
 import (
-	"app/cli"
+	"github.com/boomfunc/base/cli"
 )
 
 func main() {

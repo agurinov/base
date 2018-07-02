@@ -7,7 +7,7 @@ import (
 	"github.com/boomfunc/log"
 	"github.com/urfave/cli"
 
-	"app/server"
+	"github.com/boomfunc/base/server"
 )
 
 var (

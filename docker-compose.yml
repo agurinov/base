@@ -1,4 +1,11 @@
-version: "2"
+version: "3.4"
+
+# x-defaults:
+#   &working_dir: /go/src/github.com/boomfunc/base
+#   &logging
+#     options:
+#       max-size: "1m"
+
 services:
 
     geo:
@@ -11,9 +18,9 @@ services:
     build:
         image: golang
         volumes:
-            - src-vol:/go/src/app
+            - src-vol:/go/src/github.com/boomfunc/base
             - src-vol:/go/bin
-        working_dir: /go/src/app
+        working_dir: /go/src/github.com/boomfunc/base
         environment:
             # - GOBIN=/go/src/bin/app
             - GOOS=darwin
@@ -23,22 +30,22 @@ services:
     test:
         image: golang
         volumes:
-            - src-vol:/go/src/app
-        working_dir: /go/src/app
+            - src-vol:/go/src/github.com/boomfunc/base
+        working_dir: /go/src/github.com/boomfunc/base
         command: sh -c "go get -v -d -t ./...; go test ./... -v -race -cover"
 
     bench:
         image: golang
         volumes:
-            - src-vol:/go/src/app
-        working_dir: /go/src/app
+            - src-vol:/go/src/github.com/boomfunc/base
+        working_dir: /go/src/github.com/boomfunc/base
         command: sh -c "go get -v -d -t ./...; go test ./... -v -run=^$$ -bench=. -benchmem"
 
     fmt:
         image: golang
         volumes:
-            - src-vol:/go/src/app
-        working_dir: /go/src/app
+            - src-vol:/go/src/github.com/boomfunc/base
+        working_dir: /go/src/github.com/boomfunc/base
         command: sh -c "go fix ./...; go vet ./...; go fmt ./..."
 
 volumes:
