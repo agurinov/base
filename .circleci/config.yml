@@ -25,6 +25,10 @@ jobs:
       - run: go get -v -d ./...
       - run: GOOS=linux GOARCH=amd64 go build -i -v -o /go/bin/base-Linux-x86_64
       # - run: GOOS=darwin GOARCH=amd64 go build -i -v -o /go/bin/base-Darwin-x86_64
+      - persist_to_workspace:
+          root: /go/bin
+          paths:
+            - *
 
   deploy:
     docker:
@@ -34,13 +38,16 @@ jobs:
 
     steps:
       - checkout
+      - run: ls -la /go/bin
       - run: go get github.com/tcnksm/ghr
+      - attach_workspace:
+          at: /go/bin
       - run: |
           ghr -t $GITHUB_TOKEN \
               -u $CIRCLE_PROJECT_USERNAME \
               -r $CIRCLE_PROJECT_REPONAME \
               --prerelease --delete \
-              1.0.0-rc1 /go/bin/
+              1.0.0-rc1 /go/bin
       # CIRCLE_TAG
 
 workflows:
