@@ -25,7 +25,8 @@ services:
             # - GOBIN=/go/src/bin/app
             - GOOS=darwin
             - GOARCH=amd64
-        command: sh -c "go get -v -d ./...; go install -v ./..."
+        # command: sh -c "go get -v -d ./...; go install -v ./..."
+        command: sh -c "go get -v -d ./...; go build -i -v -o /go/bin/base-Darwin-x86_64"
 
     test:
         image: golang

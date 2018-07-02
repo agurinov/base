@@ -26,9 +26,9 @@ jobs:
       - run: GOOS=linux GOARCH=amd64 go build -i -v -o /go/bin/base-Linux-x86_64
       # - run: GOOS=darwin GOARCH=amd64 go build -i -v -o /go/bin/base-Darwin-x86_64
       - persist_to_workspace:
-        root: /go/bin
-        paths:
-          - *
+          root: /go/bin
+          paths:
+            - *
 
   deploy:
     docker:
