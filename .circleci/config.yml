@@ -9,30 +9,30 @@ jobs:
 
     steps:
       - checkout
-      - run: go env
-      - run: pwd
-      - run: ls -lah
       - run: go get -v -d -t ./...
-      - run: go test -v -race -cover ./...
+      - run: go test -v -cover ./...
+      # - run: go test -v -race -cover ./...
 
 
-  # build:
-  #   docker:
-  #     - image: circleci/golang:1.10
-  #
-  #   working_directory: /go/src/github.com/boomfunc/base
-  #
-  #   steps:
-  #     - checkout
-  #     - run: go get -v -d ./...
-  #     - run: go install -v ./...
+  build:
+    docker:
+      - image: circleci/golang:1.10
+
+    working_directory: /go/src/github.com/boomfunc/base
+
+    steps:
+      - checkout
+      - run: go get -v -d ./...
+      - run: GOOS=linux GOARCH=amd64 go build -i -v -o /go/bin/base-Linux-x86_64
+      - run: GOOS=darwin GOARCH=amd64 go build -i -v -o /go/bin/base-Darwin-x86_64
+      - run: ls -la /go/bin
 
 workflows:
   version: 2
-  test_build_deploy:
+  test-build-deploy:
     jobs:
       - test
-      # - build
+      - build
 
 
             # filters:
@@ -40,3 +40,12 @@ workflows:
             #     ignore: /.*/
             #   tags:
             #     only: /.*/
+
+
+
+
+# curl -L https://github.com/docker/compose/releases/download/1.21.2/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+#  uname -s
+# Linux
+# / # uname -m
+# x86_64
