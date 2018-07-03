@@ -15,39 +15,41 @@ services:
       ports:
           - "8080:8080"
 
+    shell:
+        image: golang
+        volumes:
+            - src-vol:/go/src/github.com/boomfunc/base
+        working_dir: /go/src/github.com/boomfunc/base
+        command: tail -f /dev/null
+
     build:
         image: golang
         volumes:
             - src-vol:/go/src/github.com/boomfunc/base
             - src-vol:/go/bin
         working_dir: /go/src/github.com/boomfunc/base
-        environment:
-            # - GOBIN=/go/src/bin/app
-            - GOOS=darwin
-            - GOARCH=amd64
-        # command: sh -c "go get -v -d ./...; go install -v ./..."
-        command: sh -c "go get -v -d ./...; go build -i -v -ldflags \"-X main.VERSION=local -X main.TIMESTAMP=`date +%s`\" -o /go/bin/base-Darwin-x86_64"
+        command: .circleci/scripts/build.sh
 
     test:
         image: golang
         volumes:
             - src-vol:/go/src/github.com/boomfunc/base
         working_dir: /go/src/github.com/boomfunc/base
-        command: sh -c "go get -v -d -t ./...; go test ./... -v -race -cover"
+        command: .circleci/scripts/test.sh
 
     bench:
         image: golang
         volumes:
             - src-vol:/go/src/github.com/boomfunc/base
         working_dir: /go/src/github.com/boomfunc/base
-        command: sh -c "go get -v -d -t ./...; go test ./... -v -run=^$$ -bench=. -benchmem"
+        command: sh -c "go get -v -d -t ./...; go test ./... -v -race -run=^$$ -bench=. -benchmem"
 
     fmt:
         image: golang
         volumes:
             - src-vol:/go/src/github.com/boomfunc/base
         working_dir: /go/src/github.com/boomfunc/base
-        command: sh -c "go fix ./...; go vet ./...; go fmt ./..."
+        command: .circleci/scripts/fmt.sh
 
 volumes:
     src-vol:
