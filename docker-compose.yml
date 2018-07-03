@@ -9,11 +9,16 @@ version: "3.4"
 services:
 
     geo:
-      image: boomfunc/geo
+      image: golang
       environment:
         - BMP_DEBUG_MODE=true
+        - BMP_CONFIG=./conf/example.yml
+      volumes:
+          - src-vol:/go/src/github.com/boomfunc/base
       ports:
           - "8080:8080"
+      working_dir: /go/src/github.com/boomfunc/base
+      command: .circleci/scripts/run.sh
 
     shell:
         image: golang

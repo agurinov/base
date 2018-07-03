@@ -1,18 +1,16 @@
 collection:
 
-  - pattern: "{GET|HEAD} /ping HTTP/1.1"
+  # Route
+  - pattern: "geo"
     pipeline:
 
       - type: process
-        cmd: |
-          echo HTTP/1.1 204 No Content
+        cmd: python geoip.py
 
   # Route
-  - pattern: "{*}"
+  # AWS ECS ping
+  - pattern: "ping"
     pipeline:
 
       - type: process
-        cmd: echo FOOBAR
-
-      - type: process
-        cmd: rev
+        cmd: echo njktrwngtjklregnjkltrengjklrtengjklrtengjklrtengjklertngjklrtengjklrtengjkrtlengekrt
