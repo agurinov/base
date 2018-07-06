@@ -1,64 +1,69 @@
 version: "3.4"
 
-# x-defaults:
-#   &working_dir: /go/src/github.com/boomfunc/base
-#   &logging
-#     options:
-#       max-size: "1m"
+x-defaults:
+
+  volumes: &volumes
+    - src-vol:/go/src/github.com/boomfunc/base
+
+  logging: &logging
+    options:
+      max-size: 1m
+
+  working_dir: &working_dir
+    /go/src/github.com/boomfunc/base
 
 services:
 
-    geo:
-      image: golang
-      environment:
-        - BMP_DEBUG_MODE=true
-        - BMP_CONFIG=./conf/example.yml
-      volumes:
-          - src-vol:/go/src/github.com/boomfunc/base
-      ports:
-          - "8080:8080"
-      working_dir: /go/src/github.com/boomfunc/base
-      command: .circleci/scripts/run.sh
+  geo:
+    image: golang:alpine
+    environment:
+      - BMP_DEBUG_MODE=true
+      - BMP_CONFIG=./conf/example.yml
+    ports:
+        - "8080:8080"
+    volumes: *volumes
+    working_dir: *working_dir
+    logging: *logging
+    command: .circleci/scripts/run.sh
 
-    shell:
-        image: golang
-        volumes:
-            - src-vol:/go/src/github.com/boomfunc/base
-        working_dir: /go/src/github.com/boomfunc/base
-        command: tail -f /dev/null
+  build:
+    image: golang
+    volumes: *volumes
+    working_dir: *working_dir
+    logging: *logging
+    command: .circleci/scripts/build.sh
 
-    build:
-        image: golang
-        volumes:
-            - src-vol:/go/src/github.com/boomfunc/base
-            - src-vol:/go/bin
-        working_dir: /go/src/github.com/boomfunc/base
-        command: .circleci/scripts/build.sh
+  test:
+    image: golang
+    volumes: *volumes
+    working_dir: *working_dir
+    logging: *logging
+    command: .circleci/scripts/test.sh
 
-    test:
-        image: golang
-        volumes:
-            - src-vol:/go/src/github.com/boomfunc/base
-        working_dir: /go/src/github.com/boomfunc/base
-        command: .circleci/scripts/test.sh
+  bench:
+    image: golang
+    volumes: *volumes
+    working_dir: *working_dir
+    logging: *logging
+    command: .circleci/scripts/bench.sh
 
-    bench:
-        image: golang
-        volumes:
-            - src-vol:/go/src/github.com/boomfunc/base
-        working_dir: /go/src/github.com/boomfunc/base
-        command: sh -c "go get -v -d -t ./...; go test ./... -v -race -run=^$$ -bench=. -benchmem"
+  fmt:
+    image: golang
+    volumes: *volumes
+    working_dir: *working_dir
+    logging: *logging
+    command: .circleci/scripts/fmt.sh
 
-    fmt:
-        image: golang
-        volumes:
-            - src-vol:/go/src/github.com/boomfunc/base
-        working_dir: /go/src/github.com/boomfunc/base
-        command: .circleci/scripts/fmt.sh
+  # *:
+  #   image: golang
+  #   volumes: *volumes
+  #   working_dir: *working_dir
+  #   logging: *logging
+  #   command: .circleci/scripts/docker-entrypoint.sh
 
 volumes:
-    src-vol:
-        driver_opts:
-            type: none
-            device: ${PWD}
-            o: bind
+  src-vol:
+    driver_opts:
+      type: none
+      device: ${PWD}
+      o: bind

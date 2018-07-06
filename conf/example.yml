@@ -13,4 +13,4 @@ collection:
     pipeline:
 
       - type: process
-        cmd: echo njktrwngtjklregnjkltrengjklrtengjklrtengjklrtengjklertngjklrtengjklrtengjkrtlengekrt
+        cmd: 'echo {"status": 1, "message": "PingPonged", "data": {"foo": "bar", "bar": "baz"}}'
