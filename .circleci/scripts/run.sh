@@ -3,6 +3,6 @@ set -e
 
 apk add --update git
 
-./build.sh
+.circleci/scripts/build.sh
 
 /go/bin/base-Linux-x86_64 run tcp
