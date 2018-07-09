@@ -76,7 +76,7 @@ func Run(VERSION, TIMESTAMP string) {
 				{
 					Name:   "http",
 					Usage:  runHTTPCommandUsage,
-					Action: runTCPCommandAction,
+					Action: runHTTPCommandAction,
 				},
 			},
 		},
