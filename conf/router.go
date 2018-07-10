@@ -9,6 +9,10 @@ import (
 	"github.com/boomfunc/base/pipeline"
 )
 
+var (
+	ErrNotFound = errors.New("conf: Route not found")
+)
+
 // TODO look at Pipeline.UnmarshalYAML and remake this to type []Route
 type Router struct {
 	Collection []Route
@@ -21,7 +25,7 @@ func (rc *Router) Match(uri string) (*Route, error) {
 		}
 	}
 
-	return nil, errors.New("conf: Route not found")
+	return nil, ErrNotFound
 }
 
 type Route struct {

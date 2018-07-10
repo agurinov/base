@@ -50,10 +50,18 @@ func (wrp *HTTPServerWrapper) Serve() {
 		request, err := NewRequest(req)
 
 		if err != nil {
-			// handle error 500
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
-		handleRequest(request, wrp.router, w)
+		if err := handleRequest(request, wrp.router, w); err != nil {
+			switch err {
+			case conf.ErrNotFound:
+				http.Error(w, err.Error(), http.StatusNotFound)
+			default:
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+		}
+
 	})
 
 	http.Serve(wrp.listener, nil)
