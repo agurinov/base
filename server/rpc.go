@@ -4,7 +4,6 @@ import (
 	"bytes"
 
 	"github.com/boomfunc/base/conf"
-	"github.com/google/uuid"
 )
 
 type Args struct {
@@ -18,9 +17,11 @@ type pipelineRPC struct {
 
 func (rpc *pipelineRPC) Run(args *Args, reply *[]byte) error {
 	var output bytes.Buffer
-	request := &ArgsRequest{
-		uuid.New(),
-		args,
+
+	request, err := NewRequest(args)
+
+	if err != nil {
+		return err
 	}
 
 	if err := handleRequest(request, rpc.router, &output); err != nil {

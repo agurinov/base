@@ -1,45 +1,60 @@
 package server
 
 import (
-	"bytes"
-	"io"
-	"net/rpc/jsonrpc"
+	"fmt"
+	"net"
+	"net/http"
+
+	"github.com/boomfunc/base/conf"
 )
 
-// rpcRequest represents a RPC request.
-// rpcRequest implements the io.ReadWriteCloser interface.
-type rpcRequest struct {
-	r    io.Reader     // holds the JSON formated RPC request
-	rw   io.ReadWriter // holds the JSON formated RPC response
-	done chan bool     // signals then end of the RPC request
+type HTTPServerWrapper struct {
+	listener *net.TCPListener
+	router   *conf.Router
 }
 
-// NewRPCRequest returns a new rpcRequest.
-func NewRPCRequest(r io.Reader) *rpcRequest {
-	var buf bytes.Buffer
-	done := make(chan bool)
-	return &rpcRequest{r, &buf, done}
+func NewHTTP(ip net.IP, port int, filename string) (*HTTPServerWrapper, error) {
+	// Phase 1. get config for server routing
+	router, err := conf.LoadFile(filename)
+	if err != nil {
+		// cannot load server config
+		return nil, err
+	}
+
+	// Phase 2. Resolve tcp address and create tcp server listening on provided port
+	tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", ip, port))
+	if err != nil {
+		// cannot resolve address (invalid options (ip or port))
+		return nil, err
+	}
+
+	tcpListener, err := net.ListenTCP("tcp", tcpAddr)
+	if err != nil {
+		// cannot establish connection on this addr
+		return nil, err
+	}
+
+	startupLog("HTTP", tcpAddr.String(), filename)
+
+	wrapper := &HTTPServerWrapper{
+		listener: tcpListener,
+		router:   router,
+	}
+
+	return wrapper, nil
 }
 
-// Read implements the io.ReadWriteCloser Read method.
-func (r *rpcRequest) Read(p []byte) (n int, err error) {
-	return r.r.Read(p)
-}
+func (wrp *HTTPServerWrapper) Serve() {
 
-// Write implements the io.ReadWriteCloser Write method.
-func (r *rpcRequest) Write(p []byte) (n int, err error) {
-	return r.rw.Write(p)
-}
+	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		request, err := NewRequest(req)
 
-// Close implements the io.ReadWriteCloser Close method.
-func (r *rpcRequest) Close() error {
-	r.done <- true
-	return nil
-}
+		if err != nil {
+			// handle error 500
+		}
 
-// Call invokes the RPC request, waits for it to complete, and returns the results.
-func (r *rpcRequest) Call() io.Reader {
-	go jsonrpc.ServeConn(r)
-	<-r.done
-	return r.rw
+		handleRequest(request, wrp.router, w)
+	})
+
+	http.Serve(wrp.listener, nil)
 }

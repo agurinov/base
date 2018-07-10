@@ -51,10 +51,11 @@ func NewTCP(ip net.IP, port int, filename string) (*TCPServerWrapper, error) {
 		router:   router,
 		server:   server,
 	}
+
 	return wrapper, nil
 }
 
-func (s *TCPServerWrapper) Serve() {
+func (wrp *TCPServerWrapper) Serve() {
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
 	// TODO defer ch.Close()
 	// TODO defer s.conn.Close()
@@ -64,13 +65,13 @@ func (s *TCPServerWrapper) Serve() {
 	// Phase 1. Listen infinitely TCP connection for incoming requests
 	for {
 		// Listen for an incoming connection.
-		conn, err := s.listener.Accept()
+		conn, err := wrp.listener.Accept()
 		if err != nil {
 			panic(err)
 		}
 		// Handle connections in a new goroutine.
 		// Phase 3. Message received, resolve this shit concurrently!
 		// conn will be closed by ServeCodec!
-		go s.server.ServeCodec(jsonrpc.NewServerCodec(conn))
+		go wrp.server.ServeCodec(jsonrpc.NewServerCodec(conn))
 	}
 }

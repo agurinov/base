@@ -41,7 +41,7 @@ func runTCPCommandAction(c *cli.Context) {
 func runHTTPCommandAction(c *cli.Context) {
 	log.SetDebug(c.GlobalBool("debug"))
 
-	server, err := server.NewTCP(
+	server, err := server.NewHTTP(
 		net.ParseIP("0.0.0.0"),
 		c.GlobalInt("port"),
 		c.GlobalString("config"),

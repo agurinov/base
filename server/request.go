@@ -1,13 +1,29 @@
 package server
 
 import (
+	"bytes"
+	"errors"
+	"io"
+	"net/http"
+
 	"github.com/google/uuid"
 )
 
 type Request interface {
 	UUID() uuid.UUID
 	Url() string
-	Body() []byte
+	Body() io.Reader
+}
+
+func NewRequest(req interface{}) (Request, error) {
+	switch typed := req.(type) {
+	case *Args:
+		return &ArgsRequest{uuid.New(), typed}, nil
+	case *http.Request:
+		return &HTTPRequest{uuid.New(), typed}, nil
+	default:
+		return nil, errors.New("server: Unknown underlying request type")
+	}
 }
 
 // ArgsRequest is wrapper type for rpc args to be Request interface
@@ -16,14 +32,32 @@ type ArgsRequest struct {
 	*Args
 }
 
-func (a *ArgsRequest) Url() string {
-	return a.Args.Url
+func (r *ArgsRequest) Url() string {
+	return r.Args.Url
 }
 
-func (a *ArgsRequest) Body() []byte {
-	return a.Args.Body
+func (r *ArgsRequest) Body() io.Reader {
+	return bytes.NewReader(r.Args.Body)
 }
 
-func (a *ArgsRequest) UUID() uuid.UUID {
-	return a.uuid
+func (r *ArgsRequest) UUID() uuid.UUID {
+	return r.uuid
+}
+
+// HTTPRequest is wrapper type for http to be Request interface
+type HTTPRequest struct {
+	uuid uuid.UUID
+	*http.Request
+}
+
+func (r *HTTPRequest) Url() string {
+	return r.Request.URL.RequestURI()
+}
+
+func (r *HTTPRequest) Body() io.Reader {
+	return r.Request.Body
+}
+
+func (r *HTTPRequest) UUID() uuid.UUID {
+	return r.uuid
 }

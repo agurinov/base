@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"io"
 
 	"github.com/boomfunc/base/conf"
@@ -29,8 +28,7 @@ func handleRequest(req Request, router *conf.Router, output io.Writer) (err erro
 	}
 
 	// Phase 2. Write answer to output
-	input := bytes.NewBuffer(req.Body())
-	if err := route.Run(input, output); err != nil {
+	if err := route.Run(req.Body(), output); err != nil {
 		return err
 	}
 
