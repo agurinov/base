@@ -1,52 +1,29 @@
 package server
 
 import (
-	"bufio"
-	"io"
-
 	"github.com/google/uuid"
 )
 
-type request struct {
-	uuid   uuid.UUID
-	url    string
-	reader io.Reader
+type Request interface {
+	UUID() uuid.UUID
+	Url() string
+	Body() []byte
 }
 
-func NewRequest(r io.Reader) (*request, error) {
-	reader := bufio.NewReader(r)
-
-	var url string
-
-	// url
-	buf, _, err := reader.ReadLine()
-	if err != nil {
-		if err != io.EOF {
-			return nil, err
-		} else {
-			url = "ping"
-		}
-	} else {
-		url = string(buf)
-	}
-
-	req := request{
-		uuid:   uuid.New(),
-		url:    url,
-		reader: reader,
-	}
-
-	return &req, nil
+// ArgsRequest is wrapper type for rpc args to be Request interface
+type ArgsRequest struct {
+	uuid uuid.UUID
+	*Args
 }
 
-func (r *request) Url() string {
-	return r.url
+func (a *ArgsRequest) Url() string {
+	return a.Args.Url
 }
 
-func (r *request) Body() io.Reader {
-	return r.reader
+func (a *ArgsRequest) Body() []byte {
+	return a.Args.Body
 }
 
-func (r *request) Id() uuid.UUID {
-	return r.uuid
+func (a *ArgsRequest) UUID() uuid.UUID {
+	return a.uuid
 }

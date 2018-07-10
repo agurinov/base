@@ -1,26 +1,25 @@
 package server
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"net"
-	"runtime/debug"
+	"net/rpc"
+	"net/rpc/jsonrpc"
 
 	"github.com/boomfunc/base/conf"
-	"github.com/boomfunc/log"
 )
 
-type TCPServer struct {
+type TCPServerWrapper struct {
 	listener *net.TCPListener
 	router   *conf.Router
+	server   *rpc.Server
 }
 
-func NewTCP(ip net.IP, port int, filename string) (*TCPServer, error) {
+func NewTCP(ip net.IP, port int, filename string) (*TCPServerWrapper, error) {
 	// Phase 1. get config for server routing
 	router, err := conf.LoadFile(filename)
-	// cannot load server config
 	if err != nil {
+		// cannot load server config
 		return nil, err
 	}
 
@@ -37,69 +36,25 @@ func NewTCP(ip net.IP, port int, filename string) (*TCPServer, error) {
 		return nil, err
 	}
 
-	log.Infof("TCP server up and running on %s", log.Wrap(fmt.Sprintf("%s", tcpAddr), log.Bold, log.Blink))
-	log.Infof("Spawned config file: %s", log.Wrap(filename, log.Bold))
-	log.Debugf("Enabled %s mode", log.Wrap("DEBUG", log.Bold, log.Blink))
+	// Phase 3. Create RPC server
+	server := rpc.NewServer()
+	pipeline := &pipelineRPC{router}
+	if err := server.RegisterName("Pipeline", pipeline); err != nil {
+		// cannot register methods to rpc server
+		return nil, err
+	}
 
-	server := &TCPServer{listener: tcpListener, router: router}
-	return server, nil
+	startupLog("TCP", tcpAddr.String(), filename)
+
+	wrapper := &TCPServerWrapper{
+		listener: tcpListener,
+		router:   router,
+		server:   server,
+	}
+	return wrapper, nil
 }
 
-func (s *TCPServer) handle(conn net.Conn) {
-	var url string
-	var status = "SUCCESS"
-	var written int64
-	var req *request
-
-	// logging and error handling block
-	// this defer must be invoked last (first in) for recovering all available panics and errors
-	defer func() {
-		if err := recover(); err != nil {
-			log.Errorf("%s\n%s", err, debug.Stack())
-			status = "ERROR"
-		}
-		// log ANY kind result
-		log.Infof("%s\t-\t%s\t-\t%s\t-\t%d", req.Id(), url, status, written)
-	}()
-
-	// Firstly - close connection
-	defer func() {
-		if err := conn.Close(); err != nil {
-			panic(err)
-		}
-	}()
-
-	// TODO some layer -> separate uri from request body
-	// TODO need some internal style of requests
-	// TODO separate uri and request body
-	// TODO timeoutDuration := 5 * time.Second
-	req, err := NewRequest(conn)
-	if err != nil {
-		panic(err)
-	}
-
-	url = req.Url()
-
-	route, err := s.router.Match(url)
-	if err != nil {
-		panic(err)
-	}
-
-	input := req.Body()
-	output := bytes.NewBuffer([]byte{})
-
-	if err := route.Run(input, output); err != nil {
-		panic(err)
-	}
-
-	// write answer to channel
-	written, err = io.Copy(conn, output)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (s *TCPServer) Serve() {
+func (s *TCPServerWrapper) Serve() {
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
 	// TODO defer ch.Close()
 	// TODO defer s.conn.Close()
@@ -115,6 +70,7 @@ func (s *TCPServer) Serve() {
 		}
 		// Handle connections in a new goroutine.
 		// Phase 3. Message received, resolve this shit concurrently!
-		go s.handle(conn)
+		// conn will be closed by ServeCodec!
+		go s.server.ServeCodec(jsonrpc.NewServerCodec(conn))
 	}
 }

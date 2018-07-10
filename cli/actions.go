@@ -25,7 +25,7 @@ var (
 func runTCPCommandAction(c *cli.Context) {
 	log.SetDebug(c.GlobalBool("debug"))
 
-	server, err := server.New(
+	server, err := server.NewTCP(
 		net.ParseIP("0.0.0.0"),
 		c.GlobalInt("port"),
 		c.GlobalString("config"),
@@ -35,13 +35,13 @@ func runTCPCommandAction(c *cli.Context) {
 		os.Exit(1)
 	}
 
-	server.ServeTCP()
+	server.Serve()
 }
 
 func runHTTPCommandAction(c *cli.Context) {
 	log.SetDebug(c.GlobalBool("debug"))
 
-	server, err := server.New(
+	server, err := server.NewTCP(
 		net.ParseIP("0.0.0.0"),
 		c.GlobalInt("port"),
 		c.GlobalString("config"),
@@ -51,5 +51,5 @@ func runHTTPCommandAction(c *cli.Context) {
 		os.Exit(1)
 	}
 
-	server.ServeHTTP()
+	server.Serve()
 }
