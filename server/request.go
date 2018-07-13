@@ -14,12 +14,14 @@ type Request interface {
 	UUID() uuid.UUID
 	Url() string
 	Body() io.Reader
+
+	// Serve()
 }
 
 func NewRequest(req interface{}) (Request, error) {
 	switch typed := req.(type) {
-	case *Args:
-		return &ArgsRequest{uuid.New(), typed}, nil
+	case *RPCArgs:
+		return &RPCRequest{uuid.New(), typed}, nil
 	case *http.Request:
 		return &HTTPRequest{uuid.New(), typed}, nil
 	default:
@@ -27,21 +29,21 @@ func NewRequest(req interface{}) (Request, error) {
 	}
 }
 
-// ArgsRequest is wrapper type for rpc args to be Request interface
-type ArgsRequest struct {
+// RPCRequest is wrapper type for rpc args to be Request interface
+type RPCRequest struct {
 	uuid uuid.UUID
-	*Args
+	*RPCArgs
 }
 
-func (r *ArgsRequest) Url() string {
-	return r.Args.Url
+func (r *RPCRequest) Url() string {
+	return r.RPCArgs.Url
 }
 
-func (r *ArgsRequest) Body() io.Reader {
-	return bytes.NewReader(r.Args.Body)
+func (r *RPCRequest) Body() io.Reader {
+	return bytes.NewReader(r.RPCArgs.Body)
 }
 
-func (r *ArgsRequest) UUID() uuid.UUID {
+func (r *RPCRequest) UUID() uuid.UUID {
 	return r.uuid
 }
 

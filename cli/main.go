@@ -63,20 +63,20 @@ func Run(VERSION, TIMESTAMP string) {
 				},
 			},
 			Subcommands: []cli.Command{
+				// {
+				// 	Name:   "udp",
+				// 	Usage:  runUDPCommandUsage,
+				// 	Action: runCommandAction,
+				// },
 				{
-					Name:   "udp",
-					Usage:  runUDPCommandUsage,
-					Action: runTCPCommandAction,
-				},
-				{
-					Name:   "tcp",
+					Name:   "rpc",
 					Usage:  runTCPCommandUsage,
-					Action: runTCPCommandAction,
+					Action: runCommandAction,
 				},
 				{
 					Name:   "http",
 					Usage:  runHTTPCommandUsage,
-					Action: runHTTPCommandAction,
+					Action: runCommandAction,
 				},
 			},
 		},

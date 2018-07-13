@@ -22,26 +22,13 @@ var (
 	configFlagUsage = "Path to config file"
 )
 
-func runTCPCommandAction(c *cli.Context) {
+func runCommandAction(c *cli.Context) {
 	log.SetDebug(c.GlobalBool("debug"))
 
-	server, err := server.NewTCP(
-		net.ParseIP("0.0.0.0"),
-		c.GlobalInt("port"),
-		c.GlobalString("config"),
-	)
-	if err != nil {
-		log.Error(err)
-		os.Exit(1)
-	}
+	boomfuncStartupLog(c.App.Version, c.App.Compiled)
 
-	server.Serve()
-}
-
-func runHTTPCommandAction(c *cli.Context) {
-	log.SetDebug(c.GlobalBool("debug"))
-
-	server, err := server.NewHTTP(
+	server, err := server.New(
+		c.Command.Name,
 		net.ParseIP("0.0.0.0"),
 		c.GlobalInt("port"),
 		c.GlobalString("config"),

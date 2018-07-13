@@ -14,11 +14,11 @@ func handleRequest(req Request, router *conf.Router, output io.Writer) (err erro
 		var status = "SUCCESS"
 
 		if err != nil {
-			errorLog(err)
+			serverErrorLog(err)
 			status = "ERROR"
 		}
 		// log ANY kind result
-		accessLog(req, status)
+		serverAccessLog(req, status)
 	}()
 
 	// Phase 1. Resolve view
