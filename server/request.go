@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -55,6 +56,11 @@ func (r *HTTPRequest) Url() string {
 }
 
 func (r *HTTPRequest) Body() io.Reader {
+	// TODO TMP HARDCODE FOR geoservice
+	if r.Request.URL.Path == "/geo" || r.Request.URL.Path == "/geo/" {
+		return strings.NewReader(r.Request.URL.Query().Get("ip"))
+	}
+
 	return r.Request.Body
 }
 
