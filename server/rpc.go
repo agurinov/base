@@ -1,32 +1,33 @@
 package server
 
 import (
-	"bytes"
+	// "bytes"
 	"net"
-	"net/rpc"
-	"net/rpc/jsonrpc"
+	// "net/rpc"
+	// "net/rpc/jsonrpc"
 
 	"github.com/boomfunc/base/conf"
+	"github.com/boomfunc/log"
 )
 
 type RPCWrapper struct {
 	listener net.Listener
 	router   *conf.Router
-	server   *rpc.Server
+	// server   *rpc.Server
 }
 
 func newRPCWrapper(listener net.Listener, router *conf.Router) (*RPCWrapper, error) {
-	server := rpc.NewServer()
-	pipeline := &pipelineRPC{router}
-	if err := server.RegisterName("Pipeline", pipeline); err != nil {
-		// cannot register methods to rpc server
-		return nil, err
-	}
+	// server := rpc.NewServer()
+	// pipeline := &pipelineRPC{router}
+	// if err := server.RegisterName("Pipeline", pipeline); err != nil {
+	// 	// cannot register methods to rpc server
+	// 	return nil, err
+	// }
 
 	wrapper := &RPCWrapper{
 		listener: listener,
 		router:   router,
-		server:   server,
+		// server:   server,
 	}
 	return wrapper, nil
 }
@@ -39,44 +40,60 @@ func (wrp *RPCWrapper) Serve() {
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
 	// https://rcrowley.org/articles/golang-graceful-stop.html
 
-	// Phase 1. Listen infinitely TCP connection for incoming requests
+	work := make(chan Request)
+	go NewBalancer().balance(work)
+
+	// queue := make(chan net.Conn)
+	//
+	// go func() {
+	// 	for {
+	// 		select {
+	// 		case conn := <-queue:
+	// 			// conn will be closed by ServeCodec!
+	// 			wrp.server.ServeCodec(jsonrpc.NewServerCodec(conn))
+	// 		}
+	// 	}
+	// }()
+	//
+	// // Phase 1. Listen infinitely TCP connection for incoming requests
 	for {
 		// Listen for an incoming connection.
 		conn, err := wrp.listener.Accept()
 		if err != nil {
-			panic(err)
+			log.Error(err)
+			continue
 		}
-		// Handle connections in a new goroutine.
+
 		// Phase 3. Message received, resolve this shit concurrently!
-		// conn will be closed by ServeCodec!
-		go wrp.server.ServeCodec(jsonrpc.NewServerCodec(conn))
+		work <- NewRequest(conn, wrp.router)
+		// go wrp.server.ServeCodec(jsonrpc.NewServerCodec(conn))
 	}
 }
 
-type RPCArgs struct {
-	Url  string
-	Body []byte
-}
-
-type pipelineRPC struct {
-	router *conf.Router
-}
-
-func (rpc *pipelineRPC) Run(args *RPCArgs, reply *[]byte) error {
-	var output bytes.Buffer
-
-	request, err := NewRequest(args)
-
-	if err != nil {
-		return err
-	}
-
-	if err := handleRequest(request, rpc.router, &output); err != nil {
-		return err
-	}
-
-	// write answer back
-	*reply = output.Bytes()
-
-	return nil
-}
+// type RPCArgs struct {
+// 	Url  string
+// 	Body []byte
+// }
+//
+// type pipelineRPC struct {
+// 	router *conf.Router
+// }
+//
+// func (rpc *pipelineRPC) Run(args *RPCArgs, reply *[]byte) error {
+// 	var output bytes.Buffer
+//
+// 	request, err := NewRequest2(args)
+//
+// 	if err != nil {
+// 		return err
+// 	}
+//
+// 	if err := handleRequest(request, rpc.router, &output); err != nil {
+// 		return err
+// 	}
+//
+// 	// write answer back
+// 	*reply = output.Bytes()
+//
+// 	return nil
+// }

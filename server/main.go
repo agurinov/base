@@ -27,7 +27,7 @@ func New(mode string, ip net.IP, port int, filename string) (wrapper Wrapper, er
 	// startup logging if no error
 	defer func() {
 		if err == nil {
-			serverStartupLog(strings.ToUpper(mode), fmt.Sprintf("%s:%d", ip, port), filename)
+			StartupLog(strings.ToUpper(mode), fmt.Sprintf("%s:%d", ip, port), filename)
 		}
 	}()
 
@@ -53,8 +53,8 @@ func New(mode string, ip net.IP, port int, filename string) (wrapper Wrapper, er
 
 	// Phase 3. Create transport (http or rpc)
 	switch mode {
-	case "http":
-		return newHTTPWrapper(tcpListener, router), nil
+	// case "http":
+	// 	return newHTTPWrapper(tcpListener, router), nil
 	case "rpc":
 		return newRPCWrapper(tcpListener, router)
 	default:

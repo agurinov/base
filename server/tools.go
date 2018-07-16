@@ -7,18 +7,18 @@ import (
 )
 
 // TODO (written int64, err error) at return
-func handleRequest(req Request, router *conf.Router, output io.Writer) (err error) {
+func handleRequest(req *Request, router *conf.Router, output io.Writer) (err error) {
 	// logging and error handling block
 	// this defer must be invoked last (first in) for recovering all available panics and errors
 	defer func() {
 		var status = "SUCCESS"
 
 		if err != nil {
-			serverErrorLog(err)
+			ErrorLog(err)
 			status = "ERROR"
 		}
 		// log ANY kind result
-		serverAccessLog(req, status)
+		AccessLog(req, status)
 	}()
 
 	// Phase 1. Resolve view
@@ -34,3 +34,14 @@ func handleRequest(req Request, router *conf.Router, output io.Writer) (err erro
 
 	return nil
 }
+
+// func requester(work chan<- Request) {
+// 	c := make(chan int)
+// 	for {
+// 		// Kill some time (fake load).
+// 		Sleep(rand.Int63n(nWorker * 2 * Second))
+// 		work <- Request{workFn, c} // send request
+// 		result := <-c              // wait for answer
+// 		furtherProcess(result)
+// 	}
+// }
