@@ -9,13 +9,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/boomfunc/base/conf"
-	"github.com/boomfunc/log"
 )
 
 type Request struct {
 	conn net.Conn  // The operation to perform.
 	router *conf.Router
-	c  chan io.Reader    // The channel to return the result.
 	uuid uuid.UUID
 }
 
@@ -47,7 +45,6 @@ func (req *Request) Handle() (err error) {
 
 	// Firstly - close connection
 	defer func() {
-		log.Debug("Closing conn")
 		err = req.conn.Close()
 	}()
 
@@ -82,7 +79,6 @@ func NewRequest(conn net.Conn, router *conf.Router) Request {
 	return Request{
 		conn: conn,
 		router: router,
-		c: make(chan io.Reader),
 		uuid: uuid.New(),
 	}
 }

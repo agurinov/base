@@ -1,54 +1,41 @@
 package server
 
+// Worker represents the worker that executes the job
 type Worker struct {
-	requests chan Request // work to do (buffered channel)
-	pending  int          // count of pending tasks
-	index     int         // index in the heap
+	WorkerPool  chan chan Request
+	RequestChannel  chan Request
+	quit chan bool
 }
 
-func NewWorker(requests chan Request) *Worker {
-	return &Worker{requests: requests}
-}
-
-func (w *Worker) work(done chan *Worker) {
-	for {
-		req := <-w.requests // get Request from balancer
-		req.Handle()   // call fn and send result
-		done <- w           // we've finished this request
+func NewWorker(workerPool chan chan Request) *Worker {
+	return &Worker{
+		WorkerPool: workerPool,
+		RequestChannel: make(chan Request),
+		quit:       make(chan bool),
 	}
 }
 
-type Pool []*Worker
+func (w *Worker) Start() {
+	go func() {
+		for {
+			// register the current worker into the worker queue.
+			w.WorkerPool <- w.RequestChannel
 
-func (p Pool) Less(i, j int) bool {
-	return p[i].pending < p[j].pending
+			select {
+			case request := <-w.RequestChannel:
+				request.Handle()
+
+			case <-w.quit:
+				// we have received a signal to stop
+				return
+			}
+		}
+	}()
 }
 
-func (p Pool) Len() int {
-	return len(p)
-}
-
-func (p *Pool) Swap(i, j int) {
-	a := *p
-	a[i], a[j] = a[j], a[i]
-	a[i].index = i
-	a[j].index = j
-}
-
-func (p *Pool) Push(x interface{}) {
-	a := *p
-	n := len(a)
-	a = a[0 : n+1]
-	w := x.(*Worker)
-	a[n] = w
-	w.index = n
-	*p = a
-}
-
-func (p *Pool) Pop() interface{} {
-	a := *p
-	*p = a[0 : len(a)-1]
-	w := a[len(a)-1]
-	w.index = -1 // for safety
-	return w
+// Stop signals the worker to stop listening for work requests.
+func (w *Worker) Stop() {
+	go func() {
+		w.quit <- true
+	}()
 }

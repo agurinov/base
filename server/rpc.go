@@ -40,8 +40,7 @@ func (wrp *RPCWrapper) Serve() {
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
 	// https://rcrowley.org/articles/golang-graceful-stop.html
 
-	work := make(chan Request)
-	go NewBalancer().balance(work)
+	NewDispatcher(4).Run()
 
 	// queue := make(chan net.Conn)
 	//
@@ -65,7 +64,7 @@ func (wrp *RPCWrapper) Serve() {
 		}
 
 		// Phase 3. Message received, resolve this shit concurrently!
-		work <- NewRequest(conn, wrp.router)
+		RequestQueue <- NewRequest(conn, wrp.router)
 		// go wrp.server.ServeCodec(jsonrpc.NewServerCodec(conn))
 	}
 }
