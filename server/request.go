@@ -1,7 +1,7 @@
 package server
 
 import (
-	// "bytes"
+	"bytes"
 	"io"
 	// "net/http"
 	"strings"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/boomfunc/base/conf"
+	"github.com/boomfunc/log"
 )
 
 type Request struct {
@@ -44,14 +45,28 @@ func (req *Request) Handle() (err error) {
 		AccessLog(req, status)
 	}()
 
+	// Firstly - close connection
+	defer func() {
+		log.Debug("Closing conn")
+		err = req.conn.Close()
+	}()
+
 	// Phase 1. Resolve view
 	route, err := req.router.Match(req.Url())
 	if err != nil {
 		return err
 	}
 
+	var output bytes.Buffer
+
 	// Phase 2. Write answer to output
-	return route.Run(req.Body(), req.conn)
+	if err = route.Run(req.Body(), &output); err != nil {
+		return err
+	}
+
+	io.Copy(req.conn, &output)
+
+	return nil
 }
 
 

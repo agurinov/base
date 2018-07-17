@@ -6,6 +6,7 @@ import (
 	"github.com/boomfunc/log"
 )
 
+// https://gist.github.com/angeldm/2421216
 type Balancer struct {
 	pool Pool
 	done chan *Worker
@@ -17,7 +18,7 @@ func NewBalancer() *Balancer {
 	done := make(chan *Worker, nWorker)
 	b := &Balancer{
 		pool: make(Pool, 0, nWorker),
-		done: done
+		done: done,
 	}
 
 	for i := 0; i < nWorker; i++ {
@@ -30,7 +31,6 @@ func NewBalancer() *Balancer {
 }
 
 func (b *Balancer) dispatch(req Request) {
-	log.Debug("b.dispatch()")
 	// Grab the least loaded worker...
 	w := heap.Pop(&b.pool).(*Worker)
 	// ...send it the task.
@@ -55,8 +55,10 @@ func (b *Balancer) balance(work chan Request) {
 	for {
 		select {
 		case req := <-work: // received a Request...
+			log.Debug("WORK COMING")
 			b.dispatch(req) // ...so send it to a Worker
 		case w := <-b.done: // a worker has finished ...
+			log.Debug("WORK FINISHED")
 			b.completed(w)  // ...so update its info
 		}
 	}
