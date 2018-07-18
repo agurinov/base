@@ -13,9 +13,16 @@ type Request interface {
 	Body() io.Reader
 }
 
-type Response interface {
-	Duration() time.Duration
-	Request() Request
-	Status() bool
-	Len() int64
+type Response struct {
+	Duration time.Duration
+	Request  Request
+	Status   string
+	Len      int64
 }
+
+// type Response interface {
+// 	Duration() time.Duration
+// 	Request() Request
+// 	Status() bool
+// 	Len() int64
+// }
