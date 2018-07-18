@@ -6,4 +6,4 @@ pip install --no-cache-dir pygeoip==0.3.2
 
 .circleci/scripts/build.sh
 
-/go/bin/base-Linux-x86_64 run rpc
+/go/bin/base-Linux-x86_64 run tcp

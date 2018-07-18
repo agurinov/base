@@ -1,16 +1,20 @@
 package server
 
-var RequestQueue = make(chan Request)
+import (
+	"github.com/boomfunc/base/server/request"
+)
+
+var RequestQueue = make(chan request.Request)
 
 type Dispatcher struct {
 	// A pool of workers channels that are registered with the dispatcher
-	WorkerPool chan chan Request
+	WorkerPool chan chan request.Request
 	maxWorkers int
 }
 
 func NewDispatcher(maxWorkers int) *Dispatcher {
 	return &Dispatcher{
-		WorkerPool: make(chan chan Request, maxWorkers),
+		WorkerPool: make(chan chan request.Request, maxWorkers),
 		maxWorkers: maxWorkers,
 	}
 }
@@ -27,16 +31,15 @@ func (d *Dispatcher) Run() {
 func (d *Dispatcher) dispatch() {
 	for {
 		select {
-		case request := <-RequestQueue:
+		case req := <-RequestQueue:
 			// a job request has been received
-			go func(request Request) {
+			go func(req request.Request) {
 				// try to obtain a worker job channel that is available.
 				// this will block until a worker is idle
-				requestChannel := <-d.WorkerPool
-
+				workerChannel := <-d.WorkerPool
 				// dispatch the job to the worker job channel
-				requestChannel <- request
-			}(request)
+				workerChannel <- req
+			}(req)
 		}
 	}
 }

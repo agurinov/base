@@ -6,6 +6,7 @@ import (
 
 	"github.com/boomfunc/base/conf"
 	"github.com/boomfunc/base/server/application"
+	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
 	"github.com/boomfunc/log"
 )
@@ -27,20 +28,19 @@ func (srv *Server) Serve() {
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
 	// https://rcrowley.org/articles/golang-graceful-stop.html
 
-	// Another goroutine - listen RequestQueue
+	// First goroutine - listen RequestQueue
 	NewDispatcher(4).Run()
 
-	// second goroutine - transport listen
+	// second goroutine - listen transport channels
 	go func() {
 		for {
 			select {
 			case err := <-srv.errCh:
-				// error from somewhere
+				// error from transport
 				log.Error(err)
 			case conn := <-srv.connCh:
 				// connection from transport
-				RequestQueue <- NewRequest(conn, srv.router)
-				// TODO to dispatcher channel
+				RequestQueue <- request.New(conn)
 			}
 		}
 	}()

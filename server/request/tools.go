@@ -1,87 +1,73 @@
-package server
+package request
 
 import (
-	"bytes"
 	"io"
-	// "net/http"
-	"strings"
 	"net"
+	"strings"
 
 	"github.com/google/uuid"
-	"github.com/boomfunc/base/conf"
 )
 
-type Request struct {
-	conn net.Conn  // The operation to perform.
-	router *conf.Router
+type r struct {
+	conn net.Conn
 	uuid uuid.UUID
 }
 
-func (req *Request) UUID() uuid.UUID {
+func (req *r) UUID() uuid.UUID {
 	return req.uuid
 }
 
-func (req *Request) Url() string {
-	return "ping"
+func (req *r) Url() string {
+	return "geo"
 }
 
-func (req *Request) Body() io.Reader {
-	return strings.NewReader("")
+func (req *r) Body() io.Reader {
+	return strings.NewReader("185.86.151.11")
 }
 
-func (req *Request) Handle() (err error) {
-	// logging and error handling block
-	// this defer must be invoked last (first in) for recovering all available panics and errors
-	defer func() {
-		var status = "SUCCESS"
-
-		if err != nil {
-			ErrorLog(err)
-			status = "ERROR"
-		}
-		// log ANY kind result
-		AccessLog(req, status)
-	}()
-
-	// Firstly - close connection
-	defer func() {
-		err = req.conn.Close()
-	}()
-
-	// Phase 1. Resolve view
-	route, err := req.router.Match(req.Url())
-	if err != nil {
-		return err
-	}
-
-	var output bytes.Buffer
-
-	// Phase 2. Write answer to output
-	if err = route.Run(req.Body(), &output); err != nil {
-		return err
-	}
-
-	io.Copy(req.conn, &output)
-
-	return nil
-}
-
-
-// type Request interface {
-// 	UUID() uuid.UUID
-// 	Url() string
-// 	Body() io.Reader
-//
-// 	// Serve()
-// }
-//
-func NewRequest(conn net.Conn, router *conf.Router) Request {
-	return Request{
+func New(conn net.Conn) Request {
+	return &r{
 		conn: conn,
-		router: router,
 		uuid: uuid.New(),
 	}
 }
+
+// func (req *Request) Handle() (err error) {
+// 	// logging and error handling block
+// 	// this defer must be invoked last (first in) for recovering all available panics and errors
+// 	defer func() {
+// 		var status = "SUCCESS"
+//
+// 		if err != nil {
+// 			ErrorLog(err)
+// 			status = "ERROR"
+// 		}
+// 		// log ANY kind result
+// 		AccessLog(req, status)
+// 	}()
+//
+// 	// Firstly - close connection
+// 	defer func() {
+// 		err = req.conn.Close()
+// 	}()
+//
+// 	// Phase 1. Resolve view
+// 	route, err := req.router.Match(req.Url())
+// 	if err != nil {
+// 		return err
+// 	}
+//
+// 	var output bytes.Buffer
+//
+// 	// Phase 2. Write answer to output
+// 	if err = route.Run(req.Body(), &output); err != nil {
+// 		return err
+// 	}
+//
+// 	io.Copy(req.conn, &output)
+//
+// 	return nil
+// }
 
 // func NewRequest2(req interface{}) (*RPCRequest, error) {
 // 	switch typed := req.(type) {

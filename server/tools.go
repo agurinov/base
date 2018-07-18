@@ -4,21 +4,22 @@ import (
 	"io"
 
 	"github.com/boomfunc/base/conf"
+	"github.com/boomfunc/base/server/request"
 )
 
 // TODO (written int64, err error) at return
-func handleRequest(req *Request, router *conf.Router, output io.Writer) (err error) {
+func handleRequest(req request.Request, router *conf.Router, output io.Writer) (err error) {
 	// logging and error handling block
 	// this defer must be invoked last (first in) for recovering all available panics and errors
 	defer func() {
-		var status = "SUCCESS"
+		// var status = "SUCCESS"
 
 		if err != nil {
 			ErrorLog(err)
-			status = "ERROR"
+			// status = "ERROR"
 		}
 		// log ANY kind result
-		AccessLog(req, status)
+		// AccessLog(req, status)
 	}()
 
 	// Phase 1. Resolve view

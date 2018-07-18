@@ -3,6 +3,7 @@ package server
 import (
 	"runtime/debug"
 
+	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/log"
 )
 
@@ -12,8 +13,10 @@ func StartupLog(mode, addr, filename string) {
 	log.Debugf("Enabled %s mode", log.Wrap("DEBUG", log.Bold, log.Blink))
 }
 
-func AccessLog(req *Request, status string) {
-	log.Infof("%s\t-\t%s\t-\t%s", req.UUID(), req.Url(), status)
+func AccessLog(response request.Response) {
+	req := response.Request()
+
+	log.Infof("%s\t-\t%s\t-\t%s", req.UUID(), req.Url(), response.Status())
 }
 
 // TODO clear Stack

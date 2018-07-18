@@ -1,16 +1,20 @@
 package server
 
+import (
+	"github.com/boomfunc/base/server/request"
+)
+
 // Worker represents the worker that executes the job
 type Worker struct {
-	WorkerPool     chan chan Request
-	RequestChannel chan Request
+	WorkerPool     chan chan request.Request
+	RequestChannel chan request.Request
 	quit           chan bool
 }
 
-func NewWorker(workerPool chan chan Request) *Worker {
+func NewWorker(workerPool chan chan request.Request) *Worker {
 	return &Worker{
 		WorkerPool:     workerPool,
-		RequestChannel: make(chan Request),
+		RequestChannel: make(chan request.Request),
 		quit:           make(chan bool),
 	}
 }
@@ -23,7 +27,7 @@ func (w *Worker) Start() {
 
 			select {
 			case request := <-w.RequestChannel:
-				request.Handle()
+				request.Url()
 
 			case <-w.quit:
 				// we have received a signal to stop
