@@ -16,8 +16,12 @@ type Request interface {
 type Response struct {
 	Duration time.Duration
 	Request  Request
-	Status   string
+	Error    error
 	Len      int64
+}
+
+func (r Response) Successful() bool {
+	return r.Error == nil
 }
 
 // type Response interface {

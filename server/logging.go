@@ -16,7 +16,8 @@ func StartupLog(mode, addr, filename string) {
 func AccessLog(response request.Response) {
 	req := response.Request
 
-	log.Infof("%s\t-\t%s\t-\t%s", req.UUID(), req.Url(), response.Status)
+	log.Infof("%s\t-\t%s", req.UUID(), req.Url())
+	// log.Infof("%s\t-\t%s\t-\t%s", req.UUID(), req.Url(), response.Status)
 }
 
 // TODO clear Stack

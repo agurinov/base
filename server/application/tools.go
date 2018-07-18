@@ -17,12 +17,7 @@ func handleRequest(req request.Request, router *conf.Router, output io.Writer) r
 	defer func() {
 		response.Duration = time.Since(begin)
 		response.Request = req
-		response.Status = "SUCCESS"
-
-		if err != nil {
-			// ch <- err
-			response.Status = "ERROR"
-		}
+		response.Error = err
 	}()
 
 	// Start measuring

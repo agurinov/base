@@ -8,15 +8,15 @@ import (
 	"github.com/boomfunc/base/server/application"
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
-	"github.com/boomfunc/log"
 )
 
 type Server struct {
 	transport transport.Interface
 	app       application.Interface
 
-	connCh chan net.Conn
-	errCh  chan error
+	connCh     chan net.Conn
+	errCh      chan error
+	responseCh chan request.Response
 
 	// move to application layer
 	router *conf.Router
@@ -51,7 +51,8 @@ func (srv *Server) Serve() {
 			select {
 			case err := <-srv.errCh:
 				// error from transport
-				log.Error(err)
+				ErrorLog(err)
+
 			case conn := <-srv.connCh:
 				// connection from transport
 				r := Request{
@@ -59,6 +60,13 @@ func (srv *Server) Serve() {
 					server: srv,
 				}
 				RequestChannel <- r
+
+			case response := <-srv.responseCh:
+				// ready response from worker
+				AccessLog(response)
+				if !response.Successful() {
+					srv.errCh <- response.Error
+				}
 			}
 		}
 	}()
@@ -77,6 +85,7 @@ func New(transportName string, ip net.IP, port int, filename string) (*Server, e
 	}
 
 	// Phase 2. Prepare main application layer
+	// TODO
 	connCh := make(chan net.Conn)
 	errCh := make(chan error)
 
