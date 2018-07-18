@@ -88,6 +88,7 @@ func New(transportName string, ip net.IP, port int, filename string) (*Server, e
 	// TODO
 	connCh := make(chan net.Conn)
 	errCh := make(chan error)
+	responseCh := make(chan request.Response)
 
 	// Phase 3. Prepare transport layer
 	var tr transport.Interface
@@ -103,10 +104,11 @@ func New(transportName string, ip net.IP, port int, filename string) (*Server, e
 	}
 
 	srv := &Server{
-		transport: tr,
-		connCh:    connCh,
-		errCh:     errCh,
-		router:    router,
+		transport:  tr,
+		connCh:     connCh,
+		errCh:      errCh,
+		responseCh: responseCh,
+		router:     router,
 	}
 	return srv, nil
 }
