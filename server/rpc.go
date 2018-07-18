@@ -7,7 +7,7 @@ import (
 	// "net/rpc/jsonrpc"
 
 	"github.com/boomfunc/base/conf"
-	"github.com/boomfunc/log"
+	// "github.com/boomfunc/log"
 )
 
 type RPCWrapper struct {
@@ -40,7 +40,7 @@ func (wrp *RPCWrapper) Serve() {
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
 	// https://rcrowley.org/articles/golang-graceful-stop.html
 
-	NewDispatcher(4).Run()
+	// NewDispatcher(4).Run()
 
 	// queue := make(chan net.Conn)
 	//
@@ -55,18 +55,19 @@ func (wrp *RPCWrapper) Serve() {
 	// }()
 	//
 	// // Phase 1. Listen infinitely TCP connection for incoming requests
-	for {
-		// Listen for an incoming connection.
-		conn, err := wrp.listener.Accept()
-		if err != nil {
-			log.Error(err)
-			continue
-		}
-
-		// Phase 3. Message received, resolve this shit concurrently!
-		RequestQueue <- NewRequest(conn, wrp.router)
-		// go wrp.server.ServeCodec(jsonrpc.NewServerCodec(conn))
-	}
+	// for {
+	// 	// Listen for an incoming connection.
+	// 	conn, err := wrp.listener.Accept()
+	// 	if err != nil {
+	// 		log.Error(err)
+	// 		continue
+	// 	}
+	//
+	// 	// Phase 3. Message received, resolve this shit concurrently!
+	// 	RequestChannel <- NewRequest(conn, wrp.router)
+	// 	// conn will be closed by ServeCodec!
+	// 	// wrp.server.ServeCodec(jsonrpc.NewServerCodec(conn))
+	// }
 }
 
 // type RPCArgs struct {

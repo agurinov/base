@@ -12,12 +12,13 @@ import (
 )
 
 type Server struct {
-	transport   transport.Interface
-	application application.Interface
+	transport transport.Interface
+	app       application.Interface
 
 	connCh chan net.Conn
 	errCh  chan error
 
+	// move to application layer
 	router *conf.Router
 }
 
@@ -41,7 +42,7 @@ func (srv *Server) Serve() {
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
 	// https://rcrowley.org/articles/golang-graceful-stop.html
 
-	// First goroutine - listen RequestQueue
+	// First goroutine - listen RequestChannel
 	NewDispatcher(4).Run()
 
 	// second goroutine - listen transport channels
@@ -53,7 +54,11 @@ func (srv *Server) Serve() {
 				log.Error(err)
 			case conn := <-srv.connCh:
 				// connection from transport
-				RequestQueue <- request.New(conn)
+				r := Request{
+					under:  request.New(conn),
+					server: srv,
+				}
+				RequestChannel <- r
 			}
 		}
 	}()
