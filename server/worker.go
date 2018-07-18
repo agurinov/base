@@ -2,16 +2,16 @@ package server
 
 // Worker represents the worker that executes the job
 type Worker struct {
-	WorkerPool  chan chan Request
-	RequestChannel  chan Request
-	quit chan bool
+	WorkerPool     chan chan Request
+	RequestChannel chan Request
+	quit           chan bool
 }
 
 func NewWorker(workerPool chan chan Request) *Worker {
 	return &Worker{
-		WorkerPool: workerPool,
+		WorkerPool:     workerPool,
 		RequestChannel: make(chan Request),
-		quit:       make(chan bool),
+		quit:           make(chan bool),
 	}
 }
 

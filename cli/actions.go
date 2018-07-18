@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"fmt"
 	"net"
 	"os"
+	"strings"
 
 	"github.com/boomfunc/log"
 	"github.com/urfave/cli"
@@ -25,18 +27,22 @@ var (
 func runCommandAction(c *cli.Context) {
 	log.SetDebug(c.GlobalBool("debug"))
 
-	boomfuncStartupLog(c.App.Version, c.App.Compiled)
+	StartupLog(c.App.Version, c.App.Compiled)
 
-	server, err := server.New(
-		c.Command.Name,
-		net.ParseIP("0.0.0.0"),
-		c.GlobalInt("port"),
-		c.GlobalString("config"),
-	)
+	// Exctract params
+	transport := c.Command.Name
+	ip := net.ParseIP("0.0.0.0")
+	port := c.GlobalInt("port")
+	filename := c.GlobalString("config")
+
+	// Create server
+	srv, err := server.New(transport, ip, port, filename)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
 
-	server.Serve()
+	// Run
+	server.StartupLog(strings.ToUpper(transport), fmt.Sprintf("%s:%d", ip, port), filename)
+	srv.Serve()
 }

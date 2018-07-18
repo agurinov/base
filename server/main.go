@@ -2,62 +2,84 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"net"
-	"strings"
 
 	"github.com/boomfunc/base/conf"
+	"github.com/boomfunc/base/server/application"
+	"github.com/boomfunc/base/server/transport"
+	"github.com/boomfunc/log"
 )
 
-type Wrapper interface {
-	Serve()
-	// Router()
-	// Close()
+type Server struct {
+	transport   transport.Interface
+	application application.Interface
 
-	// Addr() net.Addr
-	// ServeConn(conn net.Conn)
+	connCh chan net.Conn
+	errCh  chan error
 
-	// log
-	// startupLog()
-	// accessLog()
-	// errorLog()
+	router *conf.Router
 }
 
-func New(mode string, ip net.IP, port int, filename string) (wrapper Wrapper, err error) {
-	// startup logging if no error
-	defer func() {
-		if err == nil {
-			StartupLog(strings.ToUpper(mode), fmt.Sprintf("%s:%d", ip, port), filename)
+func (srv *Server) Serve() {
+	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
+	// TODO defer ch.Close()
+	// TODO defer s.conn.Close()
+	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
+	// https://rcrowley.org/articles/golang-graceful-stop.html
+
+	// Another goroutine - listen RequestQueue
+	NewDispatcher(4).Run()
+
+	// second goroutine - transport listen
+	go func() {
+		for {
+			select {
+			case err := <-srv.errCh:
+				// error from somewhere
+				log.Error(err)
+			case conn := <-srv.connCh:
+				// connection from transport
+				RequestQueue <- NewRequest(conn, srv.router)
+				// TODO to dispatcher channel
+			}
 		}
 	}()
 
-	// Phase 1. get config for server routing
+	// This is thread blocking procedure - infinity loop
+	srv.transport.Serve()
+}
+
+func New(transportName string, ip net.IP, port int, filename string) (*Server, error) {
+	// Phase 1. Prepare light application layer things
+	// router
 	router, err := conf.LoadFile(filename)
 	if err != nil {
 		// cannot load server config
 		return nil, err
 	}
 
-	// Phase 2. Resolve tcp address and create tcp server listening on provided port
-	tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", ip, port))
-	if err != nil {
-		// cannot resolve address (invalid options (ip or port))
-		return nil, err
-	}
+	// Phase 2. Prepare main application layer
+	connCh := make(chan net.Conn)
+	errCh := make(chan error)
 
-	tcpListener, err := net.ListenTCP("tcp", tcpAddr)
-	if err != nil {
-		// cannot establish connection on this addr
-		return nil, err
-	}
+	// Phase 3. Prepare transport layer
+	var tr transport.Interface
 
-	// Phase 3. Create transport (http or rpc)
-	switch mode {
-	// case "http":
-	// 	return newHTTPWrapper(tcpListener, router), nil
-	case "rpc":
-		return newRPCWrapper(tcpListener, router)
+	switch transportName {
+	case "tcp":
+		tr, err = transport.TCP(ip, port, connCh, errCh)
+		if err != nil {
+			return nil, err
+		}
 	default:
-		return nil, errors.New("server: Unknown server protocol")
+		return nil, errors.New("server: Unknown server transport")
 	}
+
+	srv := &Server{
+		transport: tr,
+		connCh:    connCh,
+		errCh:     errCh,
+		router:    router,
+	}
+	return srv, nil
 }

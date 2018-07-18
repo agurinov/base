@@ -74,6 +74,11 @@ func Run(VERSION, TIMESTAMP string) {
 					Action: runCommandAction,
 				},
 				{
+					Name:   "tcp",
+					Usage:  runTCPCommandUsage,
+					Action: runCommandAction,
+				},
+				{
 					Name:   "http",
 					Usage:  runHTTPCommandUsage,
 					Action: runCommandAction,

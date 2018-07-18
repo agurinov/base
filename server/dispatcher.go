@@ -18,8 +18,7 @@ func NewDispatcher(maxWorkers int) *Dispatcher {
 func (d *Dispatcher) Run() {
 	// starting n number of workers
 	for i := 0; i < d.maxWorkers; i++ {
-		worker := NewWorker(d.WorkerPool)
-		worker.Start()
+		NewWorker(d.WorkerPool).Start()
 	}
 
 	go d.dispatch()

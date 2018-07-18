@@ -6,7 +6,7 @@ import (
 	"github.com/boomfunc/log"
 )
 
-func boomfuncStartupLog(version string, compiled time.Time) {
+func StartupLog(version string, compiled time.Time) {
 	log.Infof("==============================")
 	log.Infof("Boomfunc base version:\t%s", log.Wrap(version, log.Bold))
 	log.Infof("Boomfunc compilation time:\t%s", log.Wrap(compiled.String(), log.Bold))
