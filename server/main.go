@@ -21,6 +21,19 @@ type Server struct {
 	router *conf.Router
 }
 
+// // logging and error handling block
+// // this defer must be invoked last (first in) for recovering all available panics and errors
+// defer func() {
+// 	// var status = "SUCCESS"
+//
+// 	if err != nil {
+// 		ErrorLog(err)
+// 		// status = "ERROR"
+// 	}
+// 	// log ANY kind result
+// 	// AccessLog(req, status)
+// }()
+
 func (srv *Server) Serve() {
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
 	// TODO defer ch.Close()
