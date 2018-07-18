@@ -50,22 +50,22 @@ func (srv *Server) Serve() {
 		for {
 			select {
 			case err := <-srv.errCh:
-				// error from transport
-				ErrorLog(err)
+				if err != nil {
+					ErrorLog(err)
+				}
 
 			case conn := <-srv.connCh:
 				// connection from transport
-				r := Request{
-					under:  request.New(conn),
-					server: srv,
-				}
-				RequestChannel <- r
+				// send to dispatcher's queue
+				RequestChannel <- Request{conn, srv}
 
 			case response := <-srv.responseCh:
 				// ready response from worker
+				// log ANY kind of result
 				AccessLog(response)
-				if !response.Successful() {
-					srv.errCh <- response.Error
+				// and errors
+				if err := response.Error; err != nil {
+					ErrorLog(err)
 				}
 			}
 		}
@@ -86,6 +86,7 @@ func New(transportName string, ip net.IP, port int, filename string) (*Server, e
 
 	// Phase 2. Prepare main application layer
 	// TODO
+	app := application.New(router)
 	connCh := make(chan net.Conn)
 	errCh := make(chan error)
 	responseCh := make(chan request.Response)
@@ -105,6 +106,7 @@ func New(transportName string, ip net.IP, port int, filename string) (*Server, e
 
 	srv := &Server{
 		transport:  tr,
+		app:        app,
 		connCh:     connCh,
 		errCh:      errCh,
 		responseCh: responseCh,

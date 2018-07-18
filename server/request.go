@@ -1,10 +1,10 @@
 package server
 
 import (
-	"github.com/boomfunc/base/server/request"
+	"net"
 )
 
 type Request struct {
-	under  request.Request
+	conn   net.Conn
 	server *Server
 }

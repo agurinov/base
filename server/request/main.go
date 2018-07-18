@@ -2,6 +2,7 @@ package request
 
 import (
 	"io"
+	"net"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,6 +12,7 @@ type Request interface {
 	UUID() uuid.UUID
 	Url() string
 	Body() io.Reader
+	Conn() net.Conn
 }
 
 type Response struct {

@@ -25,6 +25,10 @@ func (req *r) Body() io.Reader {
 	return strings.NewReader("185.86.151.11")
 }
 
+func (req *r) Conn() net.Conn {
+	return req.conn
+}
+
 func New(conn net.Conn) Request {
 	return &r{
 		conn: conn,
