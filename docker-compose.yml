@@ -4,6 +4,7 @@ x-defaults:
 
   volumes: &volumes
     - src-vol:/go/src/github.com/boomfunc/base
+    - bin-vol:/go/bin
 
   logging: &logging
     options:
@@ -63,6 +64,12 @@ services:
 
 volumes:
   src-vol:
+    driver_opts:
+      type: none
+      device: ${PWD}
+      o: bind
+
+  bin-vol:
     driver_opts:
       type: none
       device: ${PWD}
