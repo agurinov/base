@@ -36,7 +36,7 @@ func runCommandAction(c *cli.Context) {
 	filename := c.GlobalString("config")
 
 	// Create server
-	srv, err := server.New(transport, ip, port, filename)
+	srv, err := server.New(transport, "dummy", ip, port, filename)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)

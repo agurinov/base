@@ -65,7 +65,9 @@ func (srv *Server) Serve() {
 				AccessLog(response)
 				// and errors
 				if err := response.Error; err != nil {
-					ErrorLog(err)
+					go func() {
+						srv.errCh <- err
+					}()
 				}
 			}
 		}
@@ -75,7 +77,7 @@ func (srv *Server) Serve() {
 	srv.transport.Serve()
 }
 
-func New(transportName string, ip net.IP, port int, filename string) (*Server, error) {
+func New(transportName string, applicationName string, ip net.IP, port int, filename string) (*Server, error) {
 	// Phase 1. Prepare light application layer things
 	// router
 	router, err := conf.LoadFile(filename)

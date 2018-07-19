@@ -8,7 +8,7 @@ x-defaults:
 
   logging: &logging
     options:
-      max-size: 1m
+      max-size: 200k
 
   working_dir: &working_dir
     /go/src/github.com/boomfunc/base
@@ -16,14 +16,26 @@ x-defaults:
 services:
 
   geo:
-    build:
-      context: ./geo
+    image: golang:alpine
     environment:
       - BMP_DEBUG_MODE=true
-      # - BMP_CONFIG=./conf/example.yml
+      - BMP_CONFIG=./geo/conf.yml
     ports:
         - "8080:8080"
+    volumes: *volumes
+    working_dir: *working_dir
     logging: *logging
+    command: .circleci/scripts/run.sh
+
+  # geo:
+  #   build:
+  #     context: ./geo
+  #   environment:
+  #     - BMP_DEBUG_MODE=true
+  #     # - BMP_CONFIG=./conf/example.yml
+  #   ports:
+  #       - "8080:8080"
+  #   logging: *logging
 
   build:
     image: golang
