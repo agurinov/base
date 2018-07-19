@@ -16,16 +16,14 @@ x-defaults:
 services:
 
   geo:
-    image: golang:alpine
+    build:
+      context: ./geo
     environment:
       - BMP_DEBUG_MODE=true
-      - BMP_CONFIG=./conf/example.yml
+      # - BMP_CONFIG=./conf/example.yml
     ports:
         - "8080:8080"
-    volumes: *volumes
-    working_dir: *working_dir
     logging: *logging
-    command: .circleci/scripts/run.sh
 
   build:
     image: golang
