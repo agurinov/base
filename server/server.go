@@ -3,11 +3,13 @@ package server
 import (
 	"errors"
 	"net"
+	"runtime"
 
 	"github.com/boomfunc/base/conf"
 	"github.com/boomfunc/base/server/application"
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
+	"github.com/boomfunc/log"
 )
 
 type Server struct {
@@ -35,17 +37,17 @@ type Server struct {
 // 	// AccessLog(req, status)
 // }()
 
-func (srv *Server) Serve() {
+func (srv *Server) Serve(numWorkers int) {
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
 	// TODO defer ch.Close()
 	// TODO defer s.conn.Close()
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
 	// https://rcrowley.org/articles/golang-graceful-stop.html
 
-	// First goroutine - listen RequestChannel
-	NewDispatcher(4).Run()
+	// GOROUTINE 2 (dispatcher - listen RequestChannel)
+	NewDispatcher(numWorkers).Run()
 
-	// second goroutine - listen transport channels
+	// GOROUTINE 3 (listen server channels)
 	go func() {
 		for {
 			select {
@@ -73,6 +75,23 @@ func (srv *Server) Serve() {
 		}
 	}()
 
+	log.Debugf("Spawned %d goroutines", runtime.NumGoroutine())
+	if runtime.NumGoroutine() != numWorkers+3 {
+		log.Warnf(
+			"Unexpected number of goroutines, possibly an issue. Expected: %d, Got: %d",
+			numWorkers+3,
+			runtime.NumGoroutine(),
+		)
+	}
+	log.Debugf("Detected %d CPU cores", runtime.NumCPU())
+	if runtime.NumCPU() != numWorkers {
+		log.Warnf(
+			"Possible overloading of CPU cores. Detected: %[1]d CPU. Recommended worker number: %[1]d (Current: %[2]d)",
+			runtime.NumCPU(), numWorkers,
+		)
+	}
+
+	// GOROUTINE 1 (main)
 	// This is thread blocking procedure - infinity loop
 	srv.transport.Serve()
 }

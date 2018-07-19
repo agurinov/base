@@ -44,5 +44,5 @@ func runCommandAction(c *cli.Context) {
 
 	// Run
 	server.StartupLog(strings.ToUpper(transport), fmt.Sprintf("%s:%d", ip, port), filename)
-	srv.Serve()
+	srv.Serve(2)
 }
