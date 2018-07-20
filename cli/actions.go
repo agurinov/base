@@ -33,6 +33,7 @@ func runCommandAction(c *cli.Context) {
 	transport := c.Command.Name
 	ip := net.ParseIP("0.0.0.0")
 	port := c.GlobalInt("port")
+	workerNum := c.GlobalInt("workers")
 	filename := c.GlobalString("config")
 
 	// Create server
@@ -44,5 +45,5 @@ func runCommandAction(c *cli.Context) {
 
 	// Run
 	server.StartupLog(strings.ToUpper(transport), fmt.Sprintf("%s:%d", ip, port), filename)
-	srv.Serve(2)
+	srv.Serve(workerNum)
 }

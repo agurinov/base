@@ -2,6 +2,7 @@ package cli
 
 import (
 	"os"
+	"runtime"
 	"sort"
 	"strconv"
 	"time"
@@ -54,6 +55,12 @@ func Run(VERSION, TIMESTAMP string) {
 					Usage:  portFlagUsage,
 					EnvVar: "BMP_PORT",
 					Value:  8080,
+				},
+				cli.IntFlag{
+					Name:   "workers",
+					Usage:  portFlagUsage,
+					EnvVar: "BMP_WORKER_NUM",
+					Value:  runtime.NumCPU(),
 				},
 				cli.StringFlag{
 					Name:   "config",
