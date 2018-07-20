@@ -67,9 +67,9 @@ func (srv *Server) Serve(numWorkers int) {
 				AccessLog(response)
 				// and errors
 				if err := response.Error; err != nil {
-					go func() {
-						srv.errCh <- err
-					}()
+					// TODO not good, find better solution
+					// TODO repeat line56
+					ErrorLog(err)
 				}
 			}
 		}
@@ -84,9 +84,14 @@ func (srv *Server) Serve(numWorkers int) {
 		)
 	}
 	log.Debugf("Detected %d CPU cores", runtime.NumCPU())
-	if runtime.NumCPU() != numWorkers {
+	if runtime.NumCPU() < numWorkers {
 		log.Warnf(
 			"Possible overloading of CPU cores. Detected: %[1]d CPU. Recommended worker number: %[1]d (Current: %[2]d)",
+			runtime.NumCPU(), numWorkers,
+		)
+	} else if runtime.NumCPU() > numWorkers {
+		log.Warnf(
+			"Possible performance improvements. Increase worker number. Detected: %[1]d CPU. Recommended worker number: %[1]d (Current: %[2]d)",
 			runtime.NumCPU(), numWorkers,
 		)
 	}
