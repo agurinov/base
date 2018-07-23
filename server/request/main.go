@@ -14,15 +14,15 @@ type Interface interface {
 	Output() io.Writer
 }
 
-type Response struct {
+type Stat struct {
 	Duration time.Duration
 	Request  Interface
 	Error    error
 	Len      int64
 }
 
-func (r Response) Successful() bool {
-	return r.Error == nil
+func (stat Stat) Successful() bool {
+	return stat.Error == nil
 }
 
 // type Response interface {

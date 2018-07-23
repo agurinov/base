@@ -13,14 +13,14 @@ func StartupLog(mode, addr, filename string) {
 	log.Debugf("Enabled %s mode", log.Wrap("DEBUG", log.Bold, log.Blink))
 }
 
-func AccessLog(response request.Response) {
-	req := response.Request
+func AccessLog(stat request.Stat) {
+	req := stat.Request
 	status := "SUCCESS"
-	if !response.Successful() {
+	if !stat.Successful() {
 		status = "ERROR"
 	}
 
-	log.Infof("%s\t-\t%s\t-\t%s\t-\t%s", req.UUID(), req.Url(), status, response.Duration)
+	log.Infof("%s\t-\t%s\t-\t%s\t-\t%s", req.UUID(), req.Url(), status, stat.Duration)
 }
 
 // TODO clear Stack

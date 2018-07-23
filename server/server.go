@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"io"
 	"net"
 	"runtime"
 
@@ -16,26 +17,28 @@ type Server struct {
 	transport transport.Interface
 	app       application.Interface
 
-	connCh     chan net.Conn
-	errCh      chan error
-	responseCh chan request.Response
-
-	// move to application layer
-	router *conf.Router
+	inputCh  chan io.ReadWriteCloser
+	errCh    chan error
+	// TODO in next iteration it will be perfect Type)
+	outputCh chan request.Stat
 }
 
-// // logging and error handling block
-// // this defer must be invoked last (first in) for recovering all available panics and errors
-// defer func() {
-// 	// var status = "SUCCESS"
-//
-// 	if err != nil {
-// 		ErrorLog(err)
-// 		// status = "ERROR"
-// 	}
-// 	// log ANY kind result
-// 	// AccessLog(req, status)
-// }()
+// this function will be passed to dispatcher system
+// and will be run at parallel
+// TODO move to interface as a link to the dispatcher ыныеуь
+func (srv *Server) handle(input io.ReadWriteCloser) {
+	defer input.Close()
+
+	request, err := srv.app.Parse(input)
+	if err != nil {
+		srv.errCh <- err
+		// TODO
+		// Write answer based on app logic
+		// input.Write(srv.app.ErrorMessage(err))
+	} else {
+		srv.outputCh <- srv.app.Handle(request)
+	}
+}
 
 func (srv *Server) Serve(numWorkers int) {
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
@@ -44,7 +47,7 @@ func (srv *Server) Serve(numWorkers int) {
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
 	// https://rcrowley.org/articles/golang-graceful-stop.html
 
-	// GOROUTINE 2 (dispatcher - listen RequestChannel)
+	// GOROUTINE 2 (dispatcher - listen TaskChannel)
 	NewDispatcher(numWorkers).Run()
 
 	// GOROUTINE 3 (listen server channels)
@@ -56,18 +59,20 @@ func (srv *Server) Serve(numWorkers int) {
 					ErrorLog(err)
 				}
 
-			case conn := <-srv.connCh:
-				// connection from transport layer
+			case input := <-srv.inputCh:
+				// input from transport layer (conn, file socket, or something else)
 				// transform to ServerRequest
 				// send to dispatcher's queue
-				RequestChannel <- NewRequest(srv, conn)
+				TaskChannel <- func() {
+					srv.handle(input)
+				}
 
-			case response := <-srv.responseCh:
-				// ready response from worker
+			case stat := <-srv.outputCh:
+				// ready response from dispatcher system
 				// log ANY kind of result
-				AccessLog(response)
+				AccessLog(stat)
 				// and errors
-				if err := response.Error; err != nil {
+				if err := stat.Error; err != nil {
 					// TODO not good, find better solution
 					// TODO repeat line56
 					ErrorLog(err)
@@ -115,30 +120,30 @@ func New(transportName string, applicationName string, ip net.IP, port int, file
 	// Phase 2. Prepare main application layer
 	// TODO
 	app := application.New(router)
-	connCh := make(chan net.Conn)
+	inputCh := make(chan io.ReadWriteCloser)
 	errCh := make(chan error)
-	responseCh := make(chan request.Response)
+	outputCh := make(chan request.Stat)
 
 	// Phase 3. Prepare transport layer
 	var tr transport.Interface
 
 	switch transportName {
 	case "tcp":
-		tr, err = transport.TCP(ip, port, connCh, errCh)
+		tr, err = transport.TCP(ip, port)
 		if err != nil {
 			return nil, err
 		}
+		tr.Connect(inputCh, errCh)
 	default:
 		return nil, errors.New("server: Unknown server transport")
 	}
 
 	srv := &Server{
-		transport:  tr,
-		app:        app,
-		connCh:     connCh,
-		errCh:      errCh,
-		responseCh: responseCh,
-		router:     router,
+		transport: tr,
+		app:       app,
+		inputCh:   inputCh,
+		errCh:     errCh,
+		outputCh:  outputCh,
 	}
 	return srv, nil
 }

@@ -8,5 +8,5 @@ import (
 
 type Interface interface {
 	Parse(request io.ReadWriter) (request.Interface, error)
-	Handle(request request.Interface) request.Response
+	Handle(request request.Interface) request.Stat
 }

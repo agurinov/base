@@ -10,6 +10,10 @@ import (
 	"github.com/google/uuid"
 )
 
+// Load test
+// JS='{"url":"geo","input":"185.86.151.11"}'
+// seq 1000 | xargs -n 1 -P 250 sh -c "echo '$JS' | nc playground.lo 8080"
+
 // simple JSON {"url":"", "input":"..."} incoming
 type JsonApplicationLayer struct {
 	router *conf.Router
@@ -36,7 +40,7 @@ func (app *JsonApplicationLayer) Parse(request io.ReadWriter) (request.Interface
 	return &r, nil
 }
 
-func (app *JsonApplicationLayer) Handle(request request.Interface) request.Response {
+func (app *JsonApplicationLayer) Handle(request request.Interface) request.Stat {
 	return handle(request, app.router)
 }
 

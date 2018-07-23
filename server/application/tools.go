@@ -11,17 +11,17 @@ func New(router *conf.Router) Interface {
 	return &JsonApplicationLayer{router}
 }
 
-func handle(req request.Interface, router *conf.Router) (response request.Response) {
+func handle(req request.Interface, router *conf.Router) (stat request.Stat) {
 	var begin time.Time
 	var err error
 	var written int64
 
 	defer func() {
 		// end measuring and collect data
-		response.Duration = time.Since(begin)
-		response.Request = req
-		response.Error = err
-		response.Len = written
+		stat.Duration = time.Since(begin)
+		stat.Request = req
+		stat.Error = err
+		stat.Len = written
 	}()
 
 	// Start measuring

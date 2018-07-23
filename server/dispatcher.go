@@ -1,16 +1,19 @@
 package server
 
-var RequestChannel = make(chan Request)
+// TODO look carefully
+type Task func()
+
+var TaskChannel = make(chan Task)
 
 type Dispatcher struct {
 	// A pool of workers channels that are registered with the dispatcher
-	WorkerPool chan chan Request
+	WorkerPool chan chan Task
 	maxWorkers int
 }
 
 func NewDispatcher(maxWorkers int) *Dispatcher {
 	return &Dispatcher{
-		WorkerPool: make(chan chan Request, maxWorkers),
+		WorkerPool: make(chan chan Task, maxWorkers),
 		maxWorkers: maxWorkers,
 	}
 }
@@ -27,31 +30,31 @@ func (d *Dispatcher) Run() {
 func (d *Dispatcher) dispatch() {
 	for {
 		select {
-		case request := <-RequestChannel:
-			// a job request has been received
-			go func(request Request) {
-				// try to obtain a worker job channel that is available.
+		case task := <-TaskChannel:
+			// a Task request has been received
+			go func(task Task) {
+				// try to obtain a worker Task channel that is available.
 				// this will block until a worker is idle
 				workerChannel := <-d.WorkerPool
-				// dispatch the job to the worker job channel
-				workerChannel <- request
-			}(request)
+				// dispatch the Task to the worker Task channel
+				workerChannel <- task
+			}(task)
 		}
 	}
 }
 
-// Worker represents the worker that executes the job
+// Worker represents the worker that executes the Task
 type Worker struct {
-	WorkerPool     chan chan Request
-	RequestChannel chan Request
-	quit           chan bool
+	WorkerPool  chan chan Task
+	TaskChannel chan Task
+	quit        chan bool
 }
 
-func NewWorker(workerPool chan chan Request) *Worker {
+func NewWorker(workerPool chan chan Task) *Worker {
 	return &Worker{
-		WorkerPool:     workerPool,
-		RequestChannel: make(chan Request),
-		quit:           make(chan bool),
+		WorkerPool:  workerPool,
+		TaskChannel: make(chan Task),
+		quit:        make(chan bool),
 	}
 }
 
@@ -59,17 +62,11 @@ func (w *Worker) Start() {
 	go func() {
 		for {
 			// register the current worker into the worker queue.
-			w.WorkerPool <- w.RequestChannel
+			w.WorkerPool <- w.TaskChannel
 
 			select {
-			case r := <-w.RequestChannel:
-				server := r.server
-				request, err := server.app.Parse(r.rw)
-				if err != nil {
-					server.errCh <- err
-					break
-				}
-				server.responseCh <- server.app.Handle(request)
+			case task := <-w.TaskChannel:
+				task()
 
 			case <-w.quit:
 				// we have received a signal to stop
