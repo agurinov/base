@@ -1,13 +1,19 @@
 package transport
 
 import (
+	"io"
 	"net"
 )
 
 type tcp struct {
 	listener *net.TCPListener
-	connCh   chan net.Conn
+	inputCh  chan io.ReadWriteCloser
 	errCh    chan error
+}
+
+func (tcp *tcp) Connect(inputCh chan io.ReadWriteCloser, errCh chan error) {
+	tcp.inputCh = inputCh
+	tcp.errCh = errCh
 }
 
 func (tcp *tcp) Serve() {
@@ -15,19 +21,11 @@ func (tcp *tcp) Serve() {
 		conn, err := tcp.listener.AcceptTCP()
 		if err != nil {
 			// handle error
-			tcp.Error(err)
+			tcp.errCh <- err
 			continue
 		}
 
 		// handle successful connection
-		tcp.Conn(conn)
+		tcp.inputCh <- conn
 	}
-}
-
-func (tcp *tcp) Conn(conn net.Conn) {
-	tcp.connCh <- conn
-}
-
-func (tcp *tcp) Error(err error) {
-	tcp.errCh <- err
 }

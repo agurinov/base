@@ -1,11 +1,10 @@
 package transport
 
 import (
-	"net"
+	"io"
 )
 
 type Interface interface {
+	Connect(inputCh chan io.ReadWriteCloser, errCh chan error)
 	Serve()
-	Conn(conn net.Conn)
-	Error(err error)
 }

@@ -5,7 +5,7 @@ import (
 	"net"
 )
 
-func TCP(ip net.IP, port int, connCh chan net.Conn, errCh chan error) (Interface, error) {
+func TCP(ip net.IP, port int) (Interface, error) {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", ip, port))
 	if err != nil {
 		return nil, err
@@ -16,10 +16,6 @@ func TCP(ip net.IP, port int, connCh chan net.Conn, errCh chan error) (Interface
 		return nil, err
 	}
 
-	tcp := &tcp{
-		listener: tcpListener,
-		errCh:    errCh,
-		connCh:   connCh,
-	}
+	tcp := &tcp{listener: tcpListener}
 	return tcp, nil
 }
