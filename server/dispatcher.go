@@ -1,9 +1,5 @@
 package server
 
-import (
-	"github.com/boomfunc/base/server/request"
-)
-
 var RequestChannel = make(chan Request)
 
 type Dispatcher struct {
@@ -68,8 +64,12 @@ func (w *Worker) Start() {
 			select {
 			case r := <-w.RequestChannel:
 				server := r.server
-				req := request.New(r.conn)
-				server.responseCh <- server.app.HandleRequest(req, r.conn)
+				request, err := server.app.Parse(r.rw)
+				if err != nil {
+					server.errCh <- err
+					break
+				}
+				server.responseCh <- server.app.Handle(request)
 
 			case <-w.quit:
 				// we have received a signal to stop

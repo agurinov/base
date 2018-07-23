@@ -1,10 +1,14 @@
 package server
 
 import (
-	"net"
+	"io"
 )
 
 type Request struct {
-	conn   net.Conn
 	server *Server
+	rw     io.ReadWriter
+}
+
+func NewRequest(server *Server, rw io.ReadWriter) Request {
+	return Request{server, rw}
 }

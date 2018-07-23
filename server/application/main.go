@@ -1,11 +1,12 @@
 package application
 
 import (
-	"net"
+	"io"
 
 	"github.com/boomfunc/base/server/request"
 )
 
 type Interface interface {
-	HandleRequest(request request.Request, conn net.Conn) request.Response
+	Parse(request io.ReadWriter) (request.Interface, error)
+	Handle(request request.Interface) request.Response
 }

@@ -2,22 +2,21 @@ package request
 
 import (
 	"io"
-	"net"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-type Request interface {
+type Interface interface {
 	UUID() uuid.UUID
 	Url() string
-	Body() io.Reader
-	Conn() net.Conn
+	Input() io.Reader
+	Output() io.Writer
 }
 
 type Response struct {
 	Duration time.Duration
-	Request  Request
+	Request  Interface
 	Error    error
 	Len      int64
 }

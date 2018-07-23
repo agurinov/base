@@ -1,49 +1,44 @@
 package application
 
 import (
-	"io"
-	"net"
 	"time"
 
 	"github.com/boomfunc/base/conf"
 	"github.com/boomfunc/base/server/request"
 )
 
-type BaseApplicationLayer struct {
-	router *conf.Router
-}
-
-func (app *BaseApplicationLayer) HandleRequest(request request.Request, conn net.Conn) request.Response {
-	return handleRequest(request, app.router, conn)
-}
-
 func New(router *conf.Router) Interface {
-	return &BaseApplicationLayer{router}
+	return &JsonApplicationLayer{router}
 }
 
-// TODO (written int64, err error) at return
-func handleRequest(req request.Request, router *conf.Router, output io.Writer) (response request.Response) {
+func handle(req request.Interface, router *conf.Router) (response request.Response) {
 	var begin time.Time
 	var err error
+	var written int64
 
 	defer func() {
-		// end measuring
+		// end measuring and collect data
 		response.Duration = time.Since(begin)
 		response.Request = req
 		response.Error = err
+		response.Len = written
 	}()
 
 	// Start measuring
 	begin = time.Now()
 
+	url := req.Url()
+	input := req.Input()
+	output := req.Output()
+
 	// Phase 1. Resolve view
-	route, err := router.Match(req.Url())
+	route, err := router.Match(url)
 	if err != nil {
 		return
 	}
 
 	// Phase 2. Write answer to output
-	err = route.Run(req.Body(), output)
+	err = route.Run(input, output)
 
 	return
 }

@@ -6,10 +6,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/boomfunc/base/server"
 	"github.com/boomfunc/log"
 	"github.com/urfave/cli"
-
-	"github.com/boomfunc/base/server"
 )
 
 var (

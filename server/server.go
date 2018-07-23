@@ -57,9 +57,10 @@ func (srv *Server) Serve(numWorkers int) {
 				}
 
 			case conn := <-srv.connCh:
-				// connection from transport
+				// connection from transport layer
+				// transform to ServerRequest
 				// send to dispatcher's queue
-				RequestChannel <- Request{conn, srv}
+				RequestChannel <- NewRequest(srv, conn)
 
 			case response := <-srv.responseCh:
 				// ready response from worker
@@ -75,6 +76,7 @@ func (srv *Server) Serve(numWorkers int) {
 		}
 	}()
 
+	// TODO https://insights.sei.cmu.edu/sei_blog/2017/08/multicore-and-virtualization-an-introduction.html
 	log.Debugf("Spawned %d goroutines", runtime.NumGoroutine())
 	if runtime.NumGoroutine() != numWorkers+3 {
 		log.Warnf(
