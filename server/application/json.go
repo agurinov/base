@@ -7,12 +7,10 @@ import (
 
 	"github.com/boomfunc/base/conf"
 	"github.com/boomfunc/base/server/request"
-	"github.com/boomfunc/log"
 	"github.com/google/uuid"
 )
 
-// simple JSON {"Url":"", "Body":"..."} incoming
-// {"url":"geo", "input":"185.86.151.11"}
+// simple JSON {"url":"", "input":"..."} incoming
 type JsonApplicationLayer struct {
 	router *conf.Router
 }
@@ -20,13 +18,20 @@ type JsonApplicationLayer struct {
 func (app *JsonApplicationLayer) Parse(request io.ReadWriter) (request.Interface, error) {
 	var r JSONRequest
 	r.uuid = uuid.New()
+	r.rw = request
+
+	intermediate := struct {
+		Url   string
+		Input string
+	}{}
 
 	decoder := json.NewDecoder(request)
-	if err := decoder.Decode(&r); err != nil {
+	if err := decoder.Decode(&intermediate); err != nil {
 		return nil, err
 	}
 
-	log.Debug(r.url, r.input)
+	r.url = intermediate.Url
+	r.input = intermediate.Input
 
 	return &r, nil
 }
