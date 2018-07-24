@@ -17,8 +17,8 @@ type Server struct {
 	transport transport.Interface
 	app       application.Interface
 
-	inputCh  chan io.ReadWriteCloser
-	errCh    chan error
+	inputCh chan io.ReadWriteCloser
+	errCh   chan error
 	// TODO in next iteration it will be perfect Type)
 	outputCh chan request.Stat
 }
@@ -27,17 +27,20 @@ type Server struct {
 // and will be run at parallel
 // TODO move to interface as a link to the dispatcher ыныеуь
 func (srv *Server) handle(input io.ReadWriteCloser) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch typed := r.(type) {
+			case error:
+				srv.errCh <- typed
+			case string:
+				srv.errCh <- errors.New(typed)
+			}
+		}
+	}()
+
 	defer input.Close()
 
-	request, err := srv.app.Parse(input)
-	if err != nil {
-		srv.errCh <- err
-		// TODO
-		// Write answer based on app logic
-		// input.Write(srv.app.ErrorMessage(err))
-	} else {
-		srv.outputCh <- srv.app.Handle(request)
-	}
+	srv.outputCh <- srv.app.Handle(input)
 }
 
 func (srv *Server) Serve(numWorkers int) {
