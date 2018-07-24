@@ -20,7 +20,7 @@ func AccessLog(stat request.Stat) {
 		status = "ERROR"
 	}
 
-	log.Infof("%s\t-\t%s\t-\t%s\t-\t%s", req.UUID(), req.Url(), status, stat.Duration)
+	log.Infof("%s\t-\t%s\t-\t%s\t-\t%s\t-\tWritten: %d", req.UUID(), req.Url(), status, stat.Duration, stat.Len)
 }
 
 // TODO clear Stack
