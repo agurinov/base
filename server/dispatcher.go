@@ -12,22 +12,23 @@ type Dispatcher struct {
 }
 
 func NewDispatcher(maxWorkers int) *Dispatcher {
-	return &Dispatcher{
+	d := &Dispatcher{
 		WorkerPool: make(chan chan Task, maxWorkers),
 		maxWorkers: maxWorkers,
 	}
+	d.Prepare()
+
+	return d
 }
 
-func (d *Dispatcher) Run() {
+func (d *Dispatcher) Prepare() {
 	// starting n number of workers
 	for i := 0; i < d.maxWorkers; i++ {
 		NewWorker(d.WorkerPool).Start()
 	}
-
-	go d.dispatch()
 }
 
-func (d *Dispatcher) dispatch() {
+func (d *Dispatcher) Dispatch() {
 	for {
 		select {
 		case task := <-TaskChannel:

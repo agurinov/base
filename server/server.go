@@ -18,11 +18,15 @@ type Server struct {
 	outputCh chan request.Stat
 }
 
+func (srv *Server) listenOS() {
+
+}
+
 // this function listen all server channels and proxying
 // errors to log
 // io.RWC to dispatcher system
 // response.Stat to log and check for errors additionally
-func (srv *Server) listen() {
+func (srv *Server) listenCh() {
 	for {
 		select {
 		case err := <-srv.errCh:
@@ -80,12 +84,14 @@ func (srv *Server) Serve(numWorkers int) {
 	// TODO https://rcrowley.org/articles/golang-graceful-stop.html
 
 	// GOROUTINE 2 (dispatcher - listen TaskChannel)
-	NewDispatcher(numWorkers).Run()
+	dispatcher := NewDispatcher(numWorkers)
+	go dispatcher.Dispatch()
 
 	// GOROUTINE 3 (listen server channels)
-	go srv.listen()
+	go srv.listenCh()
 
 	// TODO GOROUTINE 4 (listen for os signals and gracefully close server)
+	go srv.listenOS()
 
 	// Here we can test some of our system requirements and performance recommendations
 	PerfomanceLog(numWorkers)
