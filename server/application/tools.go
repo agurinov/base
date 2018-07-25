@@ -4,9 +4,16 @@ import (
 	"github.com/boomfunc/base/conf"
 )
 
-func New(router *conf.Router) Interface {
+func JSON(router *conf.Router) Interface {
 	return &Application{
 		router: router,
-		packer: new(JSON),
+		packer: new(jsonPacker),
+	}
+}
+
+func HTTP(router *conf.Router) Interface {
+	return &Application{
+		router: router,
+		packer: new(httpPacker),
 	}
 }

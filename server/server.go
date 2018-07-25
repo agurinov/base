@@ -4,13 +4,11 @@ import (
 	"errors"
 	"io"
 	"net"
-	"runtime"
 
 	"github.com/boomfunc/base/conf"
 	"github.com/boomfunc/base/server/application"
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
-	"github.com/boomfunc/log"
 )
 
 type Server struct {
@@ -84,27 +82,7 @@ func (srv *Server) Serve(numWorkers int) {
 		}
 	}()
 
-	// TODO https://insights.sei.cmu.edu/sei_blog/2017/08/multicore-and-virtualization-an-introduction.html
-	log.Debugf("Spawned %d goroutines", runtime.NumGoroutine())
-	if runtime.NumGoroutine() != numWorkers+3 {
-		log.Warnf(
-			"Unexpected number of goroutines, possibly an issue. Expected: %d, Got: %d",
-			numWorkers+3,
-			runtime.NumGoroutine(),
-		)
-	}
-	log.Debugf("Detected %d CPU cores", runtime.NumCPU())
-	if runtime.NumCPU() < numWorkers {
-		log.Warnf(
-			"Possible overloading of CPU cores. Detected: %[1]d CPU. Recommended worker number: %[1]d (Current: %[2]d)",
-			runtime.NumCPU(), numWorkers,
-		)
-	} else if runtime.NumCPU() > numWorkers {
-		log.Warnf(
-			"Possible performance improvements. Increase worker number. Detected: %[1]d CPU. Recommended worker number: %[1]d (Current: %[2]d)",
-			runtime.NumCPU(), numWorkers,
-		)
-	}
+	PerfomanceLog(numWorkers)
 
 	// GOROUTINE 1 (main)
 	// This is thread blocking procedure - infinity loop
@@ -121,8 +99,16 @@ func New(transportName string, applicationName string, ip net.IP, port int, file
 	}
 
 	// Phase 2. Prepare main application layer
-	// TODO
-	app := application.New(router)
+	var app application.Interface
+
+	switch applicationName {
+	case "http":
+		app = application.HTTP(router)
+	case "json":
+		app = application.JSON(router)
+	default:
+		return nil, errors.New("server: Unknown server application")
+	}
 	inputCh := make(chan io.ReadWriteCloser)
 	errCh := make(chan error)
 	outputCh := make(chan request.Stat)

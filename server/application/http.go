@@ -8,11 +8,11 @@ import (
 	"github.com/boomfunc/base/server/request"
 )
 
-type HTTP struct {
+type httpPacker struct {
 	request *http.Request
 }
 
-func (packer *HTTP) Unpack(r io.Reader) (*request.Request, error) {
+func (packer *httpPacker) Unpack(r io.Reader) (*request.Request, error) {
 	br := bufio.NewReader(r)
 	httpRequest, err := http.ReadRequest(br)
 
@@ -30,7 +30,7 @@ func (packer *HTTP) Unpack(r io.Reader) (*request.Request, error) {
 	return req, nil
 }
 
-func (packer *HTTP) Pack(rc io.ReadCloser, w io.Writer) (int64, error) {
+func (packer *httpPacker) Pack(rc io.ReadCloser, w io.Writer) (int64, error) {
 	response := &http.Response{
 		Status:     "200 OK",
 		Proto:      "HTTP/1.1",

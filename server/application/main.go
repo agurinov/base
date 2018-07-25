@@ -15,7 +15,7 @@ type Interface interface {
 
 type Packer interface {
 	Unpack(io.Reader) (*request.Request, error)
-	Pack(io.Reader, io.Writer) (int64, error)
+	Pack(io.ReadCloser, io.Writer) (int64, error)
 }
 
 type Application struct {

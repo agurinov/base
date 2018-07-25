@@ -1,16 +1,46 @@
 package server
 
 import (
+	"runtime"
 	"runtime/debug"
 
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/log"
 )
 
-func StartupLog(mode, addr, filename string) {
-	log.Infof("%s server up and running on %s", log.Wrap(mode, log.Bold), log.Wrap(addr, log.Bold, log.Blink))
+func StartupLog(transportName, applicationName, addr, filename string) {
+	log.Infof(
+		"%s server (%s application) up and running on %s",
+		log.Wrap(transportName, log.Bold),
+		log.Wrap(applicationName, log.Bold),
+		log.Wrap(addr, log.Bold, log.Blink),
+	)
 	log.Infof("Spawned config file: %s", log.Wrap(filename, log.Bold))
 	log.Debugf("Enabled %s mode", log.Wrap("DEBUG", log.Bold, log.Blink))
+}
+
+func PerfomanceLog(numWorkers int) {
+	// TODO https://insights.sei.cmu.edu/sei_blog/2017/08/multicore-and-virtualization-an-introduction.html
+	log.Debugf("Spawned %d goroutines", runtime.NumGoroutine())
+	if runtime.NumGoroutine() != numWorkers+3 {
+		log.Warnf(
+			"Unexpected number of goroutines, possibly an issue. Expected: %d, Got: %d",
+			numWorkers+3,
+			runtime.NumGoroutine(),
+		)
+	}
+	log.Debugf("Detected %d CPU cores", runtime.NumCPU())
+	if runtime.NumCPU() < numWorkers {
+		log.Warnf(
+			"Possible overloading of CPU cores. Detected: %[1]d CPU. Recommended worker number: %[1]d (Current: %[2]d)",
+			runtime.NumCPU(), numWorkers,
+		)
+	} else if runtime.NumCPU() > numWorkers {
+		log.Warnf(
+			"Possible performance improvements. Increase worker number. Detected: %[1]d CPU. Recommended worker number: %[1]d (Current: %[2]d)",
+			runtime.NumCPU(), numWorkers,
+		)
+	}
 }
 
 func AccessLog(stat request.Stat) {
