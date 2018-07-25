@@ -57,8 +57,8 @@ func AccessLog(stat request.Stat) {
 		uuid = stat.Request.UUID.String()
 		url = stat.Request.Url
 	} else {
-		uuid = "<not_parsed>"
-		url = "<not_parsed>"
+		uuid = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+		url = "/XXX/XXX/XXX"
 	}
 
 	log.Infof("%s\t-\t%s\t-\t%s\t-\t%s\t-\tWritten: %d", uuid, url, status, stat.Duration, stat.Len)
