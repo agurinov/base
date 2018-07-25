@@ -1,11 +1,18 @@
 package application
 
 import (
+	"errors"
 	"io"
 	"time"
 
 	"github.com/boomfunc/base/conf"
 	"github.com/boomfunc/base/server/request"
+)
+
+var (
+	ErrBadRequest  = errors.New("application: cannot parse request")
+	ErrNotFound    = errors.New("application: no route found")
+	ErrServerError = errors.New("application: internal server error")
 )
 
 type Interface interface {
@@ -41,12 +48,14 @@ func (app *Application) Handle(rw io.ReadWriter) (stat request.Stat) {
 	begin = time.Now()
 
 	// Parse request
+	// TODO ErrBadRequest
 	req, err = app.packer.Unpack(rw)
 	if err != nil {
 		return
 	}
 
 	// Resolve view
+	// TODO ErrNotFound
 	route, err := app.router.Match(req.Url)
 	if err != nil {
 		return
@@ -59,10 +68,12 @@ func (app *Application) Handle(rw io.ReadWriter) (stat request.Stat) {
 		defer pw.Close()
 
 		// BUG: race condition
+		// TODO ErrServerError
 		err = route.Run(req.Input, pw)
 	}()
 
 	// write data to rwc only if all success
+	// TODO ErrServerError
 	written, err = app.packer.Pack(pr, rw)
 
 	return
