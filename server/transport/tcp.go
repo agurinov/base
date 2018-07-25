@@ -11,21 +11,21 @@ type tcp struct {
 	errCh    chan error
 }
 
-func (tcp *tcp) Connect(inputCh chan io.ReadWriteCloser, errCh chan error) {
-	tcp.inputCh = inputCh
-	tcp.errCh = errCh
+func (tr *tcp) Connect(inputCh chan io.ReadWriteCloser, errCh chan error) {
+	tr.inputCh = inputCh
+	tr.errCh = errCh
 }
 
-func (tcp *tcp) Serve() {
+func (tr *tcp) Serve() {
 	for {
-		conn, err := tcp.listener.AcceptTCP()
+		conn, err := tr.listener.AcceptTCP()
 		if err != nil {
 			// handle error
-			tcp.errCh <- err
+			tr.errCh <- err
 			continue
 		}
 
 		// handle successful connection
-		tcp.inputCh <- conn
+		tr.inputCh <- conn
 	}
 }
