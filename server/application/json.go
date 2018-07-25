@@ -5,64 +5,34 @@ import (
 	"io"
 	"strings"
 
-	"github.com/boomfunc/base/conf"
 	"github.com/boomfunc/base/server/request"
-	"github.com/google/uuid"
 )
 
 // Load test
 // JS='{"url":"geo","input":"185.86.151.11"}'
 // seq 1000 | xargs -n 1 -P 250 sh -c "echo '$JS' | nc playground.lo 8080"
 
-// simple JSON {"url":"", "input":"..."} incoming
-type JsonApplicationLayer struct {
-	router *conf.Router
-}
+type JSON struct{}
 
-func (app *JsonApplicationLayer) Parse(request io.ReadWriter) (request.Interface, error) {
-	var r JSONRequest
-	r.uuid = uuid.New()
-	r.rw = request
-
+func (packer *JSON) Unpack(r io.Reader) (*request.Request, error) {
 	intermediate := struct {
 		Url   string
 		Input string
 	}{}
 
-	decoder := json.NewDecoder(request)
+	decoder := json.NewDecoder(r)
 	if err := decoder.Decode(&intermediate); err != nil {
 		return nil, err
 	}
 
-	r.url = intermediate.Url
-	r.input = intermediate.Input
+	req := request.New(
+		intermediate.Url,
+		strings.NewReader(intermediate.Input),
+	)
 
-	return &r, nil
+	return req, nil
 }
 
-func (app *JsonApplicationLayer) Handle(request request.Interface) request.Stat {
-	return handle(request, app.router)
-}
-
-type JSONRequest struct {
-	uuid  uuid.UUID
-	url   string
-	input string
-	rw    io.ReadWriter
-}
-
-func (req *JSONRequest) UUID() uuid.UUID {
-	return req.uuid
-}
-
-func (req *JSONRequest) Url() string {
-	return req.url
-}
-
-func (req *JSONRequest) Input() io.Reader {
-	return strings.NewReader(req.input)
-}
-
-func (req *JSONRequest) Output() io.Writer {
-	return req.rw
+func (packer *JSON) Pack(r io.Reader, w io.Writer) (int64, error) {
+	return io.Copy(w, r)
 }

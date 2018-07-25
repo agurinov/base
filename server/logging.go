@@ -14,13 +14,24 @@ func StartupLog(mode, addr, filename string) {
 }
 
 func AccessLog(stat request.Stat) {
-	req := stat.Request
-	status := "SUCCESS"
-	if !stat.Successful() {
+	var status, uuid, url string
+
+	if stat.Successful() {
+		status = "SUCCESS"
+	} else {
 		status = "ERROR"
 	}
 
-	log.Infof("%s\t-\t%s\t-\t%s\t-\t%s\t-\tWritten: %d", req.UUID(), req.Url(), status, stat.Duration, stat.Len)
+	// Request might be nil if err while parsing incoming message
+	if stat.Request != nil {
+		uuid = stat.Request.UUID.String()
+		url = stat.Request.Url
+	} else {
+		uuid = "<not_parsed>"
+		url = "<not_parsed>"
+	}
+
+	log.Infof("%s\t-\t%s\t-\t%s\t-\t%s\t-\tWritten: %d", uuid, url, status, stat.Duration, stat.Len)
 }
 
 // TODO clear Stack

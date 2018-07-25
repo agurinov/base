@@ -5,5 +5,8 @@ import (
 )
 
 func New(router *conf.Router) Interface {
-	return &Application{router}
+	return &Application{
+		router: router,
+		packer: new(JSON),
+	}
 }
