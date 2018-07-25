@@ -91,7 +91,7 @@ func (srv *Server) Serve(numWorkers int) {
 	go srv.listenCh()
 
 	// TODO GOROUTINE 4 (listen for os signals and gracefully close server)
-	go srv.listenOS()
+	// go srv.listenOS()
 
 	// Here we can test some of our system requirements and performance recommendations
 	PerfomanceLog(numWorkers)
