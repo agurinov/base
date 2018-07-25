@@ -11,7 +11,6 @@ import (
 // Load test
 // JS='{"url":"geo","input":"185.86.151.11"}'
 // seq 1000 | xargs -n 1 -P 250 sh -c "echo '$JS' | nc playground.lo 8080"
-
 type jsonPacker struct{}
 
 func (packer *jsonPacker) Unpack(r io.Reader) (*request.Request, error) {
@@ -33,6 +32,6 @@ func (packer *jsonPacker) Unpack(r io.Reader) (*request.Request, error) {
 	return req, nil
 }
 
-func (packer *jsonPacker) Pack(r io.ReadCloser, w io.Writer) (int64, error) {
-	return io.Copy(w, r)
+func (packer *jsonPacker) Pack(rc io.ReadCloser, w io.Writer) (int64, error) {
+	return io.Copy(w, rc)
 }
