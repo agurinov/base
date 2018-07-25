@@ -21,6 +21,7 @@ var (
 	debugFlagUsage  = "Debugging mode"
 	portFlagUsage   = "Port on which the listener will be"
 	configFlagUsage = "Path to config file"
+	appFlagUsage    = "Variant of server application layer"
 )
 
 func runCommandAction(c *cli.Context) {
@@ -30,19 +31,20 @@ func runCommandAction(c *cli.Context) {
 
 	// Exctract params
 	transport := c.Command.Name
+	application := c.GlobalString("app")
 	ip := net.ParseIP("0.0.0.0")
 	port := c.GlobalInt("port")
 	workerNum := c.GlobalInt("workers")
 	filename := c.GlobalString("config")
 
 	// Create server
-	srv, err := server.New(transport, "dummy", ip, port, filename)
+	srv, err := server.New(transport, application, ip, port, filename)
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
 
 	// Run
-	server.StartupLog(strings.ToUpper(transport), fmt.Sprintf("%s:%d", ip, port), filename)
+	server.StartupLog(strings.ToUpper(transport), strings.ToUpper(application), fmt.Sprintf("%s:%d", ip, port), filename)
 	srv.Serve(workerNum)
 }

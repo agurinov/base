@@ -68,6 +68,12 @@ func Run(VERSION, TIMESTAMP string) {
 					EnvVar: "BMP_CONFIG",
 					Value:  "/boomfunc/app/conf.yml",
 				},
+				cli.StringFlag{
+					Name:   "app",
+					Usage:  appFlagUsage,
+					EnvVar: "BMP_APPLICATION_LAYER",
+					Value:  "http",
+				},
 			},
 			Subcommands: []cli.Command{
 				// {
