@@ -18,6 +18,40 @@ type Server struct {
 	outputCh chan request.Stat
 }
 
+// this function listen all server channels and proxying
+// errors to log
+// io.RWC to dispatcher system
+// response.Stat to log and check for errors additionally
+func (srv *Server) listen() {
+	for {
+		select {
+		case err := <-srv.errCh:
+			if err != nil {
+				ErrorLog(err)
+			}
+
+		case input := <-srv.inputCh:
+			// input from transport layer (conn, file socket, or something else)
+			// transform to ServerRequest
+			// send to dispatcher's queue
+			// TODO implement server timeout for dispatcher system
+			task := func() { srv.handle(input) }
+			TaskChannel <- task
+
+		case stat := <-srv.outputCh:
+			// ready response from dispatcher system
+			// log ANY kind of result
+			AccessLog(stat)
+			// and errors
+			if err := stat.Error; err != nil {
+				// TODO not good, find better solution
+				// TODO repeat line56
+				ErrorLog(err)
+			}
+		}
+	}
+}
+
 // this function will be passed to dispatcher system
 // and will be run at parallel
 // TODO move to interface as a link to the dispatcher system
@@ -49,38 +83,14 @@ func (srv *Server) Serve(numWorkers int) {
 	NewDispatcher(numWorkers).Run()
 
 	// GOROUTINE 3 (listen server channels)
-	go func() {
-		for {
-			select {
-			case err := <-srv.errCh:
-				if err != nil {
-					ErrorLog(err)
-				}
+	go srv.listen()
 
-			case input := <-srv.inputCh:
-				// input from transport layer (conn, file socket, or something else)
-				// transform to ServerRequest
-				// send to dispatcher's queue
-				task := func() { srv.handle(input) }
-				TaskChannel <- task
+	// TODO GOROUTINE 4 (listen for os signals and gracefully close server)
 
-			case stat := <-srv.outputCh:
-				// ready response from dispatcher system
-				// log ANY kind of result
-				AccessLog(stat)
-				// and errors
-				if err := stat.Error; err != nil {
-					// TODO not good, find better solution
-					// TODO repeat line56
-					ErrorLog(err)
-				}
-			}
-		}
-	}()
-
+	// Here we can test some of our system requirements and performance recommendations
 	PerfomanceLog(numWorkers)
 
-	// GOROUTINE 1 (main)
+	// GOROUTINE 1 (main) - this goroutine
 	// This is thread blocking procedure - infinity loop
 	srv.transport.Serve()
 }
