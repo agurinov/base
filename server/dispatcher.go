@@ -35,9 +35,9 @@ func (d *Dispatcher) dispatch() {
 			go func(task Task) {
 				// try to obtain a worker Task channel that is available.
 				// this will block until a worker is idle
-				workerChannel := <-d.WorkerPool
+				workerTaskChannel := <-d.WorkerPool
 				// dispatch the Task to the worker Task channel
-				workerChannel <- task
+				workerTaskChannel <- task
 			}(task)
 		}
 	}
