@@ -46,7 +46,7 @@ func (srv *Server) Serve(numWorkers int) {
 	// TODO defer ch.Close()
 	// TODO defer s.conn.Close()
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
-	// https://rcrowley.org/articles/golang-graceful-stop.html
+	// TODO https://rcrowley.org/articles/golang-graceful-stop.html
 
 	// GOROUTINE 2 (dispatcher - listen TaskChannel)
 	NewDispatcher(numWorkers).Run()
@@ -64,9 +64,8 @@ func (srv *Server) Serve(numWorkers int) {
 				// input from transport layer (conn, file socket, or something else)
 				// transform to ServerRequest
 				// send to dispatcher's queue
-				TaskChannel <- func() {
-					srv.handle(input)
-				}
+				task := func() { srv.handle(input) }
+				TaskChannel <- task
 
 			case stat := <-srv.outputCh:
 				// ready response from dispatcher system
