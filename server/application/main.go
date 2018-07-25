@@ -58,6 +58,7 @@ func (app *Application) Handle(rw io.ReadWriter) (stat request.Stat) {
 		// close the writer, so the reader knows there's no more data
 		defer pw.Close()
 
+		// BUG: race condition
 		err = route.Run(req.Input, pw)
 	}()
 
