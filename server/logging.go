@@ -1,6 +1,7 @@
 package server
 
 import (
+	"path/filepath"
 	"runtime"
 	"runtime/debug"
 
@@ -9,13 +10,20 @@ import (
 )
 
 func StartupLog(transportName, applicationName, addr, filename string) {
+	var fpath string
+
+	fpath, err := filepath.Abs(filename)
+	if err != nil {
+		fpath = filename
+	}
+
 	log.Infof(
 		"%s server (%s application) up and running on %s",
 		log.Wrap(transportName, log.Bold),
 		log.Wrap(applicationName, log.Bold),
 		log.Wrap(addr, log.Bold, log.Blink),
 	)
-	log.Infof("Spawned config file: %s", log.Wrap(filename, log.Bold))
+	log.Infof("Spawned config file: %s", log.Wrap(fpath, log.Bold))
 	log.Debugf("Enabled %s mode", log.Wrap("DEBUG", log.Bold, log.Blink))
 }
 
