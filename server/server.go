@@ -52,6 +52,9 @@ func (srv *Server) listenCh() {
 				// TODO repeat line56
 				tools.ErrorLog(err)
 			}
+
+		default:
+			// for non blocking
 		}
 	}
 }

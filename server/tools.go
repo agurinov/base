@@ -13,6 +13,10 @@ import (
 	"github.com/boomfunc/base/tools"
 )
 
+const (
+	srvCtxKey = "meta.srv"
+)
+
 func New(transportName string, applicationName string, ip net.IP, port int, filename string) (*Server, error) {
 	// Phase 1. Prepare light application layer things
 	// router
@@ -55,7 +59,7 @@ func New(transportName string, applicationName string, ip net.IP, port int, file
 	// flow data
 	srv.transport = tr
 	srv.app = app
-	srv.ctx = context.WithValue(context.Background(), "srv", srv)
+	srv.ctx = context.WithValue(context.Background(), srvCtxKey, srv)
 	// channels
 	srv.inputCh = inputCh
 	srv.errCh = errCh
@@ -67,9 +71,9 @@ func New(transportName string, applicationName string, ip net.IP, port int, file
 // this function will be passed to dispatcher system
 // and will be run at parallel
 func HandleTask(task Task) {
-	srv, ok := task.ctx.Value("srv").(*Server)
+	srv, ok := task.ctx.Value(srvCtxKey).(*Server)
 	if !ok {
-		tools.FatalLog(errors.New("server: Context without required 'srv' key"))
+		tools.FatalLog(errors.New("server: Context without required key"))
 	}
 
 	defer func() {
