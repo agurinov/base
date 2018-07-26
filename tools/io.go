@@ -20,12 +20,12 @@ func ReadCloser(r io.Reader) io.ReadCloser {
 	if rc, ok := r.(io.ReadCloser); ok {
 		return rc
 	}
-	return readCloser{r}
+	return &readCloser{r}
 }
 
 func WriteCloser(w io.Writer) io.WriteCloser {
 	if wc, ok := w.(io.WriteCloser); ok {
 		return wc
 	}
-	return writeCloser{w}
+	return &writeCloser{w}
 }
