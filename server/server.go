@@ -7,11 +7,13 @@ import (
 	"github.com/boomfunc/base/server/application"
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
+	"github.com/boomfunc/base/tools"
 )
 
 type Server struct {
 	transport transport.Interface
 	app       application.Interface
+	ctx       context.Context
 
 	inputCh  chan io.ReadWriteCloser
 	errCh    chan error
@@ -31,15 +33,14 @@ func (srv *Server) listenCh() {
 		select {
 		case err := <-srv.errCh:
 			if err != nil {
-				ErrorLog(err)
+				tools.ErrorLog(err)
 			}
 
 		case input := <-srv.inputCh:
 			// input from transport layer (conn, file socket, or something else)
 			// create flow context, fill from server info
 			// send to dispatcher's queue
-			ctx := context.WithValue(context.Background(), "srv", srv)
-			TaskChannel <- Task{ctx, input}
+			TaskChannel <- Task{srv.ctx, input}
 
 		case stat := <-srv.outputCh:
 			// ready response from dispatcher system
@@ -49,7 +50,7 @@ func (srv *Server) listenCh() {
 			if err := stat.Error; err != nil {
 				// TODO not good, find better solution
 				// TODO repeat line56
-				ErrorLog(err)
+				tools.ErrorLog(err)
 			}
 		}
 	}

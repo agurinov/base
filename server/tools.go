@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net"
@@ -9,6 +10,7 @@ import (
 	"github.com/boomfunc/base/server/application"
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
+	"github.com/boomfunc/base/tools"
 )
 
 func New(transportName string, applicationName string, ip net.IP, port int, filename string) (*Server, error) {
@@ -49,21 +51,26 @@ func New(transportName string, applicationName string, ip net.IP, port int, file
 		return nil, errors.New("server: Unknown server transport")
 	}
 
-	srv := &Server{
-		transport: tr,
-		app:       app,
-		inputCh:   inputCh,
-		errCh:     errCh,
-		outputCh:  outputCh,
-	}
+	srv := new(Server)
+	// flow data
+	srv.transport = tr
+	srv.app = app
+	srv.ctx = context.WithValue(context.Background(), "srv", srv)
+	// channels
+	srv.inputCh = inputCh
+	srv.errCh = errCh
+	srv.outputCh = outputCh
+
 	return srv, nil
 }
 
 // this function will be passed to dispatcher system
 // and will be run at parallel
 func HandleTask(task Task) {
-	// TODO what to do if not server?
-	srv := task.ctx.Value("srv").(*Server)
+	srv, ok := task.ctx.Value("srv").(*Server)
+	if !ok {
+		tools.FatalLog(errors.New("server: Context without required 'srv' key"))
+	}
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -78,5 +85,5 @@ func HandleTask(task Task) {
 
 	defer task.input.Close()
 
-	srv.outputCh <- srv.app.Handle(task.input)
+	srv.outputCh <- srv.app.Handle(task.ctx, task.input)
 }
