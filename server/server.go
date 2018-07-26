@@ -48,9 +48,9 @@ func (srv *Server) listenCh() {
 			AccessLog(stat)
 			// and errors
 			if err := stat.Error; err != nil {
-				// TODO not good, find better solution
-				// TODO repeat line56
-				tools.ErrorLog(err)
+				go func() {
+					srv.errCh <- stat.Error
+				}()
 			}
 
 		default:
