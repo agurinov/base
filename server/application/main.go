@@ -11,7 +11,6 @@ import (
 
 var (
 	ErrBadRequest  = errors.New("application: cannot parse request")
-	ErrNotFound    = errors.New("application: no route found")
 	ErrServerError = errors.New("application: internal server error")
 )
 
@@ -22,7 +21,7 @@ type Interface interface {
 
 type Packer interface {
 	Unpack(io.Reader) (*request.Request, error)
-	Pack(io.ReadCloser, io.Writer) (int64, error)
+	Pack(io.Reader, io.Writer) (int64, error)
 }
 
 type Application struct {
@@ -55,7 +54,7 @@ func (app *Application) Handle(rw io.ReadWriter) (stat request.Stat) {
 	}
 
 	// Resolve view
-	// TODO ErrNotFound
+	// TODO conf.ErrNotFound
 	route, err := app.router.Match(req.Url)
 	if err != nil {
 		return

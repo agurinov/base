@@ -27,11 +27,12 @@ func (packer *jsonPacker) Unpack(r io.Reader) (*request.Request, error) {
 	req := request.New(
 		intermediate.Url,
 		strings.NewReader(intermediate.Input),
+		nil,
 	)
 
 	return req, nil
 }
 
-func (packer *jsonPacker) Pack(rc io.ReadCloser, w io.Writer) (int64, error) {
-	return io.Copy(w, rc)
+func (packer *jsonPacker) Pack(r io.Reader, w io.Writer) (int64, error) {
+	return io.Copy(w, r)
 }

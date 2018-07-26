@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/boomfunc/base/server/request"
+	"github.com/boomfunc/base/tools"
 )
 
 // Load test
@@ -27,19 +28,20 @@ func (packer *httpPacker) Unpack(r io.Reader) (*request.Request, error) {
 	req := request.New(
 		httpRequest.URL.RequestURI(),
 		httpRequest.Body,
+		nil,
 	)
 
 	return req, nil
 }
 
-func (packer *httpPacker) Pack(rc io.ReadCloser, w io.Writer) (int64, error) {
+func (packer *httpPacker) Pack(r io.Reader, w io.Writer) (int64, error) {
 	response := &http.Response{
 		Status:     "200 OK",
 		StatusCode: 200,
 		Proto:      "HTTP/1.1",
 		ProtoMajor: 1,
 		ProtoMinor: 1,
-		Body:       rc,
+		Body:       tools.ReadCloser(r),
 		Request:    packer.request,
 	}
 
