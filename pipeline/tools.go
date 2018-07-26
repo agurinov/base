@@ -5,32 +5,6 @@ import (
 	"sync"
 )
 
-type readCloser struct {
-	io.Reader
-}
-
-func (readCloser) Close() error { return nil }
-
-type writeCloser struct {
-	io.Writer
-}
-
-func (writeCloser) Close() error { return nil }
-
-func toReadCloser(reader io.Reader) io.ReadCloser {
-	if rc, ok := reader.(io.ReadCloser); ok {
-		return rc
-	}
-	return &readCloser{reader}
-}
-
-func toWriteCloser(writer io.Writer) io.WriteCloser {
-	if wc, ok := writer.(io.WriteCloser); ok {
-		return wc
-	}
-	return &writeCloser{writer}
-}
-
 // piping establishes pipe connections between IO processes (Able)
 // the first obj accepts as stdin the input buffer
 // the last obj puts into output buffer his stdout

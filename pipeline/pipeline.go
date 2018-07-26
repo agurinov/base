@@ -3,6 +3,8 @@ package pipeline
 import (
 	"errors"
 	"io"
+
+	"github.com/boomfunc/base/tools"
 )
 
 type Pipeline []Layer
@@ -14,8 +16,8 @@ func New(layers ...Layer) *Pipeline {
 
 func (p Pipeline) Run(input io.Reader, output io.Writer) error {
 	// Convert io.Reader and io.Writer to io.ReadCloser and io.WriteCloser
-	inputCloser := toReadCloser(input)
-	outputCloser := toWriteCloser(output)
+	inputCloser := tools.ReadCloser(input)
+	outputCloser := tools.WriteCloser(output)
 
 	ables := make([]Able, len(p))
 	execs := make([]Exec, len(p))

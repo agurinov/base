@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"reflect"
 	"testing"
+
+	"github.com/boomfunc/base/tools"
 )
 
 func checkObjsByMatrixState(t *testing.T, matrix [][]int, objs []interface{}) {
@@ -30,61 +32,9 @@ func checkObjsByMatrixState(t *testing.T, matrix [][]int, objs []interface{}) {
 	}
 }
 
-func TestToCloser(t *testing.T) {
-	noCloser := bytes.NewBuffer([]byte{})
-	nativeReadCloser := toReadCloser(noCloser)
-	nativeWriteCloser := toWriteCloser(noCloser)
-
-	t.Run("Read", func(t *testing.T) {
-		t.Run("native", func(t *testing.T) {
-			oldPtr := reflect.ValueOf(nativeReadCloser).Pointer()
-			newPtr := reflect.ValueOf(toReadCloser(nativeReadCloser)).Pointer()
-
-			// native ReadCloser will return without any injections -> same pointer
-			if oldPtr != newPtr {
-				t.Error("Unexpected pointer")
-			}
-		})
-
-		t.Run("obtained", func(t *testing.T) {
-			oldPtr := reflect.ValueOf(noCloser).Pointer()
-			newPtr := reflect.ValueOf(toReadCloser(noCloser)).Pointer()
-
-			// no ReadCloser will be returned with injection of .close() method (just return nil)
-			// -> different pointer
-			if oldPtr == newPtr {
-				t.Error("Unexpected pointer")
-			}
-		})
-	})
-
-	t.Run("Write", func(t *testing.T) {
-		t.Run("native", func(t *testing.T) {
-			oldPtr := reflect.ValueOf(nativeWriteCloser).Pointer()
-			newPtr := reflect.ValueOf(toWriteCloser(nativeWriteCloser)).Pointer()
-
-			// native WriteCloser will return without any injections -> same pointer
-			if oldPtr != newPtr {
-				t.Error("Unexpected pointer")
-			}
-		})
-
-		t.Run("obtained", func(t *testing.T) {
-			oldPtr := reflect.ValueOf(noCloser).Pointer()
-			newPtr := reflect.ValueOf(toWriteCloser(noCloser)).Pointer()
-
-			// no WriteCloser will be returned with injection of .close() method (just return nil)
-			// -> different pointer
-			if oldPtr == newPtr {
-				t.Error("Unexpected pointer")
-			}
-		})
-	})
-}
-
 func TestPiping(t *testing.T) {
-	input := toReadCloser(bytes.NewBuffer([]byte{}))
-	output := toWriteCloser(bytes.NewBuffer([]byte{}))
+	input := tools.ReadCloser(bytes.NewBuffer([]byte{}))
+	output := tools.WriteCloser(bytes.NewBuffer([]byte{}))
 	inputPtr := reflect.ValueOf(input).Pointer()
 	outputPtr := reflect.ValueOf(output).Pointer()
 
