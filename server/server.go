@@ -13,7 +13,6 @@ import (
 type Server struct {
 	transport transport.Interface
 	app       application.Interface
-	ctx       context.Context
 
 	inputCh  chan io.ReadWriteCloser
 	errCh    chan error
@@ -38,9 +37,10 @@ func (srv *Server) listenCh() {
 
 		case input := <-srv.inputCh:
 			// input from transport layer (conn, file socket, or something else)
-			// create flow context, fill from server info
+			// create request own flow context, fill server part of data
+			ctx := context.WithValue(context.Background(), srvCtxKey, srv)
 			// send to dispatcher's queue
-			TaskChannel <- Task{srv.ctx, input}
+			TaskChannel <- Task{ctx, input}
 
 		case stat := <-srv.outputCh:
 			// ready response from dispatcher system
@@ -54,6 +54,9 @@ func (srv *Server) listenCh() {
 			}
 
 		default:
+			// NOTE: slowest working, but parallel - OK
+			// NOTE: increase cpu !!
+			// TODO check separate goroutines per channel
 			// for non blocking
 		}
 	}

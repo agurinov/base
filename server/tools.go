@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"errors"
 	"io"
 	"net"
@@ -59,7 +58,6 @@ func New(transportName string, applicationName string, ip net.IP, port int, file
 	// flow data
 	srv.transport = tr
 	srv.app = app
-	srv.ctx = context.WithValue(context.Background(), srvCtxKey, srv)
 	// channels
 	srv.inputCh = inputCh
 	srv.errCh = errCh
