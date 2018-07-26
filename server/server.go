@@ -1,7 +1,7 @@
 package server
 
 import (
-	"errors"
+	"context"
 	"io"
 
 	"github.com/boomfunc/base/server/application"
@@ -36,11 +36,10 @@ func (srv *Server) listenCh() {
 
 		case input := <-srv.inputCh:
 			// input from transport layer (conn, file socket, or something else)
-			// transform to ServerRequest
+			// create flow context, fill from server info
 			// send to dispatcher's queue
-			// TODO implement server timeout for dispatcher system
-			task := func() { srv.handle(input) }
-			TaskChannel <- task
+			ctx := context.WithValue(context.Background(), "srv", srv)
+			TaskChannel <- Task{ctx, input}
 
 		case stat := <-srv.outputCh:
 			// ready response from dispatcher system
@@ -54,26 +53,6 @@ func (srv *Server) listenCh() {
 			}
 		}
 	}
-}
-
-// this function will be passed to dispatcher system
-// and will be run at parallel
-// TODO move to interface as a link to the dispatcher system
-func (srv *Server) handle(input io.ReadWriteCloser) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch typed := r.(type) {
-			case error:
-				srv.errCh <- typed
-			case string:
-				srv.errCh <- errors.New(typed)
-			}
-		}
-	}()
-
-	defer input.Close()
-
-	srv.outputCh <- srv.app.Handle(input)
 }
 
 func (srv *Server) Serve(numWorkers int) {

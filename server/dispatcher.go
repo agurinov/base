@@ -1,7 +1,14 @@
 package server
 
-// TODO look carefully
-type Task func()
+import (
+	"context"
+	"io"
+)
+
+type Task struct {
+	ctx   context.Context
+	input io.ReadWriteCloser
+}
 
 var TaskChannel = make(chan Task)
 
@@ -67,7 +74,7 @@ func (w *Worker) Start() {
 
 			select {
 			case task := <-w.TaskChannel:
-				task()
+				HandleTask(task)
 
 			case <-w.quit:
 				// we have received a signal to stop

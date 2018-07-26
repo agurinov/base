@@ -58,3 +58,25 @@ func New(transportName string, applicationName string, ip net.IP, port int, file
 	}
 	return srv, nil
 }
+
+// this function will be passed to dispatcher system
+// and will be run at parallel
+func HandleTask(task Task) {
+	// TODO what to do if not server?
+	srv := task.ctx.Value("srv").(*Server)
+
+	defer func() {
+		if r := recover(); r != nil {
+			switch typed := r.(type) {
+			case error:
+				srv.errCh <- typed
+			case string:
+				srv.errCh <- errors.New(typed)
+			}
+		}
+	}()
+
+	defer task.input.Close()
+
+	srv.outputCh <- srv.app.Handle(task.input)
+}
