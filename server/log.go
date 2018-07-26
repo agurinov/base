@@ -3,7 +3,6 @@ package server
 import (
 	"path/filepath"
 	"runtime"
-	"runtime/debug"
 
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/log"
@@ -70,9 +69,4 @@ func AccessLog(stat request.Stat) {
 	}
 
 	log.Infof("%s\t-\t%s\t-\t%s\t-\t%s\t-\tWritten: %d", uuid, url, status, stat.Duration, stat.Len)
-}
-
-// TODO clear Stack
-func ErrorLog(err interface{}) {
-	log.Errorf("%s\n%s", err, debug.Stack())
 }

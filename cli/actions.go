@@ -3,10 +3,10 @@ package cli
 import (
 	"fmt"
 	"net"
-	"os"
 	"strings"
 
 	"github.com/boomfunc/base/server"
+	"github.com/boomfunc/base/tools"
 	"github.com/boomfunc/log"
 	"github.com/urfave/cli"
 )
@@ -40,8 +40,7 @@ func runCommandAction(c *cli.Context) {
 	// Create server
 	srv, err := server.New(transport, application, ip, port, filename)
 	if err != nil {
-		log.Error(err)
-		os.Exit(1)
+		tools.FatalLog(err)
 	}
 
 	// Run
