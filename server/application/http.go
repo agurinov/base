@@ -2,9 +2,11 @@ package application
 
 import (
 	"bufio"
+	"context"
 	"io"
 	"net/http"
 
+	srvctx "github.com/boomfunc/base/server/context"
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/tools"
 )
@@ -15,20 +17,26 @@ type httpPacker struct {
 	request *http.Request
 }
 
-func (packer *httpPacker) Unpack(r io.Reader) (*request.Request, error) {
+func (packer *httpPacker) Unpack(ctx context.Context, r io.Reader) (*request.Request, error) {
 	br := bufio.NewReader(r)
 	httpRequest, err := http.ReadRequest(br)
-
 	if err != nil {
 		return nil, err
 	}
+
+	// extend ctx
+	srvctx.SetMeta(ctx, "ip", tools.GetRemoteIP())
+	values, err := srvctx.Values(ctx)
+	if err != nil {
+		return nil, err
+	}
+	values.Q = httpRequest.URL.Query()
 
 	packer.request = httpRequest
 
 	req := request.New(
 		httpRequest.URL.RequestURI(),
 		httpRequest.Body,
-		nil,
 	)
 
 	return req, nil
