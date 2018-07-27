@@ -1,8 +1,8 @@
 package pipeline
 
 import (
-	"errors"
 	"context"
+	"errors"
 	"io"
 )
 

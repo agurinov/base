@@ -2,6 +2,7 @@ package request
 
 import (
 	"io"
+	"net/url"
 	"time"
 
 	"github.com/google/uuid"
@@ -9,16 +10,23 @@ import (
 
 type Request struct {
 	UUID  uuid.UUID
-	Url   string
+	Url   *url.URL
 	Input io.Reader
 }
 
-func New(url string, input io.Reader) *Request {
-	return &Request{
+func New(raw string, input io.Reader) (*Request, error) {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return nil, err
+	}
+
+	request := &Request{
 		UUID:  uuid.New(),
-		Url:   url,
+		Url:   u,
 		Input: input,
 	}
+
+	return request, nil
 }
 
 type Stat struct {

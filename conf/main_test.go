@@ -3,6 +3,7 @@ package conf
 import (
 	"bytes"
 	"context"
+	"net/url"
 	"testing"
 
 	"gopkg.in/yaml.v2"
@@ -45,7 +46,8 @@ func TestRouteUnmarshalYAML(t *testing.T) {
 	}
 
 	// exist url
-	route, err := router.Match("data/foobar.jpg")
+	url, _ := url.Parse("data/foobar.jpg")
+	route, err := router.Match(url)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +63,8 @@ func TestRouteUnmarshalYAML(t *testing.T) {
 	// t.Log(output)
 
 	// default route
-	route, err = router.Match("/foobar/bar/baz")
+	url, _ = url.Parse("/foobar/bar/baz")
+	route, err = router.Match(url)
 	if err != nil {
 		t.Fatal(err)
 	}

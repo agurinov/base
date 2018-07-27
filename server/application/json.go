@@ -25,12 +25,10 @@ func (packer *jsonPacker) Unpack(ctx context.Context, r io.Reader) (*request.Req
 		return nil, err
 	}
 
-	req := request.New(
+	return request.New(
 		intermediate.Url,
 		strings.NewReader(intermediate.Input),
 	)
-
-	return req, nil
 }
 
 func (packer *jsonPacker) Pack(r io.Reader, w io.Writer) (int64, error) {

@@ -62,7 +62,7 @@ func AccessLog(stat request.Stat) {
 	// Request might be nil if err while parsing incoming message
 	if stat.Request != nil {
 		uuid = stat.Request.UUID.String()
-		url = stat.Request.Url
+		url = stat.Request.Url.RequestURI()
 	} else {
 		uuid = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 		url = "/XXX/XXX/XXX"

@@ -63,7 +63,7 @@ func (app *Application) Handle(ctx context.Context, rw io.ReadWriter) (stat requ
 	// log.Debug("Q:", values.Q)
 
 	// Resolve view
-	// TODO conf.ErrNotFound
+	// TODO conf.ErrRouteNotFound
 	// fill context url
 	route, err := app.router.Match(req.Url)
 	if err != nil {

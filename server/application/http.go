@@ -34,12 +34,10 @@ func (packer *httpPacker) Unpack(ctx context.Context, r io.Reader) (*request.Req
 
 	packer.request = httpRequest
 
-	req := request.New(
+	return request.New(
 		httpRequest.URL.RequestURI(),
 		httpRequest.Body,
 	)
-
-	return req, nil
 }
 
 func (packer *httpPacker) Pack(r io.Reader, w io.Writer) (int64, error) {

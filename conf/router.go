@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net/url"
 	"regexp"
 
 	"github.com/boomfunc/base/pattql"
@@ -19,9 +20,9 @@ type Router struct {
 	Collection []Route
 }
 
-func (rc *Router) Match(uri string) (*Route, error) {
+func (rc *Router) Match(url *url.URL) (*Route, error) {
 	for _, route := range rc.Collection {
-		if route.match(uri) {
+		if route.match(url.RequestURI()) {
 			return &route, nil
 		}
 	}
