@@ -2,7 +2,6 @@ package pipeline
 
 import (
 	"context"
-	"errors"
 	"io"
 
 	"github.com/boomfunc/base/tools"
