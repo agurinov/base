@@ -7,13 +7,16 @@ import (
 
 	"github.com/boomfunc/base/conf"
 	"github.com/boomfunc/base/server/application"
+	"github.com/boomfunc/base/server/context"
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
 	"github.com/boomfunc/base/tools"
 )
 
-const (
-	srvCtxKey = "meta.srv"
+var (
+	ErrWrongContext       = errors.New("server: Context without required key")
+	ErrUnknownApplication = errors.New("server: Unknown server application")
+	ErrUnknownTransport   = errors.New("server: Unknown server transport")
 )
 
 func New(transportName string, applicationName string, ip net.IP, port int, filename string) (*Server, error) {
@@ -34,7 +37,7 @@ func New(transportName string, applicationName string, ip net.IP, port int, file
 	case "json":
 		app = application.JSON(router)
 	default:
-		return nil, errors.New("server: Unknown server application")
+		return nil, ErrUnknownApplication
 	}
 	inputCh := make(chan io.ReadWriteCloser)
 	errCh := make(chan error)
@@ -51,7 +54,7 @@ func New(transportName string, applicationName string, ip net.IP, port int, file
 		}
 		tr.Connect(inputCh, errCh)
 	default:
-		return nil, errors.New("server: Unknown server transport")
+		return nil, ErrUnknownTransport
 	}
 
 	srv := new(Server)
@@ -69,9 +72,14 @@ func New(transportName string, applicationName string, ip net.IP, port int, file
 // this function will be passed to dispatcher system
 // and will be run at parallel
 func HandleTask(task Task) {
-	srv, ok := task.ctx.Value(srvCtxKey).(*Server)
+	srvInterface, err := context.GetMeta(task.ctx, "srv")
+	if err != nil {
+		tools.FatalLog(err)
+	}
+
+	srv, ok := srvInterface.(*Server)
 	if !ok {
-		tools.FatalLog(errors.New("server: Context without required key"))
+		tools.FatalLog(ErrWrongContext)
 	}
 
 	defer func() {

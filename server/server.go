@@ -1,10 +1,10 @@
 package server
 
 import (
-	"context"
 	"io"
 
 	"github.com/boomfunc/base/server/application"
+	"github.com/boomfunc/base/server/context"
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
 	"github.com/boomfunc/base/tools"
@@ -38,7 +38,8 @@ func (srv *Server) listenCh() {
 		case input := <-srv.inputCh:
 			// input from transport layer (conn, file socket, or something else)
 			// create request own flow context, fill server part of data
-			ctx := context.WithValue(context.Background(), srvCtxKey, srv)
+			ctx := context.New()
+			context.SetMeta(ctx, "srv", srv)
 			// send to dispatcher's queue
 			TaskChannel <- Task{ctx, input}
 
@@ -53,11 +54,10 @@ func (srv *Server) listenCh() {
 				}()
 			}
 
-		default:
+			// default:
+			// for non blocking
 			// NOTE: slowest working, but parallel - OK
 			// NOTE: increase cpu !!
-			// TODO check separate goroutines per channel
-			// for non blocking
 		}
 	}
 }
