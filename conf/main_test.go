@@ -2,6 +2,7 @@ package conf
 
 import (
 	"bytes"
+	"context"
 	"testing"
 
 	"gopkg.in/yaml.v2"
@@ -52,7 +53,7 @@ func TestRouteUnmarshalYAML(t *testing.T) {
 	input := bytes.NewBuffer([]byte("foobar"))
 	output := bytes.NewBuffer([]byte{})
 
-	err = route.pipeline.Run(input, output)
+	err = route.pipeline.Run(context.TODO(), input, output)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +69,7 @@ func TestRouteUnmarshalYAML(t *testing.T) {
 	input = bytes.NewBuffer([]byte{})
 	output = bytes.NewBuffer([]byte{})
 
-	err = route.pipeline.Run(input, output)
+	err = route.pipeline.Run(context.TODO(), input, output)
 	if err != nil {
 		t.Fatal(err)
 	}

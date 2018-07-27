@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"context"
 	"errors"
 	"io"
 	"regexp"
@@ -10,7 +11,7 @@ import (
 )
 
 var (
-	ErrNotFound = errors.New("conf: Route not found")
+	ErrRouteNotFound = errors.New("conf: Route not found")
 )
 
 // TODO look at Pipeline.UnmarshalYAML and remake this to type []Route
@@ -25,7 +26,7 @@ func (rc *Router) Match(uri string) (*Route, error) {
 		}
 	}
 
-	return nil, ErrNotFound
+	return nil, ErrRouteNotFound
 }
 
 type Route struct {
@@ -34,11 +35,12 @@ type Route struct {
 }
 
 func (r *Route) match(uri string) bool {
+	// TODO here extend context for URl values
 	return r.regexp.MatchString(uri)
 }
 
-func (r *Route) Run(input io.Reader, output io.Writer) error {
-	return r.pipeline.Run(input, output)
+func (r *Route) Run(ctx context.Context, input io.Reader, output io.Writer) error {
+	return r.pipeline.Run(ctx, input, output)
 }
 
 func (r *Route) UnmarshalYAML(unmarshal func(interface{}) error) error {
