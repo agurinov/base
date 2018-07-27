@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"bytes"
+	"context"
 	"reflect"
 	"testing"
 
@@ -326,7 +327,7 @@ func TestExecute(t *testing.T) {
 		flags := []int{0, 0, 1, 1}
 
 		// common errors
-		if err := execute(obj); err != nil {
+		if err := execute(context.TODO(), obj); err != nil {
 			t.Fatal(err)
 		}
 
@@ -354,7 +355,7 @@ func TestExecute(t *testing.T) {
 			flags := []int{0, 0, 1, 1}
 
 			// common errors
-			err := execute(obj)
+			err := execute(context.TODO(), obj)
 			if err == nil {
 				t.Fatal("Expected error, got nil")
 			}
@@ -386,7 +387,7 @@ func TestExecute(t *testing.T) {
 			flags := []int{0, 0, 1, 1}
 
 			// common errors
-			err := execute(obj)
+			err := execute(context.TODO(), obj)
 			if err == nil {
 				t.Fatal("Expected error, got nil")
 			}
@@ -425,7 +426,7 @@ func TestRun(t *testing.T) {
 			}
 
 			// common errors
-			if err := run(layers...); err != nil {
+			if err := run(context.TODO(), layers...); err != nil {
 				t.Fatal(err)
 			}
 
@@ -462,7 +463,7 @@ func TestRun(t *testing.T) {
 			}
 
 			// common errors
-			if err := run(layers...); err != nil {
+			if err := run(context.TODO(), layers...); err != nil {
 				t.Fatal(err)
 			}
 
@@ -504,7 +505,7 @@ func TestRun(t *testing.T) {
 			}
 
 			// common errors
-			switch err := run(layers...); {
+			switch err := run(context.TODO(), layers...); {
 			case err == nil:
 				t.Fatal("Expected error, got nil")
 			case err.Error() != "prepare failed":
@@ -547,7 +548,7 @@ func TestRun(t *testing.T) {
 			}
 
 			// common errors
-			switch err := run(layers...); {
+			switch err := run(context.TODO(), layers...); {
 			case err == nil:
 				t.Fatal("Expected error, got nil")
 			case err.Error() != "check failed":

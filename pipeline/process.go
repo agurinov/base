@@ -1,23 +1,23 @@
 package pipeline
 
 import (
+	"context"
 	// "errors"
 	"os/exec"
 	"strings"
+
+	"github.com/boomfunc/base/tools"
 )
 
 type process struct {
-	name string
-	arg  []string
+	cmd string
 	// cmd exec.Cmd
 
 	stdio
 }
 
 func NewProcess(cmd string) *process {
-	parts := strings.Split(cmd, " ")
-
-	return &process{name: parts[0], arg: parts[1:]}
+	return &process{cmd: cmd}
 }
 
 func (p *process) copy() Layer {
@@ -60,8 +60,13 @@ func (p *process) check() error {
 	return nil
 }
 
-func (p *process) run() error {
-	cmd := exec.Command(p.name, p.arg...)
+func (p *process) run(ctx context.Context) error {
+	// fill templates from ctx
+	parts := strings.Split(
+		tools.StringFromCtx(ctx, p.cmd), " ",
+	)
+
+	cmd := exec.Command(parts[0], parts[1:]...)
 
 	cmd.Stdin = p.stdin
 	cmd.Stdout = p.stdout

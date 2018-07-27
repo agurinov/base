@@ -1,9 +1,14 @@
 package pipeline
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net"
+)
+
+var (
+	ErrTCPWithoutAddress = errors.New("pipeline/tcp: TCP socket without address")
 )
 
 type tcp struct {
@@ -49,7 +54,7 @@ func (s *tcp) check() error {
 
 	// check tcp socket have real address
 	if s.addr == nil {
-		return errors.New("pipeline: TCP socket without address")
+		return ErrTCPWithoutAddress
 	}
 
 	// TODO check empty input
@@ -59,7 +64,7 @@ func (s *tcp) check() error {
 }
 
 // BUG: when tcp socket anywhere as stdin and stdout is the same conn -> blocking when io.Copy
-func (s *tcp) run() error {
+func (s *tcp) run(ctx context.Context) error {
 	var err error
 
 	// establish tcp socket

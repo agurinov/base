@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"context"
 	"errors"
 	"io"
 
@@ -14,7 +15,7 @@ func New(layers ...Layer) *Pipeline {
 	return &p
 }
 
-func (p Pipeline) Run(input io.Reader, output io.Writer) error {
+func (p Pipeline) Run(ctx context.Context, input io.Reader, output io.Writer) error {
 	// Convert io.Reader and io.Writer to io.ReadCloser and io.WriteCloser
 	inputCloser := tools.ReadCloser(input)
 	outputCloser := tools.WriteCloser(output)
@@ -33,7 +34,7 @@ func (p Pipeline) Run(input io.Reader, output io.Writer) error {
 		return err
 	}
 
-	return run(execs...)
+	return run(ctx, execs...)
 }
 
 func (p *Pipeline) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -55,7 +56,7 @@ func (p *Pipeline) UnmarshalYAML(unmarshal func(interface{}) error) error {
 			*p = append(*p, NewProcess(layer["cmd"].(string)))
 
 		default:
-			return errors.New("pipeline: Unknown layer type")
+			return ErrUnknownLayer
 		}
 	}
 

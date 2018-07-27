@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"testing"
 )
@@ -18,7 +19,7 @@ func TestPipelineRun(t *testing.T) {
 
 		pipeline := New(process1, process2, process3, process4)
 
-		if err := pipeline.Run(input, output); err != nil {
+		if err := pipeline.Run(context.TODO(), input, output); err != nil {
 			t.Fatal(err)
 		}
 
@@ -36,7 +37,7 @@ func TestPipelineRun(t *testing.T) {
 
 		pipeline := New(process, socket)
 
-		if err := pipeline.Run(input, output); err != nil {
+		if err := pipeline.Run(context.TODO(), input, output); err != nil {
 			t.Fatal(err)
 		}
 

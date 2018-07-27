@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"context"
 	"io"
 	"sync"
 )
@@ -35,7 +36,7 @@ func piping(input io.ReadCloser, output io.WriteCloser, objs ...Able) error {
 	return nil
 }
 
-func execute(obj Exec) (err error) {
+func execute(ctx context.Context, obj Exec) (err error) {
 	defer func() {
 		if err != nil {
 			obj.close()
@@ -44,7 +45,7 @@ func execute(obj Exec) (err error) {
 		}
 	}()
 
-	err = obj.run()
+	err = obj.run(ctx)
 	return
 }
 
@@ -82,7 +83,7 @@ func prepare(objs ...Exec) (err error) {
 	return
 }
 
-func run(objs ...Exec) (err error) {
+func run(ctx context.Context, objs ...Exec) (err error) {
 	// Phase 1. PREPARE AND CHECK
 	// in case of error it will be rolled back to initial incoming state
 	if err = prepare(objs...); err != nil {
@@ -100,7 +101,7 @@ func run(objs ...Exec) (err error) {
 			defer wg.Done()
 
 			// BUG race condition
-			err = execute(obj)
+			err = execute(ctx, obj)
 		}(obj)
 
 		// go func(obj Exec) {

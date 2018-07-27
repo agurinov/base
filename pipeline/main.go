@@ -1,7 +1,13 @@
 package pipeline
 
 import (
+	"errors"
+	"context"
 	"io"
+)
+
+var (
+	ErrUnknownLayer = errors.New("pipeline: Unknown layer type")
 )
 
 type Cloneable interface {
@@ -23,7 +29,7 @@ type Able interface {
 type Exec interface {
 	prepare() error
 	check() error
-	run() error
+	run(ctx context.Context) error
 	close() error // TODO look at priority order errors
 }
 

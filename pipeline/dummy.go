@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"context"
 	"errors"
 	"io"
 )
@@ -41,7 +42,7 @@ func (o *FakeLayer) check() error {
 
 	return nil
 }
-func (o *FakeLayer) run() error {
+func (o *FakeLayer) run(ctx context.Context) error {
 	o.countRun++
 
 	if o.mockFailRun {
