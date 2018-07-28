@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -ex
 
 apk add --update --no-cache git
 

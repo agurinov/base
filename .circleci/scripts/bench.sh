@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -ex
 
 go get -v -d -t ./...
 go test -v -race -run=^$$ -bench=. -benchmem ./...
