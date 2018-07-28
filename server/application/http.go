@@ -25,7 +25,12 @@ func (packer *httpPacker) Unpack(ctx context.Context, r io.Reader) (*request.Req
 	}
 
 	// extend ctx
-	srvctx.SetMeta(ctx, "ip", tools.GetRemoteIP())
+	// get remote ip and save to context
+	srvctx.SetMeta(
+		ctx, "ip",
+		tools.GetRemoteIP(httpRequest.Header.Get("X-Forwarded-For"), nil),
+	)
+	// Get http query and save to context
 	values, err := srvctx.Values(ctx)
 	if err != nil {
 		return nil, err

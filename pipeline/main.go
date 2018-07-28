@@ -10,6 +10,7 @@ var (
 	ErrUnknownLayer = errors.New("pipeline: Unknown layer type")
 )
 
+// TODO rename LayerCopier
 type Cloneable interface {
 	copy() Layer
 }
