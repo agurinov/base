@@ -5,6 +5,14 @@ import (
 	"strings"
 )
 
+func GetRemoteAddr(some interface{}) net.Addr {
+	if conn, ok := some.(net.Conn); ok {
+		return conn.RemoteAddr()
+	}
+
+	return nil
+}
+
 // https://husobee.github.io/golang/ip-address/2015/12/17/remote-ip-go.html
 func GetRemoteIP(addr net.Addr, headers ...string) net.IP {
 	if ip := headersIP(headers...); ip != nil {

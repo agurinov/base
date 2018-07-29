@@ -29,7 +29,7 @@ func (packer *httpPacker) Unpack(ctx context.Context, r io.Reader) (*request.Req
 	srvctx.SetMeta(
 		ctx, "ip",
 		tools.GetRemoteIP(
-			nil,
+			tools.GetRemoteAddr(r),
 			httpRequest.Header.Get("X-Forwarded-For"),
 			httpRequest.Header.Get("X-Real-IP"),
 		),
