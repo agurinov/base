@@ -27,6 +27,8 @@ type values struct {
 func New() context.Context {
 	values := new(values)
 	values.meta = make(map[string]interface{})
+	values.Q = url.Values{}
+	values.Url = url.Values{}
 
 	return context.WithValue(context.Background(), "values", values)
 }
