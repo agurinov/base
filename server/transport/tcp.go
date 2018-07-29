@@ -26,6 +26,7 @@ func (tr *tcp) Serve() {
 		}
 
 		// handle successful connection
+		// TODO maybe send connections obly when the caller starts to write to it?
 		tr.inputCh <- conn
 	}
 }

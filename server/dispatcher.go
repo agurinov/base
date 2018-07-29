@@ -29,6 +29,7 @@ func NewDispatcher(maxWorkers int) *Dispatcher {
 }
 
 func (d *Dispatcher) Prepare() {
+	// TODO clear current stack of TaskChannel
 	// starting n number of workers
 	for i := 0; i < d.maxWorkers; i++ {
 		NewWorker(d.WorkerPool).Start()
