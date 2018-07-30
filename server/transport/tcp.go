@@ -3,6 +3,13 @@ package transport
 import (
 	"io"
 	"net"
+	"time"
+	// "github.com/boomfunc/log"
+)
+
+var (
+	// TODO parametrize
+	timeout = time.Second * 5
 )
 
 type tcp struct {
@@ -16,6 +23,8 @@ func (tr *tcp) Connect(inputCh chan io.ReadWriteCloser, errCh chan error) {
 	tr.errCh = errCh
 }
 
+// https://habr.com/company/mailru/blog/331784/
+// before 3.3.1
 func (tr *tcp) Serve() {
 	for {
 		conn, err := tr.listener.AcceptTCP()
@@ -25,8 +34,19 @@ func (tr *tcp) Serve() {
 			continue
 		}
 
-		// handle successful connection
-		// TODO maybe send connections obly when the caller starts to write to it?
+		// // handle successful connection
+		// // TODO maybe send connections only when the caller starts to write to it?
+		// // TODO maybe send connections also when worker can be fetched?
+		// go func(conn *net.TCPConn) {
+		//
+		// 	raw, _ := conn.SyscallConn()
+		//
+		// 	log.Debug("PSEUDO CHECK - READY", raw.Read(tcpDetectRead))
+		//
+		//
+		// }(conn)
+
+		conn.SetDeadline(time.Now().Add(timeout))
 		tr.inputCh <- conn
 	}
 }
