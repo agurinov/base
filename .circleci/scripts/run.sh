@@ -3,12 +3,20 @@ set -ex
 
 apk add --update --no-cache git
 
+# build base
 .circleci/scripts/build.sh
 
-cd geo
+# build microservice related src
+cd parser
 go get -v -d
 go fmt
-go build geoip.go
+go build main.go
 cd ../
 
-/go/bin/base-Linux-x86_64 run --app=http tcp
+# set application variables for run base
+export BMP_DEBUG_MODE=true
+export BMP_CONFIG='./parser/conf.yml'
+export BMP_APPLICATION_LAYER='http'
+
+# run base
+/go/bin/base-Linux-x86_64 run tcp
