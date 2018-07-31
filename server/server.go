@@ -54,7 +54,7 @@ func (srv *Server) listenCh() {
 				}()
 			}
 
-			// default:
+		default:
 			// for non blocking
 			// NOTE: slowest working, but parallel - OK
 			// NOTE: increase cpu !!
