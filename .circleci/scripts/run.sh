@@ -2,7 +2,7 @@
 set -ex
 
 # PROJECT=${1:?'No `project_name` provided '}
-PROJECT='parser'
+PROJECT='geo'
 
 apk add --update --no-cache git
 

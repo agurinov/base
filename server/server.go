@@ -8,6 +8,7 @@ import (
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
 	"github.com/boomfunc/base/tools"
+	"github.com/boomfunc/dispatcher"
 )
 
 type Server struct {
@@ -41,7 +42,7 @@ func (srv *Server) listenCh() {
 			ctx := context.New()
 			context.SetMeta(ctx, "srv", srv)
 			// send to dispatcher's queue
-			TaskChannel <- Task{ctx, input}
+			dispatcher.TaskChannel <- Task{ctx, input}
 
 		case stat := <-srv.outputCh:
 			// ready response from dispatcher system
@@ -70,8 +71,8 @@ func (srv *Server) Serve(numWorkers int) {
 	// TODO https://rcrowley.org/articles/golang-graceful-stop.html
 
 	// GOROUTINE 2 (dispatcher - listen TaskChannel)
-	dispatcher := NewDispatcher(numWorkers)
-	go dispatcher.Dispatch()
+	d := dispatcher.New(numWorkers)
+	go d.Dispatch()
 
 	// GOROUTINE 3 (listen server channels)
 	go srv.listenCh()

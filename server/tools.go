@@ -7,10 +7,8 @@ import (
 
 	"github.com/boomfunc/base/conf"
 	"github.com/boomfunc/base/server/application"
-	"github.com/boomfunc/base/server/context"
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
-	"github.com/boomfunc/base/tools"
 )
 
 var (
@@ -67,33 +65,4 @@ func New(transportName string, applicationName string, ip net.IP, port int, file
 	srv.outputCh = outputCh
 
 	return srv, nil
-}
-
-// this function will be passed to dispatcher system
-// and will be run at parallel
-func HandleTask(task Task) {
-	srvInterface, err := context.GetMeta(task.ctx, "srv")
-	if err != nil {
-		tools.FatalLog(err)
-	}
-
-	srv, ok := srvInterface.(*Server)
-	if !ok {
-		tools.FatalLog(ErrWrongContext)
-	}
-
-	defer func() {
-		if r := recover(); r != nil {
-			switch typed := r.(type) {
-			case error:
-				srv.errCh <- typed
-			case string:
-				srv.errCh <- errors.New(typed)
-			}
-		}
-	}()
-
-	defer task.input.Close()
-
-	srv.outputCh <- srv.app.Handle(task.ctx, task.input)
 }

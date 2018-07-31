@@ -8,6 +8,7 @@
 *.dylib
 base-*-*
 parser-*-*
+geo-*-*
 
 # Test binary, build with `go test -c`
 *.test
