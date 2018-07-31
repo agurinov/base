@@ -8,9 +8,14 @@ apk add --update --no-cache git
 
 # build microservice related src
 cd parser
-go get -v -d
-go fmt
-go build main.go
+
+go fix ./...
+go vet ./...
+go fmt ./...
+
+go get -v -d ./...
+go build ./...
+
 cd ../
 
 # set application variables for run base
