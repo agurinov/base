@@ -15,7 +15,7 @@ x-defaults:
 
 services:
 
-  geo:
+  ms:
     image: golang:alpine
     ports:
         - "8080:8080"
@@ -24,7 +24,7 @@ services:
     logging: *logging
     command: .circleci/scripts/run.sh
 
-  # geo:
+  # ms:
   #   build:
   #     context: ./geo
   #   environment:

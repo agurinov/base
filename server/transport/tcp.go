@@ -51,10 +51,6 @@ func (tr *tcp) Serve() {
 	}
 }
 
-
-
-
-
 // package transport
 //
 // import (
