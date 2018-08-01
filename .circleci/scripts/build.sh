@@ -3,18 +3,22 @@ set -ex
 
 go get -v -d ./...
 
+# calculate base variables
 BASE=`basename "$PWD"`
 TIMESTAMP=`date +%s`
-VERSION="LOCAL (${TIMESTAMP})"
+VERSION="${CIRCLE_TAG:=LOCAL} (${TIMESTAMP})"
+
+# calculate build/compile specific variables
+ldflags="-X 'main.VERSION=${VERSION}' -X 'main.TIMESTAMP=${TIMESTAMP}'"
 
 # linux
 GOOS=linux GOARCH=amd64 go build \
 	-v \
-	-ldflags "-X 'main.VERSION=${VERSION}' -X 'main.TIMESTAMP=${TIMESTAMP}'" \
+	-ldflags "${ldflags}" \
 	-o /go/bin/${BASE}-Linux-x86_64
 
 # macos
 GOOS=darwin GOARCH=amd64 go build \
 	-v \
-	-ldflags "-X 'main.VERSION=${VERSION}' -X 'main.TIMESTAMP=${TIMESTAMP}'" \
+	-ldflags "${ldflags}" \
 	-o /go/bin/${BASE}-Darwin-x86_64
