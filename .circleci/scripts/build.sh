@@ -1,4 +1,18 @@
 #!/bin/sh
+
+<< ////
+
+TODO:
+use cross-compiling
+$go get github.com/mitchellh/gox
+$gox \
+	-verbose \
+	-osarch="linux/amd64 darwin/amd64" \
+	-ldflags="-X main.VERSION=$CIRCLE_TAG -X main.TIMESTAMP=`date +%s`" \
+	-output="/go/bin/{{.Dir}}-{{.OS}}-{{.Arch}}"
+
+////
+
 set -ex
 
 go get -v -d ./...

@@ -9,9 +9,7 @@ jobs:
 
     steps:
       - checkout
-      - run: go get -v -d -t ./...
-      - run: go test -v -cover ./...
-      # - run: go test -v -race -cover ./...
+      - run: ./.circleci/scripts/test.sh
 
 
   build:
@@ -22,15 +20,7 @@ jobs:
 
     steps:
       - checkout
-      - run: go get -v -d ./...
-      # - run: go get github.com/mitchellh/gox
       - run: ./.circleci/scripts/build.sh
-      # - run: |
-      #     gox \
-      #         -verbose \
-      #         -osarch="linux/amd64 darwin/amd64" \
-      #         -ldflags="-X main.VERSION=$CIRCLE_TAG -X main.TIMESTAMP=`date +%s`" \
-      #         -output="/go/bin/{{.Dir}}-{{.OS}}-{{.Arch}}"
       - persist_to_workspace:
           root: /go/bin
           paths:
