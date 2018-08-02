@@ -24,11 +24,7 @@ jobs:
       - checkout
       - run: go get -v -d ./...
       # - run: go get github.com/mitchellh/gox
-      - run: |
-          GOOS=linux GOARCH=amd64 go build \
-              -v \
-              -ldflags "-X main.VERSION=$CIRCLE_TAG -X main.TIMESTAMP=`date +%s`" \
-              -o /go/bin/base-Linux-x86_64
+      - run: ./.circleci/scripts/build.sh
       # - run: |
       #     gox \
       #         -verbose \

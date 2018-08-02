@@ -6,7 +6,7 @@ go get -v -d ./...
 # calculate base variables
 BASE=`basename "$PWD"`
 TIMESTAMP=`date +%s`
-VERSION="${CIRCLE_TAG:=LOCAL} (${TIMESTAMP})"
+VERSION="${CIRCLE_TAG:=LOCAL}"
 
 # calculate build/compile specific variables
 ldflags="-X 'main.VERSION=${VERSION}' -X 'main.TIMESTAMP=${TIMESTAMP}'"
