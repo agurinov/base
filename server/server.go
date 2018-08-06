@@ -50,15 +50,11 @@ func (srv *Server) listenCh() {
 			AccessLog(stat)
 			// and errors
 			if err := stat.Error; err != nil {
+				// TODO also bad idea
 				go func() {
 					srv.errCh <- stat.Error
 				}()
 			}
-
-		default:
-			// for non blocking
-			// NOTE: slowest working, but parallel - OK
-			// NOTE: increase cpu !!
 		}
 	}
 }

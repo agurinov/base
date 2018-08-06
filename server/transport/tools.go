@@ -3,9 +3,9 @@ package transport
 import (
 	"fmt"
 	"net"
-	// "syscall"
 
-	"github.com/boomfunc/log"
+	"github.com/boomfunc/base/tools"
+	"golang.org/x/sys/unix"
 )
 
 func TCP(ip net.IP, port int) (Interface, error) {
@@ -24,19 +24,36 @@ func TCP(ip net.IP, port int) (Interface, error) {
 }
 
 func tcpDetectRead(fd uintptr) (done bool) {
+	var event unix.EpollEvent
+	var events [32]unix.EpollEvent
 
-	// epfd, e := syscall.EpollCreate1(0)
-	// if e != nil {
-	// 	fmt.Println("epoll_create1: ", e)
-	// 	os.Exit(1)
+	// create epoll
+	epfd, err := unix.EpollCreate1(0)
+	if err != nil {
+		tools.FatalLog(err)
+	}
+
+	// add conn to epoll
+	// for listen incoming data
+	event.Events = unix.EPOLLIN | unix.EPOLLET
+	event.Fd = int32(fd)
+	if err := unix.EpollCtl(epfd, unix.EPOLL_CTL_ADD, int(fd), &event); err != nil {
+		tools.FatalLog(err)
+	}
+
+	_, err = unix.EpollWait(epfd, events[:], -1)
+	return err == nil
+
+	// wait epoll
+	// for {
+	// 	_, err := unix.EpollWait(epfd, events[:], -1)
+	// 	if err != nil {
+	// 		tools.FatalLog(err)
+	// 		break
+	// 	}
+	//
+	// 	return true
 	// }
-	// defer syscall.Close(epfd)
 
-	// syscall.EPOLLIN
-
-	// log.Debug("CUSTOM FUNC", fd&syscall.EPOLLIN)
-	log.Debug("CUSTOM FUNC", uint16(fd))
-	log.Debug("CUSTOM FUNC", fd&0x1)
-	log.Debugf("CUSTOM FUNC: %+v", fd)
-	return false
+	// return false
 }
