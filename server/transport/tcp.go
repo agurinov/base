@@ -8,7 +8,8 @@ import (
 
 var (
 	// TODO parametrize
-	timeout = time.Second * 5
+	readTimeout  = time.Second * 2
+	writeTimeout = time.Second * 5
 )
 
 type tcp struct {
@@ -33,9 +34,6 @@ func (tr *tcp) Serve() {
 			continue
 		}
 
-		// Set timeouts
-		conn.SetDeadline(time.Now().Add(timeout))
-
 		// netpoll block (TODO)
 		raw, err := conn.SyscallConn()
 		if err != nil {
@@ -53,6 +51,8 @@ func (tr *tcp) Serve() {
 				tr.errCh <- err
 			} else {
 				// handle successful and ready connection
+				// conn.SetReadDeadline(time.Now().Add(readTimeout))
+				// conn.SetWriteDeadline(time.Now().Add(writeTimeout))
 				tr.inputCh <- conn
 			}
 		}(conn)
