@@ -5,10 +5,10 @@ import (
 
 	"github.com/boomfunc/base/server/application"
 	"github.com/boomfunc/base/server/context"
+	"github.com/boomfunc/base/server/dispatcher"
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
 	"github.com/boomfunc/base/tools"
-	"github.com/boomfunc/dispatcher"
 )
 
 type Server struct {
