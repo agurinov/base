@@ -3,9 +3,6 @@ package transport
 import (
 	"fmt"
 	"net"
-
-	"github.com/boomfunc/base/tools"
-	"golang.org/x/sys/unix"
 )
 
 func TCP(ip net.IP, port int) (Interface, error) {
@@ -19,41 +16,18 @@ func TCP(ip net.IP, port int) (Interface, error) {
 		return nil, err
 	}
 
-	tcp := &tcp{listener: tcpListener}
-	return tcp, nil
-}
-
-func tcpDetectRead(fd uintptr) (done bool) {
-	var event unix.EpollEvent
-	var events [32]unix.EpollEvent
-
-	// create epoll
-	epfd, err := unix.EpollCreate1(0)
+	poller, err := NewPoller()
 	if err != nil {
-		tools.FatalLog(err)
+		return nil, err
+	}
+	heap := &ConnHeap{
+		items:  make(map[uintptr]*net.TCPConn),
+		poller: poller,
 	}
 
-	// add conn to epoll
-	// for listen incoming data
-	event.Events = unix.EPOLLIN | unix.EPOLLET
-	event.Fd = int32(fd)
-	if err := unix.EpollCtl(epfd, unix.EPOLL_CTL_ADD, int(fd), &event); err != nil {
-		tools.FatalLog(err)
+	tcp := &tcp{
+		listener: tcpListener,
+		heap:     heap,
 	}
-
-	_, err = unix.EpollWait(epfd, events[:], -1)
-	return err == nil
-
-	// wait epoll
-	// for {
-	// 	_, err := unix.EpollWait(epfd, events[:], -1)
-	// 	if err != nil {
-	// 		tools.FatalLog(err)
-	// 		break
-	// 	}
-	//
-	// 	return true
-	// }
-
-	// return false
+	return tcp, nil
 }

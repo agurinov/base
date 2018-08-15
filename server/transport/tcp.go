@@ -4,6 +4,7 @@ import (
 	"io"
 	"net"
 	"time"
+	// "golang.org/x/sys/unix"
 )
 
 var (
@@ -13,9 +14,12 @@ var (
 )
 
 type tcp struct {
+	// server integration
 	listener *net.TCPListener
 	inputCh  chan io.ReadWriteCloser
 	errCh    chan error
+	// poller integration
+	heap *ConnHeap
 }
 
 func (tr *tcp) Connect(inputCh chan io.ReadWriteCloser, errCh chan error) {
@@ -26,35 +30,25 @@ func (tr *tcp) Connect(inputCh chan io.ReadWriteCloser, errCh chan error) {
 // https://habr.com/company/mailru/blog/331784/
 // before 3.3.1
 func (tr *tcp) Serve() {
+	go func() {
+		for {
+			// Obtain socket with data from heap/epoll
+			// (blocking mode)
+			tr.inputCh <- tr.heap.Pop()
+			// Also we want be sure there is worker available for this conn (with data)
+			// TODO try to fetch worker
+		}
+	}()
+
 	for {
 		conn, err := tr.listener.AcceptTCP()
 		if err != nil {
-			// handle error
 			tr.errCh <- err
 			continue
 		}
 
-		// netpoll block (TODO)
-		raw, err := conn.SyscallConn()
-		if err != nil {
-			// handle error
+		if err := tr.heap.Push(conn); err != nil {
 			tr.errCh <- err
-			continue
 		}
-
-		// wait for data in socket
-		// TODO THIS BLOCK MUST BE REFACTORED
-		go func(conn *net.TCPConn) {
-			// get signal about incoming data (blocking mode)
-			if err := raw.Read(tcpDetectRead); err != nil {
-				// handle error
-				tr.errCh <- err
-			} else {
-				// handle successful and ready connection
-				// conn.SetReadDeadline(time.Now().Add(readTimeout))
-				// conn.SetWriteDeadline(time.Now().Add(writeTimeout))
-				tr.inputCh <- conn
-			}
-		}(conn)
 	}
 }
