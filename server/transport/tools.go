@@ -3,6 +3,8 @@ package transport
 import (
 	"fmt"
 	"net"
+
+	"github.com/boomfunc/base/tools/poller/heap"
 )
 
 func TCP(ip net.IP, port int) (Interface, error) {
@@ -16,13 +18,9 @@ func TCP(ip net.IP, port int) (Interface, error) {
 		return nil, err
 	}
 
-	poller, err := NewPoller()
+	heap, err := heap.NewPollerHeap()
 	if err != nil {
 		return nil, err
-	}
-	heap := &ConnHeap{
-		items:  make(map[uintptr]*net.TCPConn),
-		poller: poller,
 	}
 
 	tcp := &tcp{

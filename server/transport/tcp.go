@@ -4,7 +4,8 @@ import (
 	"io"
 	"net"
 	"time"
-	// "golang.org/x/sys/unix"
+
+	"github.com/boomfunc/base/tools/poller/heap"
 )
 
 var (
@@ -19,7 +20,8 @@ type tcp struct {
 	inputCh  chan io.ReadWriteCloser
 	errCh    chan error
 	// poller integration
-	heap *ConnHeap
+	// TODO implement golang heap
+	heap *heap.PollerHeap
 }
 
 func (tr *tcp) Connect(inputCh chan io.ReadWriteCloser, errCh chan error) {
