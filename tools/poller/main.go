@@ -1,5 +1,7 @@
 package poller
 
+// https://people.freebsd.org/~jlemon/papers/kqueue.pdf
+
 type Event interface {
 	Fd() uintptr
 }
