@@ -31,6 +31,7 @@ func New() (Interface, error) {
 }
 
 func (p *epoll) Add(fd uintptr) error {
+	// TODO we tracking creation of fd - no matter for this event
 	event := &unix.EpollEvent{
 		Events: unix.EPOLLIN | unix.EPOLLOUT | unix.EPOLLRDHUP | unix.EPOLLET,
 		Fd:     int32(fd),
@@ -72,12 +73,13 @@ func (p *epoll) wait() ([]unix.EpollEvent, error) {
 	// TODO max events???
 	events := make([]unix.EpollEvent, 32)
 
-	_, err := unix.EpollWait(p.fd, events, -1)
+	// blocking mode
+	n, err := unix.EpollWait(p.fd, events, -1)
 	if err != nil {
 		return nil, err
 	}
 
-	return events, nil
+	return events[:n], nil
 }
 
 // special tool for converting os specific event to interface

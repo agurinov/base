@@ -32,6 +32,7 @@ func (ph *PollerHeap) Push(conn *net.TCPConn) error {
 	}
 
 	// TODO for now it is some kind of workaround
+	// TODO inner error not visible!
 	f := func(fd uintptr) bool {
 		// push to epoll
 		if err := ph.poller.Add(fd); err == nil {
