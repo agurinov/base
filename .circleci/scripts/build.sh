@@ -34,8 +34,7 @@ GOOS=linux GOARCH=amd64 go build \
 	-o /go/bin/${BASE}-Linux-x86_64
 
 # macos
-# TODO kquque instead epoll!
-# GOOS=darwin GOARCH=amd64 go build \
-# 	-v \
-# 	-ldflags "${ldflags}" \
-# 	-o /go/bin/${BASE}-Darwin-x86_64
+GOOS=darwin GOARCH=amd64 go build \
+	-v \
+	-ldflags "${ldflags}" \
+	-o /go/bin/${BASE}-Darwin-x86_64
