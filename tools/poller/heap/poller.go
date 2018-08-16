@@ -31,9 +31,10 @@ func (ph *PollerHeap) Push(conn *net.TCPConn) error {
 		return err
 	}
 
+	// TODO for now it is some kind of workaround
 	f := func(fd uintptr) bool {
 		// push to epoll
-		if err := ph.poller.Add(int32(fd)); err == nil {
+		if err := ph.poller.Add(fd); err == nil {
 			// push to map
 			ph.items[fd] = conn
 		}
@@ -57,11 +58,11 @@ func (ph *PollerHeap) Pop() *net.TCPConn {
 
 		// iterate over read ready events
 		for _, event := range re {
-			key := uintptr(event.Fd)
+			key := event.Fd()
 
 			if conn, ok := ph.items[key]; ok {
 				// rm from epoll
-				ph.poller.Del(event.Fd)
+				ph.poller.Del(key)
 				// rm from heap and return
 				delete(ph.items, key)
 				return conn

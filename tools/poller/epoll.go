@@ -6,43 +6,51 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+type epollEvent struct {
+	se unix.EpollEvent // source event
+}
+
+// Fd implements base Event interface
+func (ev epollEvent) Fd() uintptr {
+	return uintptr(ev.se.Fd)
+}
+
 type epoll struct {
-	epfd int
+	fd int
 }
 
 func New() (Interface, error) {
 	// create epoll
-	epfd, err := unix.EpollCreate1(0)
+	fd, err := unix.EpollCreate1(0)
 	if err != nil {
 		return nil, err
 	}
-	ep := &epoll{
-		epfd: epfd,
-	}
-	return ep, nil
+
+	poller := &epoll{fd}
+	return poller, nil
 }
 
-func (p *epoll) Add(fd int32) error {
+func (p *epoll) Add(fd uintptr) error {
 	event := &unix.EpollEvent{
 		Events: unix.EPOLLIN | unix.EPOLLOUT | unix.EPOLLRDHUP | unix.EPOLLET,
-		Fd:     fd,
+		Fd:     int32(fd),
 	}
 
-	return unix.EpollCtl(p.epfd, unix.EPOLL_CTL_ADD, int(fd), event)
+	return unix.EpollCtl(p.fd, unix.EPOLL_CTL_ADD, int(fd), event)
 }
 
-func (p *epoll) Del(fd int32) error {
-	return unix.EpollCtl(p.epfd, unix.EPOLL_CTL_DEL, int(fd), nil)
+func (p *epoll) Del(fd uintptr) error {
+	return unix.EpollCtl(p.fd, unix.EPOLL_CTL_DEL, int(fd), nil)
 }
 
-func (p *epoll) Events() ([]unix.EpollEvent, []unix.EpollEvent, error) {
+func (p *epoll) Events() ([]Event, []Event, error) {
 	events, err := p.wait()
 	if err != nil {
 		return nil, nil, err
 	}
 
 	// something received, try it
-	var re, we []unix.EpollEvent
+	var re, we []Event
 	for _, event := range events {
 		if event.Events&(unix.EPOLLRDHUP) != 0 {
 			// closed by peer
@@ -50,25 +58,29 @@ func (p *epoll) Events() ([]unix.EpollEvent, []unix.EpollEvent, error) {
 			// http://man7.org/linux/man-pages/man7/epoll.7.html
 		} else if event.Events&(unix.EPOLLIN) != 0 {
 			// ready to read
-			re = append(re, event)
+			re = append(re, toEvent(event))
 		} else if event.Events&(unix.EPOLLOUT) != 0 {
 			// ready to write
-			we = append(we, event)
+			we = append(we, toEvent(event))
 		}
 	}
 
 	return re, we, nil
-
 }
 
 func (p *epoll) wait() ([]unix.EpollEvent, error) {
 	// TODO max events???
 	events := make([]unix.EpollEvent, 32)
 
-	_, err := unix.EpollWait(p.epfd, events, -1)
+	_, err := unix.EpollWait(p.fd, events, -1)
 	if err != nil {
 		return nil, err
 	}
 
 	return events, nil
+}
+
+// special tool for converting os specific event to interface
+func toEvent(event unix.EpollEvent) Event {
+	return epollEvent{event}
 }

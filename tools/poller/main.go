@@ -1,11 +1,11 @@
 package poller
 
-import (
-	"golang.org/x/sys/unix"
-)
+type Event interface {
+	Fd() uintptr
+}
 
 type Interface interface {
-	Add(fd int32) error
-	Del(fd int32) error
-	Events() (re []unix.EpollEvent, we []unix.EpollEvent, err error)
+	Add(fd uintptr) error
+	Del(fd uintptr) error
+	Events() (re []Event, we []Event, err error)
 }
