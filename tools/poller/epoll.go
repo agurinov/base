@@ -41,6 +41,7 @@ func (p *epoll) Add(fd uintptr) error {
 }
 
 func (p *epoll) Del(fd uintptr) error {
+	// TODO maybe it is optional
 	return unix.EpollCtl(p.fd, unix.EPOLL_CTL_DEL, int(fd), nil)
 }
 
