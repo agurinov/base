@@ -32,6 +32,7 @@ func New() (Interface, error) {
 
 func (p *epoll) Add(fd uintptr) error {
 	// TODO we tracking creation of fd - no matter for this event
+	// TODO we tracking closing of fd - no matter for this event
 	event := &unix.EpollEvent{
 		Events: unix.EPOLLIN | unix.EPOLLOUT | unix.EPOLLRDHUP | unix.EPOLLET,
 		Fd:     int32(fd),
@@ -58,11 +59,14 @@ func (p *epoll) Events() ([]Event, []Event, error) {
 			// closed by peer
 			// nothing to do:
 			// http://man7.org/linux/man-pages/man7/epoll.7.html
-		} else if event.Events&(unix.EPOLLIN) != 0 {
-			// ready to read
+			continue
+		}
+		// Check event 'ready to read'
+		if event.Events&(unix.EPOLLIN) != 0 {
 			re = append(re, toEvent(event))
-		} else if event.Events&(unix.EPOLLOUT) != 0 {
-			// ready to write
+		}
+		// Check event 'ready to write'
+		if event.Events&(unix.EPOLLOUT) != 0 {
 			we = append(we, toEvent(event))
 		}
 	}
