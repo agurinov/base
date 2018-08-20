@@ -3,9 +3,9 @@
 package poller
 
 import (
-	"testing"
-	"os"
 	"fmt"
+	"os"
+	"testing"
 
 	"golang.org/x/sys/unix"
 )

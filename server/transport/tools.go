@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/boomfunc/base/tools/poller/heap"
+	"github.com/boomfunc/base/tools/poller"
 )
 
 func TCP(ip net.IP, port int) (Interface, error) {
@@ -18,7 +18,7 @@ func TCP(ip net.IP, port int) (Interface, error) {
 		return nil, err
 	}
 
-	heap, err := heap.NewPollerHeap()
+	heap, err := poller.Heap()
 	if err != nil {
 		return nil, err
 	}
@@ -28,4 +28,26 @@ func TCP(ip net.IP, port int) (Interface, error) {
 		heap:     heap,
 	}
 	return tcp, nil
+}
+
+func tcpFD(conn *net.TCPConn) (uintptr, error) {
+	raw, err := conn.SyscallConn()
+	if err != nil {
+		return 0, err
+	}
+
+	var fd uintptr
+
+	// TODO for now it is some kind of workaround
+	// TODO inner error not visible!
+	f := func(innerFd uintptr) bool {
+		fd = innerFd
+		return true
+	}
+
+	if err := raw.Read(f); err != nil {
+		return 0, err
+	}
+
+	return fd, nil
 }
