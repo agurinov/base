@@ -1,4 +1,4 @@
-// +build linux
+// +build darwin dragonfly freebsd netbsd openbsd
 
 package poller
 
@@ -16,18 +16,18 @@ func TestNew(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	epoll, ok := poller.(*epoll)
+	kqueue, ok := poller.(*kqueue)
 	if !ok {
-		t.Fatal("Unexpected poller (expected *epoll)")
+		t.Fatal("Unexpected poller (expected *kqueue)")
 	}
 
-	if epoll.fd <= 0 {
+	if kqueue.fd <= 0 {
 		t.Fatal("Invalid poller fd")
 	}
 }
 
 func TestToEvent(t *testing.T) {
-	se := unix.EpollEvent{Fd: 6}
+	se := unix.Kevent_t{Ident: 6}
 
 	event := toEvent(se)
 
@@ -43,7 +43,7 @@ func TestEventsWait(t *testing.T) {
 		poller.Add(r.Fd())
 		poller.Add(w.Fd())
 
-		events, err := poller.(*epoll).wait()
+		events, err := poller.(*kqueue).wait()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -51,13 +51,13 @@ func TestEventsWait(t *testing.T) {
 		if len(events) != 1 {
 			t.Fatal("Unexpected number of events, expected 1")
 		}
-		if events[0].Fd != int32(w.Fd()) {
+		if events[0].Ident != uint64(w.Fd()) {
 			t.Fatal("Unexpected event fd")
 		}
 
 		fmt.Fprint(w, "some playload")
 
-		events, err = poller.(*epoll).wait()
+		events, err = poller.(*kqueue).wait()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -65,10 +65,10 @@ func TestEventsWait(t *testing.T) {
 		if len(events) != 2 {
 			t.Fatal("Unexpected number of events, expected 2")
 		}
-		if events[0].Fd != int32(w.Fd()) {
+		if events[0].Ident != uint64(w.Fd()) {
 			t.Fatal("Unexpected event fd")
 		}
-		if events[1].Fd != int32(r.Fd()) {
+		if events[1].Ident != uint64(r.Fd()) {
 			t.Fatal("Unexpected event fd")
 		}
 	})
