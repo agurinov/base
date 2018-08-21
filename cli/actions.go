@@ -27,7 +27,7 @@ var (
 func runCommandAction(c *cli.Context) {
 	log.SetDebug(c.GlobalBool("debug"))
 
-	StartupLog(c.App.Version, c.App.Compiled)
+	StartupLog("base", c.App.Version, c.App.Compiled)
 
 	// Exctract params
 	transport := c.Command.Name
