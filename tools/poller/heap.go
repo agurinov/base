@@ -47,7 +47,7 @@ func (h pollerHeap) Swap(i, j int) {
 }
 
 func (h *pollerHeap) Push(x interface{}) {
-	h.poller.Add(fd)
+	// h.poller.Add(fd)
 
 	// push to heap (success case)
 	n := len(h.items)
@@ -59,30 +59,30 @@ func (h *pollerHeap) Push(x interface{}) {
 }
 
 func (h *pollerHeap) Pop() interface{} {
-	for {
-		// blocking mode
-		re, _, err := h.poller.Events()
-		if err != nil {
-			continue
-		}
-
-		// iterate over read ready events
-		for _, event := range re {
-			key := event.Fd()
-
-
-
-			if conn, ok := ph.items[key]; ok {
-				// rm from epoll
-				ph.poller.Del(key)
-				// rm from heap and return
-				delete(ph.items, key)
-				return conn
-			}
-		}
-		// break infinity loop, ready events are in heap
-		break
-	}
+	// for {
+	// 	// blocking mode
+	// 	re, _, err := h.poller.Events()
+	// 	if err != nil {
+	// 		continue
+	// 	}
+	//
+	// 	// iterate over read ready events
+	// 	// for _, event := range re {
+	// 	// 	// key := event.Fd()
+	// 	//
+	// 	//
+	// 	//
+	// 	// 	// if conn, ok := h.items[key]; ok {
+	// 	// 	// 	// rm from epoll
+	// 	// 	// 	h.poller.Del(key)
+	// 	// 	// 	// rm from heap and return
+	// 	// 	// 	delete(ph.items, key)
+	// 	// 	// 	return conn
+	// 	// 	// }
+	// 	// }
+	// 	// break infinity loop, ready events are in heap
+	// 	break
+	// }
 
 	// pop first priority and ready fd (minimal fd)
 	old := *h

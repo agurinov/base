@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/boomfunc/base/tools/poller"
+	"github.com/boomfunc/base/tools/poller/heap"
 )
 
 func TCP(ip net.IP, port int) (Interface, error) {
@@ -18,7 +18,7 @@ func TCP(ip net.IP, port int) (Interface, error) {
 		return nil, err
 	}
 
-	heap, err := poller.Heap()
+	heap, err := heap.NewPollerHeap()
 	if err != nil {
 		return nil, err
 	}

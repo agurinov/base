@@ -1,13 +1,11 @@
 package transport
 
 import (
-	"container/heap"
 	"io"
 	"net"
 	"time"
 
-	"github.com/boomfunc/base/tools/poller"
-	"github.com/boomfunc/log"
+	"github.com/boomfunc/base/tools/poller/heap"
 )
 
 var (
@@ -24,7 +22,8 @@ type tcp struct {
 	errCh   chan error
 
 	// poller integration
-	heap heap.Interface
+	// TODO implement golang heap
+	heap *heap.PollerHeap
 }
 
 func (tr *tcp) Connect(inputCh chan io.ReadWriteCloser, errCh chan error) {
@@ -37,11 +36,9 @@ func (tr *tcp) Connect(inputCh chan io.ReadWriteCloser, errCh chan error) {
 func (tr *tcp) Serve() {
 	go func() {
 		for {
-			// Obtain socket with data from heap/epoll
+			// Obtain socket with data from heap/poller
 			// (blocking mode)
-			tr.inputCh <- heap.Pop(tr.heap).(io.ReadWriteCloser)
-			// Also we want be sure there is worker available for this conn (with data)
-			// TODO try to fetch worker
+			tr.inputCh <- tr.heap.Pop()
 		}
 	}()
 
@@ -52,16 +49,8 @@ func (tr *tcp) Serve() {
 			continue
 		}
 
-		fd, err := tcpFD(conn)
-		if err != nil {
+		if err := tr.heap.Push(conn); err != nil {
 			tr.errCh <- err
-			continue
 		}
-
-		log.Debug("FD: ", fd)
-
-		conn.SetDeadline(time.Now().Add(time.Second * 5))
-		heap.Push(tr.heap, &poller.HeapItem{Fd: fd, Value: conn})
-
 	}
 }
