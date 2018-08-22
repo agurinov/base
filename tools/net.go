@@ -5,6 +5,35 @@ import (
 	"strings"
 )
 
+func IsBot(ua string) bool {
+	for _, word := range []string{
+		"DuckDuckBot",
+		"Slurp",
+		"yahoo",
+		"bingbot",
+		"baiduspider",
+		"yandex", "YandexBot",
+		"yeti",
+		"yodaobot",
+		"gigabot",
+		"ia_archiver",
+		"facebookexternalhit", "Facebook", "facebot",
+		"twitterbot",
+		"LinkedInBot",
+		"Googlebot",
+		"msnbot",
+		"flipboard",
+		"MicroMessenger",
+		"applebot",
+	} {
+		if strings.Contains(strings.ToLower(ua), strings.ToLower(word)) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func GetRemoteAddr(some interface{}) net.Addr {
 	if conn, ok := some.(net.Conn); ok {
 		return conn.RemoteAddr()
