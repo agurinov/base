@@ -1,11 +1,12 @@
 package transport
 
 import (
+	"container/heap"
 	"io"
 	"net"
 	"time"
 
-	"github.com/boomfunc/base/tools/poller/heap"
+	"github.com/boomfunc/base/tools/poller"
 )
 
 var (
@@ -22,8 +23,7 @@ type tcp struct {
 	errCh   chan error
 
 	// poller integration
-	// TODO implement golang heap
-	heap *heap.PollerHeap
+	heap heap.Interface
 }
 
 func (tr *tcp) Connect(inputCh chan io.ReadWriteCloser, errCh chan error) {
@@ -38,7 +38,9 @@ func (tr *tcp) Serve() {
 		for {
 			// Obtain socket with data from heap/poller
 			// (blocking mode)
-			tr.inputCh <- tr.heap.Pop()
+			if rwc, ok := heap.Pop(tr.heap).(io.ReadWriteCloser); ok {
+				tr.inputCh <- rwc
+			}
 		}
 	}()
 
@@ -49,8 +51,14 @@ func (tr *tcp) Serve() {
 			continue
 		}
 
-		if err := tr.heap.Push(conn); err != nil {
+		fd, err := tcpFD(conn)
+		if err != nil {
 			tr.errCh <- err
+			continue
 		}
+
+		// push incoming connection to heap
+		item := &poller.HeapItem{Fd: fd, Value: conn}
+		heap.Push(tr.heap, item)
 	}
 }
