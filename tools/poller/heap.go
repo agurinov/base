@@ -15,7 +15,7 @@ type pollerHeap struct {
 	poller  Interface
 }
 
-func Heap() (*pollerHeap, error) {
+func Heap() (heap.Interface, error) {
 	poller, err := New()
 	if err != nil {
 		return nil, err
@@ -42,7 +42,8 @@ func (h pollerHeap) Less(i, j int) bool {
 }
 
 func (h pollerHeap) Swap(i, j int) {
-	if i < 0 || j < 0 {
+	// otherwise panic
+	if h.Len() < 2 {
 		return
 	}
 	h.ready[i], h.ready[j] = h.ready[j], h.ready[i]

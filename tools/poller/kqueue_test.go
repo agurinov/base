@@ -15,6 +15,9 @@ func TestNew(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if poller == nil {
+		t.Fatal("Unexpected poller (expected *epoll)")
+	}
 
 	kqueue, ok := poller.(*kqueue)
 	if !ok {
