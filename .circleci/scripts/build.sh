@@ -15,7 +15,7 @@ $gox \
 
 set -ex
 
-go get -v -d ./...
+go get -d ./...
 
 # calculate base variables
 BASE=`basename "$PWD"`
