@@ -84,7 +84,7 @@ func (p *kqueue) wait() ([]unix.Kevent_t, error) {
 		return nil, err
 	}
 
-	return events[:n], nil
+	return events[0:n], nil
 }
 
 // special tool for converting os specific event to interface
