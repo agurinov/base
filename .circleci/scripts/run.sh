@@ -4,7 +4,12 @@ set -ex
 # PROJECT=${1:?'No `project_name` provided '}
 PROJECT='geo'
 
-apk add --update --no-cache git
+apk add --update --no-cache \
+	git \
+	# python \
+	# py-pip
+	# py-lxml
+	# chromium \
 
 # build base
 # fix, lint and build source code of base app
@@ -16,6 +21,8 @@ apk add --update --no-cache git
 cd ${PROJECT}
 
 # fix, lint and build source code of microservice
+# pip install --no-cache-dir -r requirements.txt
+# pip freeze > requirements.txt
 ../.circleci/scripts/fmt.sh
 ../.circleci/scripts/build.sh
 # copy bin from /go/bin to our dir (conf needs it here)

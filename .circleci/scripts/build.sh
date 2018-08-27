@@ -15,7 +15,7 @@ $gox \
 
 set -ex
 
-go get -v -d ./...
+go get -d ./...
 
 # calculate base variables
 BASE=`basename "$PWD"`
@@ -25,7 +25,9 @@ VERSION="${CIRCLE_TAG:=LOCAL}"
 # calculate build/compile specific variables
 ldflags="-X 'main.VERSION=${VERSION}' -X 'main.TIMESTAMP=${TIMESTAMP}'"
 
-# linux
+# linux 64 bit
+# - alpine
+# - ubuntu
 GOOS=linux GOARCH=amd64 go build \
 	-v \
 	-ldflags "${ldflags}" \

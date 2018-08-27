@@ -3,9 +3,8 @@ package transport
 import (
 	"fmt"
 	"net"
-	// "syscall"
 
-	"github.com/boomfunc/log"
+	"github.com/boomfunc/base/tools/poller"
 )
 
 func TCP(ip net.IP, port int) (Interface, error) {
@@ -19,24 +18,36 @@ func TCP(ip net.IP, port int) (Interface, error) {
 		return nil, err
 	}
 
-	tcp := &tcp{listener: tcpListener}
+	heap, err := poller.Heap()
+	if err != nil {
+		return nil, err
+	}
+
+	tcp := &tcp{
+		listener: tcpListener,
+		heap:     heap,
+	}
 	return tcp, nil
 }
 
-func tcpDetectRead(fd uintptr) (done bool) {
+func tcpFD(conn *net.TCPConn) (uintptr, error) {
+	raw, err := conn.SyscallConn()
+	if err != nil {
+		return 0, err
+	}
 
-	// epfd, e := syscall.EpollCreate1(0)
-	// if e != nil {
-	// 	fmt.Println("epoll_create1: ", e)
-	// 	os.Exit(1)
-	// }
-	// defer syscall.Close(epfd)
+	var fd uintptr
 
-	// syscall.EPOLLIN
+	// TODO for now it is some kind of workaround
+	// TODO inner error not visible!
+	f := func(innerFd uintptr) bool {
+		fd = innerFd
+		return true
+	}
 
-	// log.Debug("CUSTOM FUNC", fd&syscall.EPOLLIN)
-	log.Debug("CUSTOM FUNC", uint16(fd))
-	log.Debug("CUSTOM FUNC", fd&0x1)
-	log.Debugf("CUSTOM FUNC: %+v", fd)
-	return false
+	if err := raw.Read(f); err != nil {
+		return 0, err
+	}
+
+	return fd, nil
 }
