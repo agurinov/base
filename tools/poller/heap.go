@@ -2,6 +2,7 @@ package poller
 
 import (
 	"container/heap"
+	"sync"
 )
 
 type HeapItem struct {
@@ -13,6 +14,7 @@ type pollerHeap struct {
 	pending map[uintptr]interface{}
 	ready   []uintptr
 	poller  Interface
+	mux     *sync.RWMutex
 }
 
 func Heap() (heap.Interface, error) {
@@ -25,6 +27,7 @@ func Heap() (heap.Interface, error) {
 		pending: make(map[uintptr]interface{}, 0),
 		ready:   make([]uintptr, 0),
 		poller:  poller,
+		mux:     new(sync.RWMutex),
 	}
 
 	heap.Init(h)
@@ -32,21 +35,28 @@ func Heap() (heap.Interface, error) {
 }
 
 func (h pollerHeap) Len() int {
+	h.mux.RLock()
+	defer h.mux.RUnlock()
+
 	return len(h.ready)
 }
 
 func (h pollerHeap) Less(i, j int) bool {
+	h.mux.RLock()
+	defer h.mux.RUnlock()
+
 	// Less reports whether the element with
 	// index i should sort before the element with index j.
 	return h.ready[i] < h.ready[j]
 }
 
 func (h pollerHeap) Swap(i, j int) {
-	// otherwise panic
-	if h.Len() < 2 {
-		return
+	if h.Len() >= 2 {
+		// there is something to swap
+		h.mux.Lock()
+		h.ready[i], h.ready[j] = h.ready[j], h.ready[i]
+		h.mux.Unlock()
 	}
-	h.ready[i], h.ready[j] = h.ready[j], h.ready[i]
 }
 
 func (h *pollerHeap) Push(x interface{}) {
@@ -55,7 +65,9 @@ func (h *pollerHeap) Push(x interface{}) {
 		// TODO error not visible! in transport layer
 		if err := h.poller.Add(item.Fd); err == nil {
 			// fd in poller, store it for .Pop()
+			h.mux.Lock()
 			h.pending[item.Fd] = item.Value
+			h.mux.Unlock()
 		}
 	}
 }
@@ -89,23 +101,35 @@ func (h *pollerHeap) fillFromPoller() {
 	}
 }
 
-func (h *pollerHeap) pushReady(x interface{}) {
-	h.ready = append(h.ready, x.(uintptr))
+func (h *pollerHeap) pushReady(x uintptr) {
+	h.mux.Lock()
+	h.ready = append(h.ready, x)
+	h.mux.Unlock()
 }
 
 func (h *pollerHeap) popReady() interface{} {
+	h.mux.RLock()
 	n := len(h.ready)
+	h.mux.RUnlock()
 
 	if n == 0 {
 		return nil
 	}
 
+	h.mux.RLock()
 	fd := h.ready[n-1]
+	h.mux.RUnlock()
+
+	h.mux.Lock()
 	h.ready = h.ready[0 : n-1]
+	h.mux.Unlock()
 
 	// get Value by fd
 	if value, ok := h.pending[fd]; ok {
+		h.mux.Lock()
 		delete(h.pending, fd)
+		h.mux.Unlock()
+
 		return value
 	}
 
