@@ -11,15 +11,28 @@ func execute(fn func(context.Context) error, errCh chan error, ctx context.Conte
 	case <-ctx.Done():
 		// context cancelled by another function
 		// no need for starting execution of `fn`
-		return
 	default:
 		// Default is must to avoid blocking
 		// we can start atomic function execution
 		if err := fn(ctx); err != nil {
 			errCh <- err
 			cancel()
-			return
 		}
+	}
+}
+
+// errs is internal API tool for collecting erros from multiple routines or somethink else
+// sended throw channel
+func errs(errCh chan error) error {
+	// returning errors (from channel if exists or nil)
+	select {
+	case err := <-errCh:
+		// context cancelled by another function
+		// no need for starting execution of this fn
+		return err
+	default:
+		// Default is must to avoid blocking
+		return nil
 	}
 }
 
@@ -44,14 +57,6 @@ func concurrent(ctx context.Context, fns ...func(context.Context) error) error {
 	// wait until all completed
 	wg.Wait()
 
-	// returning errors (from channel if exists or nil)
-	select {
-	case err := <-errCh:
-		// context cancelled by another function
-		// no need for starting execution of this fn
-		return err
-	default:
-		// Default is must to avoid blocking
-		return nil
-	}
+	// handle errors from concurrent goroutines
+	return errs(errCh)
 }

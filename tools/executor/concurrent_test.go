@@ -60,6 +60,30 @@ func checkMatrix(t *testing.T, objs []*fake, matrix [][]int) {
 	}
 }
 
+func TestErrs(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		errCh := make(chan error, 1)
+
+		if err := errs(errCh); err != nil {
+			t.Fatalf("Unexpected error, got %q", err.Error())
+		}
+	})
+
+	t.Run("exist", func(t *testing.T) {
+		errCh := make(chan error, 1)
+
+		errCh <- errors.New("foo:bar")
+
+		err := errs(errCh)
+		if err == nil {
+			t.Fatal("Expected error, got nil")
+		}
+		if err.Error() != "foo:bar" {
+			t.Fatalf("Unexpected error, got %q", err.Error())
+		}
+	})
+}
+
 func TestExecute(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		t.Run("normal", func(t *testing.T) {
