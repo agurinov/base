@@ -4,30 +4,30 @@ import (
 	"context"
 )
 
-// https://github.com/rafaeldias/async/blob/master/async.go
+type OperationFunc func(context.Context) error
 
 type executor struct {
-	fns []func(context.Context) error
-	ctx context.Context
+	operations []*operation
+	ctx        context.Context
 }
 
-// func New(fns ...func(context.Context) error) *executor {
-// 	return &executor{
-// 		fns: fns,
-// 	}
-// }
-
-func NewWithContext(ctx context.Context, fns ...func(context.Context) error) *executor {
+func New(ctx context.Context, operations ...*operation) *executor {
 	return &executor{
-		fns: fns,
-		ctx: ctx,
+		operations: operations,
+		ctx:        ctx,
 	}
 }
 
-func (exctr *executor) Add(fn func(context.Context) error) {
-	exctr.fns = append(exctr.fns, fn)
+func (ex *executor) AddOperation(op *operation) {
+	ex.operations = append(ex.operations, op)
 }
 
-func (exctr *executor) Concurrent() error {
-	return concurrent(exctr.ctx, exctr.fns...)
+func (ex *executor) Run() error {
+	for _, op := range ex.operations {
+		if err := op.Run(ex.ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

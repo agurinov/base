@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-func execute(fn func(context.Context) error, errCh chan error, ctx context.Context, cancel context.CancelFunc) {
+func execute(fn OperationFunc, errCh chan error, ctx context.Context, cancel context.CancelFunc) {
 	// check for incoming signal of uselessness of this function
 	select {
 	case <-ctx.Done():
@@ -36,7 +36,7 @@ func errs(errCh chan error) error {
 	}
 }
 
-func concurrent(ctx context.Context, fns ...func(context.Context) error) error {
+func concurrent(ctx context.Context, fns ...OperationFunc) error {
 	wg := new(sync.WaitGroup)
 	errCh := make(chan error, 1)
 	ctx, cancel := context.WithCancel(ctx)
@@ -47,7 +47,7 @@ func concurrent(ctx context.Context, fns ...func(context.Context) error) error {
 	for _, fn := range fns {
 		wg.Add(1)
 
-		go func(fn func(context.Context) error) {
+		go func(fn OperationFunc) {
 			defer wg.Done()
 
 			execute(fn, errCh, ctx, cancel)
