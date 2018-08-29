@@ -5,9 +5,27 @@ import (
 	"sync"
 )
 
+func execute(fn func(context.Context) error, errCh chan error, ctx context.Context, cancel context.CancelFunc) {
+	// check for incoming signal of uselessness of this function
+	select {
+	case <-ctx.Done():
+		// context cancelled by another function
+		// no need for starting execution of `fn`
+		return
+	default:
+		// Default is must to avoid blocking
+		// we can start atomic function execution
+		if err := fn(ctx); err != nil {
+			errCh <- err
+			cancel()
+			return
+		}
+	}
+}
+
 func concurrent(ctx context.Context, fns ...func(context.Context) error) error {
-	errCh := make(chan error, 1)
 	wg := new(sync.WaitGroup)
+	errCh := make(chan error, 1)
 	ctx, cancel := context.WithCancel(ctx)
 
 	// Make sure it's called to release resources even if no errors
@@ -19,24 +37,7 @@ func concurrent(ctx context.Context, fns ...func(context.Context) error) error {
 		go func(fn func(context.Context) error) {
 			defer wg.Done()
 
-			// TODO defer panic?
-
-			// check for another func in another goroutine failed
-			// and cancelled all waterfall
-			select {
-			case <-ctx.Done():
-				// context cancelled by another function
-				// no need for starting execution of this fn
-				return
-			default:
-				// Default is must to avoid blocking
-				// we can start atomic function execution
-				if err := fn(ctx); err != nil {
-					errCh <- err
-					cancel()
-					return
-				}
-			}
+			execute(fn, errCh, ctx, cancel)
 		}(fn)
 	}
 
