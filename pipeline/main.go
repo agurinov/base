@@ -28,10 +28,10 @@ type Able interface {
 // 		3. Run
 // 		4. close (clear all object's sensitive data for reuse this object)
 type Exec interface {
-	prepare() error
-	check() error
+	prepare(ctx context.Context) error
+	check(ctx context.Context) error
 	run(ctx context.Context) error
-	close() error // TODO look at priority order errors
+	close(ctx context.Context) error // TODO look at priority order errors
 }
 
 // Layer interface describes complex type of object that can be a part of Pipeline

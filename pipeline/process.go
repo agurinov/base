@@ -2,7 +2,6 @@ package pipeline
 
 import (
 	"context"
-	// "errors"
 	"os/exec"
 	"strings"
 
@@ -25,7 +24,7 @@ func (p *process) copy() Layer {
 	return &clone
 }
 
-func (p *process) prepare() error {
+func (p *process) prepare(ctx context.Context) error {
 	// p.cmd.Stdin = p.stdin
 	// p.cmd.Stdout = p.stdout
 	//
@@ -40,7 +39,7 @@ func (p *process) prepare() error {
 
 // check method guarantees that the object can be launched at any time
 // process is piped
-func (p *process) check() error {
+func (p *process) check(ctx context.Context) error {
 	// check layer piped
 	if err := p.checkStdio(); err != nil {
 		return err
@@ -80,7 +79,7 @@ func (p *process) run(ctx context.Context) error {
 	return cmd.Wait()
 }
 
-func (p *process) close() error {
+func (p *process) close(ctx context.Context) error {
 	// defer func() {
 	// 	p.cmd = nil
 	// }()

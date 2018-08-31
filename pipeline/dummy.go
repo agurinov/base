@@ -24,7 +24,7 @@ func (o *FakeLayer) copy() Layer {
 	return &clone
 }
 
-func (o *FakeLayer) prepare() error {
+func (o *FakeLayer) prepare(ctx context.Context) error {
 	o.countPrepare++
 
 	if o.mockFailPrepare {
@@ -33,7 +33,7 @@ func (o *FakeLayer) prepare() error {
 
 	return nil
 }
-func (o *FakeLayer) check() error {
+func (o *FakeLayer) check(ctx context.Context) error {
 	o.countCheck++
 
 	if o.mockFailCheck {
@@ -51,7 +51,7 @@ func (o *FakeLayer) run(ctx context.Context) error {
 
 	return nil
 }
-func (o *FakeLayer) close() error {
+func (o *FakeLayer) close(ctx context.Context) error {
 	o.countClose++
 
 	if o.mockFailClose {

@@ -29,7 +29,7 @@ func (s *tcp) copy() Layer {
 	return &clone
 }
 
-func (s *tcp) prepare() error {
+func (s *tcp) prepare(ctx context.Context) error {
 	if s.addr == nil {
 		var err error
 
@@ -46,7 +46,7 @@ func (s *tcp) prepare() error {
 // check method guarantees that the object can be launched at any time
 // tcp socket is piped
 // remote address resolvable
-func (s *tcp) check() error {
+func (s *tcp) check(ctx context.Context) error {
 	// check layer piped
 	if err := s.checkStdio(); err != nil {
 		return err
@@ -87,7 +87,7 @@ func (s *tcp) run(ctx context.Context) error {
 	return nil
 }
 
-func (s *tcp) close() (err error) {
+func (s *tcp) close(ctx context.Context) (err error) {
 	defer func() {
 		s.conn = nil
 	}()
