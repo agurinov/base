@@ -3,7 +3,8 @@ package pipeline
 import (
 	"context"
 	"io"
-	"sync"
+
+	"github.com/boomfunc/base/tools/executor"
 )
 
 // piping establishes pipe connections between IO processes (Able)
@@ -36,97 +37,41 @@ func piping(input io.ReadCloser, output io.WriteCloser, objs ...Able) error {
 	return nil
 }
 
-func execute(ctx context.Context, obj Exec) (err error) {
-	defer func() {
-		if err != nil {
-			obj.close()
-		} else {
-			err = obj.close()
+func executeFunc(obj Exec) executor.OperationFunc {
+	return func(ctx context.Context) error {
+		if err := obj.run(ctx); err != nil {
+			obj.close(ctx)
+			return err
 		}
-	}()
-
-	err = obj.run(ctx)
-	return
-}
-
-func prepare(objs ...Exec) (err error) {
-	var i int
-
-	// backwards closing and resetting if error exists
-	defer func() {
-		if err != nil {
-			// need to backwards
-			for ; i >= 0; i-- {
-				// TODO error handling
-				// TODO error handling
-				// TODO error handling
-				// TODO error handling
-				// TODO like in execute()
-				if r := objs[i].close(); r != nil {
-				}
-			}
-		}
-	}()
-
-	// iterate over layers
-	for ; i < len(objs); i++ {
-		// try to prepare obj
-		if err = objs[i].prepare(); err != nil {
-			return
-		}
-		// final obj's healthcheck
-		if err = objs[i].check(); err != nil {
-			return
-		}
+		return obj.close(ctx)
 	}
-
-	return
 }
 
-func run(ctx context.Context, objs ...Exec) (err error) {
+func prepareFunc(obj Exec) executor.OperationFunc {
+	return func(ctx context.Context) error {
+		if err := obj.prepare(ctx); err != nil {
+			return err
+		}
+		return obj.check(ctx)
+	}
+}
+
+func run(ctx context.Context, objs ...Exec) error {
 	// Phase 1. PREPARE AND CHECK
 	// in case of error it will be rolled back to initial incoming state
-	if err = prepare(objs...); err != nil {
-		return
+	prepareUp := make([]executor.OperationFunc, len(objs))
+	prepareDown := make([]executor.OperationFunc, len(objs))
+	executeUp := make([]executor.OperationFunc, len(objs))
+
+	for i, obj := range objs {
+		prepareUp[i] = prepareFunc(obj)
+		executeUp[i] = executeFunc(obj)
+		prepareDown[i] = obj.close
 	}
 
-	// Phase 2. RUN. Here ALL objs ready and checked
-	var wg sync.WaitGroup
-	wg.Add(len(objs))
-	// ch := make(chan error)
-
-	for _, obj := range objs {
-
-		go func(obj Exec) {
-			defer wg.Done()
-
-			// BUG race condition
-			err = execute(ctx, obj)
-		}(obj)
-
-		// go func(obj Exec) {
-		// 	defer wg.Done()
-		//
-		// 	ch <- execute(obj)
-		// }(obj)
-
-	}
-
-	// // Problem is Here!
-	// select {
-	// case err := <-ch:
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
-
-	wg.Wait()
-
-	return
+	return executor.New(
+		ctx,
+		executor.Operation(prepareUp, prepareDown, false),
+		executor.Operation(executeUp, nil, true),
+	).Run()
 }
-
-// https://play.golang.org/p/Djv52XGnbur
-// https://play.golang.org/p/SEXBheyHnt6
-// https://play.golang.org/p/Zy7BpvwLlqg
-// func parallel(fs ...func() error) error {
-// }
