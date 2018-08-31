@@ -11,6 +11,7 @@ func TestOperation(t *testing.T) {
 	op := Operation(
 		[]OperationFunc{obj.a, obj.b},
 		[]OperationFunc{obj.c},
+		false,
 	)
 
 	if len(op.up) != 2 {
@@ -36,6 +37,7 @@ func TestOperationRun(t *testing.T) {
 			op := Operation(
 				nil,
 				nil,
+				false,
 			)
 			if err := op.Run(ctx); err != nil {
 				t.Fatalf("Unexpected error, got %q", err.Error())
@@ -55,6 +57,7 @@ func TestOperationRun(t *testing.T) {
 			op := Operation(
 				nil,
 				[]OperationFunc{objs[0].a, objs[0].b},
+				false,
 			)
 			if err := op.Run(ctx); err != nil {
 				t.Fatalf("Unexpected error, got %q", err.Error())
@@ -74,6 +77,7 @@ func TestOperationRun(t *testing.T) {
 			op := Operation(
 				[]OperationFunc{objs[0].a, objs[0].b},
 				nil,
+				false,
 			)
 			if err := op.Run(ctx); err != nil {
 				t.Fatalf("Unexpected error, got %q", err.Error())
@@ -87,12 +91,34 @@ func TestOperationRun(t *testing.T) {
 				&fake{},
 			}
 			matrix := [][]int{
-				[]int{1, 1, 0}, // TODO maybe wrong logic? 2 operations to forward, but no error -> no operations for rollback
+				[]int{1, 1, 0},
 			}
 			// run action
 			op := Operation(
 				[]OperationFunc{objs[0].a, objs[0].b},
 				[]OperationFunc{objs[0].c, objs[0].b},
+				false,
+			)
+			if err := op.Run(ctx); err != nil {
+				t.Fatalf("Unexpected error, got %q", err.Error())
+			}
+
+			// check for matrix state
+			checkMatrix(t, objs, matrix)
+		})
+
+		t.Run("up+/down+/forceRollback", func(t *testing.T) {
+			objs := []*fake{
+				&fake{},
+			}
+			matrix := [][]int{
+				[]int{1, 1, 1}, // nothing to forward, nothing to backwards
+			}
+			// run action
+			op := Operation(
+				[]OperationFunc{objs[0].a},
+				[]OperationFunc{objs[0].b, objs[0].c},
+				true,
 			)
 			if err := op.Run(ctx); err != nil {
 				t.Fatalf("Unexpected error, got %q", err.Error())
@@ -115,6 +141,7 @@ func TestOperationRun(t *testing.T) {
 			op := Operation(
 				[]OperationFunc{objs[0].a},
 				nil,
+				false,
 			)
 			err := op.Run(ctx)
 			if err == nil {
@@ -138,6 +165,7 @@ func TestOperationRun(t *testing.T) {
 			op := Operation(
 				[]OperationFunc{objs[0].a},
 				[]OperationFunc{objs[0].b, objs[0].c},
+				false,
 			)
 			err := op.Run(ctx)
 			if err == nil {

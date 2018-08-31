@@ -13,6 +13,7 @@ func TestExecutor(t *testing.T) {
 		Operation(
 			[]OperationFunc{obj.a},
 			nil,
+			false,
 		),
 	)
 
@@ -27,6 +28,7 @@ func TestExecutor(t *testing.T) {
 			Operation(
 				[]OperationFunc{func(ctx context.Context) error { return nil }},
 				[]OperationFunc{func(ctx context.Context) error { return nil }},
+				false,
 			),
 		)
 
@@ -52,6 +54,7 @@ func TestExecutor(t *testing.T) {
 				Operation(
 					[]OperationFunc{obj.b},
 					[]OperationFunc{obj.c},
+					false,
 				),
 			)
 
