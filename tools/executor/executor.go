@@ -16,8 +16,10 @@ func New(ctx context.Context, operations ...*operation) *executor {
 	}
 }
 
-func (ex *executor) AddOperation(op *operation) {
-	ex.operations = append(ex.operations, op)
+func (ex *executor) AddOperations(ops ...*operation) {
+	for _, op := range ops {
+		ex.operations = append(ex.operations, op)
+	}
 }
 
 func (ex *executor) Run() error {

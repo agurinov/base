@@ -23,8 +23,8 @@ func TestExecutor(t *testing.T) {
 		}
 	})
 
-	t.Run("AddOperation", func(t *testing.T) {
-		ex.AddOperation(
+	t.Run("AddOperations", func(t *testing.T) {
+		ex.AddOperations(
 			Operation(
 				[]OperationFunc{func(ctx context.Context) error { return nil }},
 				[]OperationFunc{func(ctx context.Context) error { return nil }},
@@ -50,7 +50,7 @@ func TestExecutor(t *testing.T) {
 		})
 
 		t.Run("Error", func(t *testing.T) {
-			ex.AddOperation(
+			ex.AddOperations(
 				Operation(
 					[]OperationFunc{obj.b},
 					[]OperationFunc{obj.c},
