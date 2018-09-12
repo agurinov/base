@@ -26,7 +26,7 @@ func StartupLog(transportName, applicationName, addr, filename string) {
 	log.Debugf("Enabled %s mode", log.Wrap("DEBUG", log.Bold, log.Blink))
 }
 
-func PerfomanceLog(numWorkers int) {
+func PerformanceLog(numWorkers int) {
 	// TODO https://insights.sei.cmu.edu/sei_blog/2017/08/multicore-and-virtualization-an-introduction.html
 	log.Debugf("Spawned %d goroutines", runtime.NumGoroutine())
 	if runtime.NumGoroutine() != numWorkers+3 {

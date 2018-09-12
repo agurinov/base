@@ -77,7 +77,7 @@ func (srv *Server) Serve(numWorkers int) {
 	// go srv.listenOS()
 
 	// Here we can test some of our system requirements and performance recommendations
-	PerfomanceLog(numWorkers)
+	PerformanceLog(numWorkers)
 
 	// GOROUTINE 1 (main) - this goroutine
 	// This is thread blocking procedure - infinity loop
