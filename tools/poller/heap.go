@@ -73,6 +73,7 @@ func (h *pollerHeap) Push(x interface{}) {
 }
 
 func (h *pollerHeap) Pop() interface{} {
+	// TODO maybe check for existing in h.ready??? if not - block to fill
 	// fill ready slice from poller signal
 	h.fillFromPoller()
 	// pop ready and return
