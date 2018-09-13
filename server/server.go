@@ -38,14 +38,16 @@ func (srv *Server) listenCh() {
 			}
 
 		case input := <-srv.inputCh:
-			// input from transport layer (conn, file socket, or something else)
-			// try to fetch empty worker (to be precise, his channel)
-			taskChannel := srv.dispatcher.FreeTaskChannel()
-			// create request own flow context, fill server part of data
-			ctx := context.New()
-			context.SetMeta(ctx, "srv", srv)
-			// send to dispatcher's queue
-			taskChannel <- Task{ctx, input}
+			go func() {
+				// input from transport layer (conn, file socket, or something else)
+				// try to fetch empty worker (to be precise, his channel)
+				taskChannel := srv.dispatcher.FreeTaskChannel()
+				// create request own flow context, fill server part of data
+				ctx := context.New()
+				context.SetMeta(ctx, "srv", srv)
+				// send to dispatcher's queue
+				taskChannel <- Task{ctx, input}
+			}()
 
 		case stat := <-srv.outputCh:
 			// ready response from dispatcher system
@@ -53,7 +55,6 @@ func (srv *Server) listenCh() {
 			AccessLog(stat)
 			// and errors
 			if err := stat.Error; err != nil {
-				// TODO also bad idea
 				go func() {
 					srv.errCh <- stat.Error
 				}()
