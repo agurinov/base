@@ -7,6 +7,7 @@ import (
 
 	"github.com/boomfunc/base/conf"
 	"github.com/boomfunc/base/server/application"
+	"github.com/boomfunc/base/server/dispatcher"
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
 )
@@ -17,10 +18,10 @@ var (
 	ErrUnknownTransport   = errors.New("server: Unknown server transport")
 )
 
-func New(transportName string, applicationName string, ip net.IP, port int, filename string) (*Server, error) {
+func New(transportName string, applicationName string, workers int, ip net.IP, port int, config string) (*Server, error) {
 	// Phase 1. Prepare light application layer things
 	// router
-	router, err := conf.LoadFile(filename)
+	router, err := conf.LoadFile(config)
 	if err != nil {
 		// cannot load server config
 		return nil, err
@@ -59,6 +60,7 @@ func New(transportName string, applicationName string, ip net.IP, port int, file
 	// flow data
 	srv.transport = tr
 	srv.app = app
+	srv.dispatcher = dispatcher.New(workers)
 	// channels
 	srv.inputCh = inputCh
 	srv.errCh = errCh

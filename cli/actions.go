@@ -34,16 +34,17 @@ func runCommandAction(c *cli.Context) {
 	application := c.GlobalString("app")
 	ip := net.ParseIP("0.0.0.0")
 	port := c.GlobalInt("port")
-	workerNum := c.GlobalInt("workers")
-	filename := c.GlobalString("config")
+	workers := c.GlobalInt("workers")
+	config := c.GlobalString("config")
 
 	// Create server
-	srv, err := server.New(transport, application, ip, port, filename)
+	srv, err := server.New(transport, application, workers, ip, port, config)
 	if err != nil {
 		tools.FatalLog(err)
 	}
 
 	// Run
-	server.StartupLog(strings.ToUpper(transport), strings.ToUpper(application), fmt.Sprintf("%s:%d", ip, port), filename)
-	srv.Serve(workerNum)
+	server.StartupLog(strings.ToUpper(transport), strings.ToUpper(application), fmt.Sprintf("%s:%d", ip, port), config)
+	// blocking mode
+	srv.Serve()
 }

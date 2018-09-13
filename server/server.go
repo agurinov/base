@@ -12,8 +12,9 @@ import (
 )
 
 type Server struct {
-	transport transport.Interface
-	app       application.Interface
+	transport  transport.Interface
+	app        application.Interface
+	dispatcher *dispatcher.Dispatcher
 
 	inputCh  chan io.ReadWriteCloser
 	errCh    chan error
@@ -38,11 +39,13 @@ func (srv *Server) listenCh() {
 
 		case input := <-srv.inputCh:
 			// input from transport layer (conn, file socket, or something else)
+			// try to fetch empty worker (to be precise, his channel)
+			taskChannel := srv.dispatcher.FreeTaskChannel()
 			// create request own flow context, fill server part of data
 			ctx := context.New()
 			context.SetMeta(ctx, "srv", srv)
 			// send to dispatcher's queue
-			dispatcher.TaskChannel <- Task{ctx, input}
+			taskChannel <- Task{ctx, input}
 
 		case stat := <-srv.outputCh:
 			// ready response from dispatcher system
@@ -59,7 +62,7 @@ func (srv *Server) listenCh() {
 	}
 }
 
-func (srv *Server) Serve(numWorkers int) {
+func (srv *Server) Serve() {
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
 	// TODO defer ch.Close()
 	// TODO defer s.conn.Close()
@@ -67,8 +70,8 @@ func (srv *Server) Serve(numWorkers int) {
 	// TODO https://rcrowley.org/articles/golang-graceful-stop.html
 
 	// GOROUTINE 2 (dispatcher - listen TaskChannel)
-	d := dispatcher.New(numWorkers)
-	go d.Dispatch()
+	srv.dispatcher.Prepare()
+	// go d.Dispatch()
 
 	// GOROUTINE 3 (listen server channels)
 	go srv.listenCh()
@@ -77,7 +80,7 @@ func (srv *Server) Serve(numWorkers int) {
 	// go srv.listenOS()
 
 	// Here we can test some of our system requirements and performance recommendations
-	PerformanceLog(numWorkers)
+	PerformanceLog(srv.dispatcher.MaxWorkers)
 
 	// GOROUTINE 1 (main) - this goroutine
 	// This is thread blocking procedure - infinity loop
