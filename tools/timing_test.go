@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func checkTiming(t *testing.T, timing *timing, enter, exit int) {
+func checkTiming(t *testing.T, timing *Timing, enter, exit int) {
 	if l := len(timing.enter); l != enter {
 		t.Fatalf("Unexpected len(timing.enter): expected %d, got %d", enter, l)
 	}

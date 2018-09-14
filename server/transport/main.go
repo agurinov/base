@@ -1,10 +1,10 @@
 package transport
 
 import (
-	"io"
+	"github.com/boomfunc/base/server/flow"
 )
 
 type Interface interface {
-	Connect(chan io.ReadWriteCloser, chan error)
+	Connect(chan *flow.Data, chan error)
 	Serve()
 }

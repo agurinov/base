@@ -2,12 +2,12 @@ package server
 
 import (
 	"errors"
-	"io"
 	"net"
 
 	"github.com/boomfunc/base/conf"
 	"github.com/boomfunc/base/server/application"
 	"github.com/boomfunc/base/server/dispatcher"
+	"github.com/boomfunc/base/server/flow"
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
 )
@@ -38,7 +38,7 @@ func New(transportName string, applicationName string, workers int, ip net.IP, p
 	default:
 		return nil, ErrUnknownApplication
 	}
-	inputCh := make(chan io.ReadWriteCloser)
+	inputCh := make(chan *flow.Data)
 	errCh := make(chan error)
 	outputCh := make(chan request.Stat)
 

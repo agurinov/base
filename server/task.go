@@ -1,24 +1,22 @@
 package server
 
 import (
-	"context"
 	"errors"
-	"io"
 
-	srvctx "github.com/boomfunc/base/server/context"
+	"github.com/boomfunc/base/server/context"
+	"github.com/boomfunc/base/server/flow"
 	"github.com/boomfunc/base/tools"
 )
 
 type Task struct {
-	ctx   context.Context
-	input io.ReadWriteCloser
+	*flow.Data
 }
 
 // Solve implements dispatcher.Task interface
 // this function will be passed to dispatcher system
 // and will be run at parallel
 func (task Task) Solve() {
-	srvInterface, err := srvctx.GetMeta(task.ctx, "srv")
+	srvInterface, err := context.GetMeta(task.Ctx, "srv")
 	if err != nil {
 		tools.FatalLog(err)
 	}
@@ -39,7 +37,11 @@ func (task Task) Solve() {
 		}
 	}()
 
-	defer task.input.Close()
+	defer task.Input.Close()
 
-	srv.outputCh <- srv.app.Handle(task.ctx, task.input)
+	task.Timing.Enter("app")
+	stat := srv.app.Handle(task.Ctx, task.Input)
+	task.Timing.Exit("app")
+
+	srv.outputCh <- stat
 }

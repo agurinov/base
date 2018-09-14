@@ -1,11 +1,10 @@
 package server
 
 import (
-	"io"
-
 	"github.com/boomfunc/base/server/application"
 	"github.com/boomfunc/base/server/context"
 	"github.com/boomfunc/base/server/dispatcher"
+	"github.com/boomfunc/base/server/flow"
 	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
 	"github.com/boomfunc/base/tools"
@@ -16,7 +15,7 @@ type Server struct {
 	app        application.Interface
 	dispatcher *dispatcher.Dispatcher
 
-	inputCh  chan io.ReadWriteCloser
+	inputCh  chan *flow.Data
 	errCh    chan error
 	outputCh chan request.Stat
 }
@@ -37,17 +36,18 @@ func (srv *Server) listenCh() {
 				tools.ErrorLog(err)
 			}
 
-		case input := <-srv.inputCh:
+		case flow := <-srv.inputCh:
 			go func() {
 				// input from transport layer (conn, file socket, or something else)
 				// try to fetch empty worker (to be precise, his channel)
 				// blocking mode!
+				flow.Timing.Enter("dispatcher")
 				taskChannel := srv.dispatcher.FreeWorkerTaskChannel()
+				flow.Timing.Exit("dispatcher")
 				// create request own flow context, fill server part of data
-				ctx := context.New()
-				context.SetMeta(ctx, "srv", srv)
+				context.SetMeta(flow.Ctx, "srv", srv)
 				// send to worker's channel
-				taskChannel <- Task{ctx, input}
+				taskChannel <- Task{flow}
 			}()
 
 		case stat := <-srv.outputCh:

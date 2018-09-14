@@ -2,10 +2,10 @@ package transport
 
 import (
 	"container/heap"
-	"io"
 	"net"
 	"time"
 
+	"github.com/boomfunc/base/server/flow"
 	"github.com/boomfunc/base/tools/poller"
 )
 
@@ -19,14 +19,14 @@ type tcp struct {
 	listener *net.TCPListener
 
 	// server integration
-	inputCh chan io.ReadWriteCloser
+	inputCh chan *flow.Data
 	errCh   chan error
 
 	// poller integration
 	heap heap.Interface
 }
 
-func (tr *tcp) Connect(inputCh chan io.ReadWriteCloser, errCh chan error) {
+func (tr *tcp) Connect(inputCh chan *flow.Data, errCh chan error) {
 	tr.inputCh = inputCh
 	tr.errCh = errCh
 }
@@ -38,8 +38,9 @@ func (tr *tcp) Serve() {
 		for {
 			// Obtain socket with data from heap/poller
 			// (blocking mode)
-			if rwc, ok := heap.Pop(tr.heap).(io.ReadWriteCloser); ok {
-				tr.inputCh <- rwc
+			if flow, ok := heap.Pop(tr.heap).(*flow.Data); ok {
+				flow.Timing.Exit("poller")
+				tr.inputCh <- flow
 			}
 		}
 	}()
@@ -58,7 +59,9 @@ func (tr *tcp) Serve() {
 		}
 
 		// push incoming connection to heap
-		item := &poller.HeapItem{Fd: fd, Value: conn}
+		flow := flow.New(conn)
+		item := &poller.HeapItem{Fd: fd, Value: flow}
+		flow.Timing.Enter("poller")
 		heap.Push(tr.heap, item)
 	}
 }
