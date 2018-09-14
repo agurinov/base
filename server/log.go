@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/boomfunc/base/server/request"
+	"github.com/boomfunc/base/server/flow"
 	"github.com/boomfunc/log"
 )
 
@@ -50,23 +50,23 @@ func PerformanceLog(numWorkers int) {
 	}
 }
 
-func AccessLog(stat request.Stat) {
+func AccessLog(flow *flow.Data) {
 	var status, uuid, url string
 
-	if stat.Successful() {
+	if flow.Stat.Successful() {
 		status = "SUCCESS"
 	} else {
 		status = "ERROR"
 	}
 
 	// Request might be nil if err while parsing incoming message
-	if stat.Request != nil {
-		uuid = stat.Request.UUID.String()
-		url = stat.Request.Url.RequestURI()
+	if flow.Stat.Request != nil {
+		uuid = flow.Stat.Request.UUID.String()
+		url = flow.Stat.Request.Url.RequestURI()
 	} else {
 		uuid = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 		url = "/XXX/XXX/XXX"
 	}
 
-	log.Infof("%s\t-\t%s\t-\t%s\t-\t%s\t-\tWritten: %d", uuid, url, status, stat.Duration, stat.Len)
+	log.Infof("%s\t-\t%s\t-\t%s\t-\tTiming: `%s`\t-\tWritten: %d", uuid, url, status, flow.Timing, flow.Stat.Len)
 }

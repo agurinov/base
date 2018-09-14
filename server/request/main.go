@@ -3,7 +3,6 @@ package request
 import (
 	"io"
 	"net/url"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -27,15 +26,4 @@ func New(raw string, input io.Reader) (*Request, error) {
 	}
 
 	return request, nil
-}
-
-type Stat struct {
-	Duration time.Duration
-	Request  *Request
-	Error    error
-	Len      int64
-}
-
-func (stat Stat) Successful() bool {
-	return stat.Error == nil
 }

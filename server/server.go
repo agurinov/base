@@ -5,7 +5,6 @@ import (
 	"github.com/boomfunc/base/server/context"
 	"github.com/boomfunc/base/server/dispatcher"
 	"github.com/boomfunc/base/server/flow"
-	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
 	"github.com/boomfunc/base/tools"
 )
@@ -17,7 +16,7 @@ type Server struct {
 
 	inputCh  chan *flow.Data
 	errCh    chan error
-	outputCh chan request.Stat
+	outputCh chan *flow.Data
 }
 
 func (srv *Server) listenOS() {
@@ -50,14 +49,14 @@ func (srv *Server) listenCh() {
 				taskChannel <- Task{flow}
 			}()
 
-		case stat := <-srv.outputCh:
+		case flow := <-srv.outputCh:
 			// ready response from dispatcher system
 			// log ANY kind of result
-			AccessLog(stat)
+			AccessLog(flow)
 			// and errors
-			if err := stat.Error; err != nil {
+			if err := flow.Stat.Error; err != nil {
 				go func() {
-					srv.errCh <- stat.Error
+					srv.errCh <- flow.Stat.Error
 				}()
 			}
 		}

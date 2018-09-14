@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"io"
-	"time"
 
 	"github.com/boomfunc/base/conf"
 	// srvctx "github.com/boomfunc/base/server/context"
+	"github.com/boomfunc/base/server/flow"
 	"github.com/boomfunc/base/server/request"
 	// "github.com/boomfunc/log"
 )
@@ -18,7 +18,7 @@ var (
 )
 
 type Interface interface {
-	Handle(context.Context, io.ReadWriter) request.Stat
+	Handle(context.Context, io.ReadWriter) flow.Stat
 }
 
 type Packer interface {
@@ -31,22 +31,16 @@ type Application struct {
 	packer Packer
 }
 
-func (app *Application) Handle(ctx context.Context, rw io.ReadWriter) (stat request.Stat) {
+func (app *Application) Handle(ctx context.Context, rw io.ReadWriter) (stat flow.Stat) {
 	var req *request.Request
-	var begin time.Time
 	var err error
 	var written int64
 
 	defer func() {
-		// end measuring and collect data
-		stat.Duration = time.Since(begin)
 		stat.Request = req
 		stat.Error = err
 		stat.Len = written
 	}()
-
-	// Start measuring
-	begin = time.Now()
 
 	// Parse request
 	// fill context meta part and q part

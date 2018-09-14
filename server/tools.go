@@ -8,7 +8,6 @@ import (
 	"github.com/boomfunc/base/server/application"
 	"github.com/boomfunc/base/server/dispatcher"
 	"github.com/boomfunc/base/server/flow"
-	"github.com/boomfunc/base/server/request"
 	"github.com/boomfunc/base/server/transport"
 )
 
@@ -40,7 +39,7 @@ func New(transportName string, applicationName string, workers int, ip net.IP, p
 	}
 	inputCh := make(chan *flow.Data)
 	errCh := make(chan error)
-	outputCh := make(chan request.Stat)
+	outputCh := make(chan *flow.Data)
 
 	// Phase 3. Prepare transport layer
 	var tr transport.Interface

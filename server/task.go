@@ -9,14 +9,14 @@ import (
 )
 
 type Task struct {
-	*flow.Data
+	flow *flow.Data
 }
 
 // Solve implements dispatcher.Task interface
 // this function will be passed to dispatcher system
 // and will be run at parallel
 func (task Task) Solve() {
-	srvInterface, err := context.GetMeta(task.Ctx, "srv")
+	srvInterface, err := context.GetMeta(task.flow.Ctx, "srv")
 	if err != nil {
 		tools.FatalLog(err)
 	}
@@ -37,11 +37,11 @@ func (task Task) Solve() {
 		}
 	}()
 
-	defer task.Input.Close()
+	defer task.flow.Input.Close()
 
-	task.Timing.Enter("app")
-	stat := srv.app.Handle(task.Ctx, task.Input)
-	task.Timing.Exit("app")
+	task.flow.Timing.Enter("app")
+	task.flow.Stat = srv.app.Handle(task.flow.Ctx, task.flow.Input)
+	task.flow.Timing.Exit("app")
 
-	srv.outputCh <- stat
+	srv.outputCh <- task.flow
 }
