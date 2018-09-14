@@ -31,8 +31,6 @@ func (tr *tcp) Connect(inputCh chan *flow.Data, errCh chan error) {
 	tr.errCh = errCh
 }
 
-// https://habr.com/company/mailru/blog/331784/
-// before 3.3.1
 func (tr *tcp) Serve() {
 	go func() {
 		for {

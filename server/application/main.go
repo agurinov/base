@@ -18,7 +18,7 @@ var (
 )
 
 type Interface interface {
-	Handle(context.Context, io.ReadWriter) flow.Stat
+	Handle(*flow.Data)
 }
 
 type Packer interface {
@@ -31,21 +31,21 @@ type Application struct {
 	packer Packer
 }
 
-func (app *Application) Handle(ctx context.Context, rw io.ReadWriter) (stat flow.Stat) {
+func (app *Application) Handle(flow *flow.Data) {
 	var req *request.Request
 	var err error
 	var written int64
 
 	defer func() {
-		stat.Request = req
-		stat.Error = err
-		stat.Len = written
+		flow.Stat.Request = req
+		flow.Stat.Error = err
+		flow.Stat.Len = written + 12
 	}()
 
 	// Parse request
 	// fill context meta part and q part
 	// TODO ErrBadRequest
-	req, err = app.packer.Unpack(ctx, rw)
+	req, err = app.packer.Unpack(flow.Ctx, flow.Input)
 	if err != nil {
 		return
 	}
@@ -72,12 +72,12 @@ func (app *Application) Handle(ctx context.Context, rw io.ReadWriter) (stat flow
 
 		// BUG: race condition
 		// TODO ErrServerError
-		err = route.Run(ctx, req.Input, pw)
+		err = route.Run(flow.Ctx, req.Input, pw)
 	}()
 
 	// write data to rwc only if all success
 	// TODO ErrServerError
-	written, err = app.packer.Pack(pr, rw)
+	written, err = app.packer.Pack(pr, flow.Input)
 
 	return
 }

@@ -40,7 +40,7 @@ func (task Task) Solve() {
 	defer task.flow.Input.Close()
 
 	task.flow.Timing.Enter("app")
-	task.flow.Stat = srv.app.Handle(task.flow.Ctx, task.flow.Input)
+	srv.app.Handle(task.flow)
 	task.flow.Timing.Exit("app")
 
 	srv.outputCh <- task.flow
