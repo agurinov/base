@@ -41,11 +41,12 @@ func (srv *Server) listenCh() {
 			go func() {
 				// input from transport layer (conn, file socket, or something else)
 				// try to fetch empty worker (to be precise, his channel)
+				// blocking mode!
 				taskChannel := srv.dispatcher.FreeWorkerTaskChannel()
 				// create request own flow context, fill server part of data
 				ctx := context.New()
 				context.SetMeta(ctx, "srv", srv)
-				// send to dispatcher's queue
+				// send to worker's channel
 				taskChannel <- Task{ctx, input}
 			}()
 
@@ -70,14 +71,13 @@ func (srv *Server) Serve() {
 	// TODO unreachable https://stackoverflow.com/questions/11268943/is-it-possible-to-capture-a-ctrlc-signal-and-run-a-cleanup-function-in-a-defe
 	// TODO https://rcrowley.org/articles/golang-graceful-stop.html
 
-	// GOROUTINE 2 (dispatcher - listen TaskChannel)
+	// create real worker instances
 	srv.dispatcher.Prepare()
-	// go d.Dispatch()
 
-	// GOROUTINE 3 (listen server channels)
+	// GOROUTINE 2 (listen server channels)
 	go srv.listenCh()
 
-	// TODO GOROUTINE 4 (listen for os signals and gracefully close server)
+	// TODO GOROUTINE 3 (listen for os signals and gracefully close server)
 	// go srv.listenOS()
 
 	// Here we can test some of our system requirements and performance recommendations

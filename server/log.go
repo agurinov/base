@@ -28,11 +28,11 @@ func StartupLog(transportName, applicationName, addr, filename string) {
 
 func PerformanceLog(numWorkers int) {
 	// TODO https://insights.sei.cmu.edu/sei_blog/2017/08/multicore-and-virtualization-an-introduction.html
-	log.Debugf("Spawned %d goroutines", runtime.NumGoroutine())
-	if runtime.NumGoroutine() != numWorkers+3 {
+	log.Debugf("Spawned %d initial goroutines", runtime.NumGoroutine())
+	if runtime.NumGoroutine() != numWorkers+2 {
 		log.Warnf(
-			"Unexpected number of goroutines, possibly an issue. Expected: %d, Got: %d",
-			numWorkers+3,
+			"Unexpected number of initial goroutines, possibly an issue. Expected: %d, Got: %d",
+			numWorkers+2,
 			runtime.NumGoroutine(),
 		)
 	}
