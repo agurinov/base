@@ -41,7 +41,7 @@ func (srv *Server) listenCh() {
 			go func() {
 				// input from transport layer (conn, file socket, or something else)
 				// try to fetch empty worker (to be precise, his channel)
-				taskChannel := srv.dispatcher.FreeTaskChannel()
+				taskChannel := srv.dispatcher.FreeWorkerTaskChannel()
 				// create request own flow context, fill server part of data
 				ctx := context.New()
 				context.SetMeta(ctx, "srv", srv)

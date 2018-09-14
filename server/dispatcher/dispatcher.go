@@ -1,21 +1,26 @@
 package dispatcher
 
+// Task is abstract job
+// something that the worker can do
 type Task interface {
 	Solve()
 }
 
-var TaskChannel = make(chan Task)
-
 type Dispatcher struct {
+	// TaskChannel is global channel for all incoming tasks
+	// used in Dispatch() mode (forever loop)
+	TaskChannel chan Task
 	// A pool of workers channels that are registered with the dispatcher
 	WorkerPool chan chan Task
 	MaxWorkers int
 }
 
+// New returns new Dispatcher instance with all channels linked
 func New(MaxWorkers int) *Dispatcher {
 	return &Dispatcher{
-		WorkerPool: make(chan chan Task, MaxWorkers),
-		MaxWorkers: MaxWorkers,
+		TaskChannel: make(chan Task),
+		WorkerPool:  make(chan chan Task, MaxWorkers),
+		MaxWorkers:  MaxWorkers,
 	}
 }
 
@@ -29,9 +34,9 @@ func (d *Dispatcher) Prepare() {
 	StartupLog(d.MaxWorkers)
 }
 
-// FreeTaskChannel returns channel of free worker
+// FreeWorkerTaskChannel returns channel of free worker
 // this will block until a worker is idle
-func (d *Dispatcher) FreeTaskChannel() chan Task {
+func (d *Dispatcher) FreeWorkerTaskChannel() chan Task {
 	return <-d.WorkerPool
 }
 
@@ -41,14 +46,12 @@ func (d *Dispatcher) FreeTaskChannel() chan Task {
 func (d *Dispatcher) Dispatch() {
 	for {
 		select {
-		case task := <-TaskChannel:
+		case task := <-d.TaskChannel:
 			// a Task request has been received
 			go func(task Task) {
 				// try to obtain a worker Task channel that is available.
-				// this will block until a worker is idle
-				workerTaskChannel := <-d.WorkerPool
-				// dispatch the Task to the worker Task channel
-				workerTaskChannel <- task
+				// and then send the Task to the worker Task channel
+				d.FreeWorkerTaskChannel() <- task
 			}(task)
 		}
 	}
