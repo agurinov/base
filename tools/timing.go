@@ -2,6 +2,7 @@ package tools
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 )
@@ -57,5 +58,6 @@ func (t *Timing) String() string {
 		nodes = append(nodes, fmt.Sprintf("%s: %s", node, t.Duration(node)))
 	}
 
+	sort.Strings(nodes)
 	return strings.Join(nodes, ", ")
 }

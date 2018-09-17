@@ -2,6 +2,7 @@ package tools
 
 import (
 	"testing"
+	"time"
 )
 
 func checkTiming(t *testing.T, timing *Timing, enter, exit int) {
@@ -51,5 +52,34 @@ func TestTiming(t *testing.T) {
 				t.Fatal("Unexpected duration, must be greater than 0")
 			}
 		})
+	})
+
+	t.Run("String", func(t *testing.T) {
+		tmng := &Timing{
+			enter: make(map[string]time.Time),
+			exit:  make(map[string]time.Time),
+		}
+		// entering
+		tmng.enter["foo"] = time.Date(2018, 9, 17, 10, 0, 0, 0, time.UTC)
+		tmng.enter["bar"] = time.Date(2018, 9, 17, 10, 0, 0, 0, time.UTC)
+
+		// exiting
+		tmng.exit["bar"] = time.Date(2018, 9, 17, 10, 5, 0, 0, time.UTC)
+		tmng.exit["baz"] = time.Date(2018, 9, 17, 10, 5, 0, 0, time.UTC)
+
+		// non entered nodes ignored
+		if log := tmng.String(); log != "bar: 5m0s, foo: 0s" {
+			t.Fatalf("Unexpected log string, expected: %q, got: %q", "bar: 5m0s, foo: 0s", log)
+		}
+
+		// append missing information
+		// close foo
+		tmng.exit["foo"] = time.Date(2018, 9, 17, 10, 5, 0, 0, time.UTC)
+		// open baz
+		tmng.enter["baz"] = time.Date(2018, 9, 17, 10, 0, 0, 0, time.UTC)
+
+		if log := tmng.String(); log != "bar: 5m0s, baz: 5m0s, foo: 5m0s" {
+			t.Fatalf("Unexpected log string, expected: %q, got: %q", "bar: 5m0s, baz: 5m0s, foo: 5m0s", log)
+		}
 	})
 }
