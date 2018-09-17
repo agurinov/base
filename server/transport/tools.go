@@ -3,9 +3,17 @@ package transport
 import (
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/boomfunc/base/tools/poller"
 )
+
+func Tick() (Interface, error) {
+	tick := &tick{
+		ticker: time.NewTicker(time.Second),
+	}
+	return tick, nil
+}
 
 func TCP(ip net.IP, port int) (Interface, error) {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", ip, port))

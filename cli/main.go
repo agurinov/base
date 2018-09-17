@@ -92,6 +92,11 @@ func Run(VERSION, TIMESTAMP string) {
 					Action: runCommandAction,
 				},
 				{
+					Name:   "tick",
+					Usage:  runTICKCommandUsage,
+					Action: runCommandAction,
+				},
+				{
 					Name:   "http",
 					Usage:  runHTTPCommandUsage,
 					Action: runCommandAction,

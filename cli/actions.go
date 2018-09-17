@@ -16,6 +16,7 @@ var (
 	runCommandUsage     = "Run creates concrete type of server and listen for incoming requests. Choose subcommand"
 	runUDPCommandUsage  = "Run UDP application server"
 	runTCPCommandUsage  = "Run TCP application server"
+	runTICKCommandUsage = "Run TICK application server (cron analog)"
 	runHTTPCommandUsage = "Run HTTP application server"
 	// Flags
 	debugFlagUsage  = "Debugging mode"

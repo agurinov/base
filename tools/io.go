@@ -16,6 +16,12 @@ type writeCloser struct {
 
 func (writeCloser) Close() error { return nil }
 
+type readWriteCloser struct {
+	io.ReadWriter
+}
+
+func (readWriteCloser) Close() error { return nil }
+
 func ReadCloser(r io.Reader) io.ReadCloser {
 	if rc, ok := r.(io.ReadCloser); ok {
 		return rc
@@ -28,4 +34,11 @@ func WriteCloser(w io.Writer) io.WriteCloser {
 		return wc
 	}
 	return &writeCloser{w}
+}
+
+func ReadWriteCloser(rw io.ReadWriter) io.ReadWriteCloser {
+	if rwc, ok := rw.(io.ReadWriteCloser); ok {
+		return rwc
+	}
+	return &readWriteCloser{rw}
 }

@@ -51,6 +51,14 @@ func New(transportName string, applicationName string, workers int, ip net.IP, p
 			return nil, err
 		}
 		tr.Connect(inputCh, errCh)
+
+	case "tick":
+		tr, err = transport.Tick()
+		if err != nil {
+			return nil, err
+		}
+		tr.Connect(inputCh, errCh)
+
 	default:
 		return nil, ErrUnknownTransport
 	}
