@@ -51,7 +51,7 @@ func PerformanceLog(numWorkers int) {
 }
 
 func AccessLog(flow *flow.Data) {
-	var status, uuid, url string
+	var status, url string
 
 	if flow.Stat.Successful() {
 		status = "SUCCESS"
@@ -61,12 +61,10 @@ func AccessLog(flow *flow.Data) {
 
 	// Request might be nil if err while parsing incoming message
 	if flow.Stat.Request != nil {
-		uuid = flow.Stat.Request.UUID.String()
 		url = flow.Stat.Request.Url.RequestURI()
 	} else {
-		uuid = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 		url = "/XXX/XXX/XXX"
 	}
 
-	log.Infof("%s\t-\t%s\t-\t%s\t-\tTiming: `%s`\t-\tWritten: %d", uuid, url, status, flow.Timing, flow.Stat.Len)
+	log.Infof("%s\t-\t%s\t-\t%s\t-\tTiming: `%s`\t-\tWritten: %d", flow.UUID.String(), url, status, flow.Timing, flow.Stat.Len)
 }

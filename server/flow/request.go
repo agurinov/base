@@ -1,4 +1,4 @@
-package request
+package flow
 
 import (
 	"io"
@@ -13,7 +13,7 @@ type Request struct {
 	Input io.Reader
 }
 
-func New(raw string, input io.Reader) (*Request, error) {
+func NewRequest(raw string, input io.Reader) (*Request, error) {
 	u, err := url.Parse(raw)
 	if err != nil {
 		return nil, err

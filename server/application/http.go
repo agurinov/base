@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	srvctx "github.com/boomfunc/base/server/context"
-	"github.com/boomfunc/base/server/request"
+	"github.com/boomfunc/base/server/flow"
 	"github.com/boomfunc/base/tools"
 )
 
@@ -17,7 +17,7 @@ type httpPacker struct {
 	request *http.Request
 }
 
-func (packer *httpPacker) Unpack(ctx context.Context, r io.Reader) (*request.Request, error) {
+func (packer *httpPacker) Unpack(ctx context.Context, r io.Reader) (*flow.Request, error) {
 	br := bufio.NewReader(r)
 	httpRequest, err := http.ReadRequest(br)
 	if err != nil {
@@ -43,7 +43,7 @@ func (packer *httpPacker) Unpack(ctx context.Context, r io.Reader) (*request.Req
 
 	packer.request = httpRequest
 
-	return request.New(
+	return flow.NewRequest(
 		httpRequest.URL.RequestURI(),
 		httpRequest.Body,
 	)
@@ -68,12 +68,14 @@ func (packer *httpPacker) Pack(r io.Reader, w io.Writer) (int64, error) {
 	}
 	response.Header = make(http.Header)
 
-	// TODO TODO
 	// CORS ISSUE while not structured application layer
-	response.Header.Set("Access-Control-Allow-Origin", "*")
-	response.Header.Set("Access-Control-Allow-Headers", "")
-	response.Header.Set("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
-	// TODO TODO
+	if packer.request.Header.Get("Origin") != "" {
+		// TODO TODO
+		response.Header.Set("Access-Control-Allow-Origin", "*")
+		response.Header.Set("Access-Control-Allow-Headers", "")
+		response.Header.Set("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+		// TODO TODO
+	}
 
 	return 0, response.Write(w)
 }

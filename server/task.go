@@ -37,7 +37,7 @@ func (task Task) Solve() {
 		}
 	}()
 
-	defer task.flow.Input.Close()
+	defer task.flow.RWC.Close()
 
 	task.flow.Timing.Enter("app")
 	srv.app.Handle(task.flow)

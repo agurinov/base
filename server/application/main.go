@@ -6,10 +6,7 @@ import (
 	"io"
 
 	"github.com/boomfunc/base/conf"
-	// srvctx "github.com/boomfunc/base/server/context"
 	"github.com/boomfunc/base/server/flow"
-	"github.com/boomfunc/base/server/request"
-	// "github.com/boomfunc/log"
 )
 
 var (
@@ -22,7 +19,7 @@ type Interface interface {
 }
 
 type Packer interface {
-	Unpack(context.Context, io.Reader) (*request.Request, error)
+	Unpack(context.Context, io.Reader) (*flow.Request, error)
 	Pack(io.Reader, io.Writer) (int64, error)
 }
 
@@ -31,21 +28,21 @@ type Application struct {
 	packer Packer
 }
 
-func (app *Application) Handle(flow *flow.Data) {
-	var req *request.Request
+func (app *Application) Handle(fl *flow.Data) {
+	var req *flow.Request
 	var err error
 	var written int64
 
 	defer func() {
-		flow.Stat.Request = req
-		flow.Stat.Error = err
-		flow.Stat.Len = written + 12
+		fl.Stat.Request = req
+		fl.Stat.Error = err
+		fl.Stat.Len = written
 	}()
 
 	// Parse request
 	// fill context meta part and q part
 	// TODO ErrBadRequest
-	req, err = app.packer.Unpack(flow.Ctx, flow.Input)
+	req, err = app.packer.Unpack(fl.Ctx, fl.RWC)
 	if err != nil {
 		return
 	}
@@ -72,12 +69,12 @@ func (app *Application) Handle(flow *flow.Data) {
 
 		// BUG: race condition
 		// TODO ErrServerError
-		err = route.Run(flow.Ctx, req.Input, pw)
+		err = route.Run(fl.Ctx, req.Input, pw)
 	}()
 
 	// write data to rwc only if all success
 	// TODO ErrServerError
-	written, err = app.packer.Pack(pr, flow.Input)
+	written, err = app.packer.Pack(pr, fl.RWC)
 
 	return
 }
