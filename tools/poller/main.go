@@ -9,5 +9,5 @@ type Event interface {
 type Interface interface {
 	Add(fd uintptr) error
 	Del(fd uintptr) error
-	Events() (re []Event, we []Event, err error)
+	Events() (re []Event, we []Event, ce []Event, err error)
 }

@@ -73,68 +73,117 @@ func (h *pollerHeap) Push(x interface{}) {
 }
 
 func (h *pollerHeap) Pop() interface{} {
+POP:
 	if h.Len() == 0 {
 		// case when nothing to fetch -> ask poller
 		// fill ready slice from poller signal
-		h.fillFromPoller()
+		h.poll()
 	}
 	// pop ready and return
-	return h.popReady()
+	if value := h.pop(); value != nil {
+		return value
+	} else {
+		// repeat this
+		goto POP
+	}
 }
 
-func (h *pollerHeap) fillFromPoller() {
+func (h *pollerHeap) poll() {
 	for {
 		// blocking mode
-		// fetching ready events from poller
-		re, _, err := h.poller.Events()
+		// fetching events from poller
+		re, _, ce, err := h.poller.Events()
 		if err != nil {
 			continue
 		}
 
-		// iterate over read ready events
-		for _, event := range re {
-			key := event.Fd()
-			// mark as ready to pop
-			h.pushReady(key)
-			// rm from epoll
-			h.poller.Del(key)
-		}
+		// push ready, excluding closed
+		readyFds := EventsToFds(re...)
+		closeFds := EventsToFds(ce...)
+		h.actualize(readyFds, closeFds)
 
-		break
+		return
 	}
 }
 
-func (h *pollerHeap) pushReady(x uintptr) {
+func (h *pollerHeap) actualize(ready []uintptr, close []uintptr) {
 	h.mux.Lock()
-	h.ready = append(h.ready, x)
-	h.mux.Unlock()
+	defer h.mux.Unlock()
+
+	// Phase 1. delete from heap if fd closed
+	for i, fd := range h.ready {
+		for _, cfd := range close {
+			if fd == cfd {
+				// fd from heap is closed
+				// not relevant, delete it from future .Pop()
+				h.ready = append(h.ready[0:i], h.ready[i+1:]...)
+			}
+		}
+	}
+
+	// Phase 2. add to heap if
+	// fd has some data (in ready) and not closed (not in close)
+	// and fd has associated in pending
+OUTER:
+	for _, rfd := range ready {
+		// check ready event has associated in pending
+		// if not - not relevant (we have not gor any returnable value)
+		if _, ok := h.pending[rfd]; !ok {
+			continue OUTER
+		}
+
+		// ready event can be returned, check next for closing at same time
+		for _, cfd := range close {
+			if rfd == cfd {
+				// ready event is closed -> not relevant, skip
+				continue OUTER
+			}
+		}
+		h.ready = append(h.ready, rfd)
+	}
+
+	// Phase 3. actualize heap pending elements
+	// closed elements remove from pending (memory release)
+	for _, cfd := range close {
+		if _, ok := h.pending[cfd]; ok {
+			delete(h.pending, cfd)
+		}
+	}
 }
 
-func (h *pollerHeap) popReady() interface{} {
-	h.mux.RLock()
-	n := len(h.ready)
-	h.mux.RUnlock()
-
-	if n == 0 {
+func (h *pollerHeap) pop() interface{} {
+	if h.Len() == 0 {
 		return nil
 	}
 
-	h.mux.RLock()
-	fd := h.ready[n-1]
-	h.mux.RUnlock()
-
+	// there is something to pop
+	// at first sight
 	h.mux.Lock()
-	h.ready = h.ready[0 : n-1]
-	h.mux.Unlock()
+	defer h.mux.Unlock()
 
-	// get Value by fd
-	if value, ok := h.pending[fd]; ok {
-		h.mux.Lock()
-		delete(h.pending, fd)
-		h.mux.Unlock()
+	var i int
+	var value interface{}
 
-		return value
+	// get first fd from heap, available in pending
+	for j, fd := range h.ready {
+		// save counter
+		i = j
+		// get Value by fd from pending
+		var ok bool
+		value, ok = h.pending[fd]
+		if ok {
+			// there is associated value in pending
+			// delete from pending and return
+			delete(h.pending, fd)
+			break
+		}
 	}
 
-	return nil
+	// we got first associated entry
+	// all before not relevant, because
+	// if associated pending exists - return this (it is this case)
+	// otherwise it is orphans -> try again (loop continue)
+	h.ready = h.ready[i+1:]
+
+	return value
 }
