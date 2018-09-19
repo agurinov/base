@@ -88,6 +88,7 @@ func TestHeap(t *testing.T) {
 			{[]uintptr{}, map[uintptr]interface{}{}, []uintptr{1, 2, 3}, []uintptr{2, 3, 4, 5}, 0, 0},
 			{[]uintptr{1, 2}, map[uintptr]interface{}{4: "some"}, []uintptr{3}, []uintptr{4}, 2, 0},
 			{[]uintptr{1, 2}, map[uintptr]interface{}{4: "some", 6: "some6"}, []uintptr{4, 6, 7}, []uintptr{4, 2, 5}, 2, 1},
+			{[]uintptr{1, 2, 3, 4}, map[uintptr]interface{}{1: "some", 2: "some", 3: "some", 4: "some"}, []uintptr{}, []uintptr{4, 2, 1}, 1, 1},
 		}
 
 		for i, tt := range tableTests {

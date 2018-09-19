@@ -74,11 +74,12 @@ func (h *pollerHeap) Push(x interface{}) {
 
 func (h *pollerHeap) Pop() interface{} {
 POP:
-	if h.Len() == 0 {
-		// case when nothing to fetch -> ask poller
-		// fill ready slice from poller signal
-		h.poll()
-	}
+	// if h.Len() == 0 {
+	// 	// case when nothing to fetch -> ask poller
+	// 	// fill ready slice from poller signal
+	// 	h.poll()
+	// }
+	h.poll()
 	// pop ready and return
 	if value := h.pop(); value != nil {
 		return value
@@ -111,32 +112,38 @@ func (h *pollerHeap) actualize(ready []uintptr, close []uintptr) {
 	defer h.mux.Unlock()
 
 	// Phase 1. delete from heap if fd closed
-	for i, fd := range h.ready {
+	var nready []uintptr
+OUTER1:
+	for _, fd := range h.ready {
 		for _, cfd := range close {
 			if fd == cfd {
 				// fd from heap is closed
 				// not relevant, delete it from future .Pop()
-				h.ready = append(h.ready[0:i], h.ready[i+1:]...)
+				continue OUTER1
 			}
 		}
+		// if this code reachable -> no continue in close loop
+		// no occurences in close - save
+		nready = append(nready, fd)
 	}
+	h.ready = nready
 
 	// Phase 2. add to heap if
 	// fd has some data (in ready) and not closed (not in close)
 	// and fd has associated in pending
-OUTER:
+OUTER2:
 	for _, rfd := range ready {
 		// check ready event has associated in pending
 		// if not - not relevant (we have not gor any returnable value)
 		if _, ok := h.pending[rfd]; !ok {
-			continue OUTER
+			continue OUTER2
 		}
 
 		// ready event can be returned, check next for closing at same time
 		for _, cfd := range close {
 			if rfd == cfd {
 				// ready event is closed -> not relevant, skip
-				continue OUTER
+				continue OUTER2
 			}
 		}
 		h.ready = append(h.ready, rfd)
