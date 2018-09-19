@@ -58,14 +58,15 @@ func (p *kqueue) Events() ([]Event, []Event, []Event, error) {
 		if event.Flags&(unix.EV_EOF) != 0 {
 			// closed by peer
 			ce = append(ce, toEvent(event))
-		}
-		// Check event 'ready to read'
-		if event.Filter&(unix.EVFILT_READ) != 0 {
-			re = append(re, toEvent(event))
-		}
-		// Check event 'ready to write'
-		if event.Filter&(unix.EVFILT_WRITE) != 0 {
-			we = append(we, toEvent(event))
+		} else {
+			// Check event 'ready to read'
+			if event.Filter&(unix.EVFILT_READ) != 0 {
+				re = append(re, toEvent(event))
+			}
+			// Check event 'ready to write'
+			if event.Filter&(unix.EVFILT_WRITE) != 0 {
+				we = append(we, toEvent(event))
+			}
 		}
 	}
 
