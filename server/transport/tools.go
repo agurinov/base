@@ -3,8 +3,6 @@ package transport
 import (
 	"fmt"
 	"net"
-
-	"github.com/boomfunc/base/tools/poller"
 )
 
 func TCP(ip net.IP, port int) (Interface, error) {
@@ -18,14 +16,8 @@ func TCP(ip net.IP, port int) (Interface, error) {
 		return nil, err
 	}
 
-	heap, err := poller.Heap()
-	if err != nil {
-		return nil, err
-	}
-
 	tcp := &tcp{
 		listener: tcpListener,
-		heap:     heap,
 	}
 	return tcp, nil
 }

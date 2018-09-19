@@ -1,6 +1,8 @@
 package server
 
 import (
+	"container/heap"
+
 	"github.com/boomfunc/base/server/application"
 	"github.com/boomfunc/base/server/context"
 	"github.com/boomfunc/base/server/dispatcher"
@@ -14,40 +16,40 @@ type Server struct {
 	app        application.Interface
 	dispatcher *dispatcher.Dispatcher
 
-	inputCh  chan *flow.Data
+	heap     heap.Interface
 	errCh    chan error
 	outputCh chan *flow.Data
 }
 
-func (srv *Server) listenOS() {
+func (srv *Server) engine() {
+	for {
+		// Phase 1. get worker
+		// try to fetch empty worker (to be precise, his channel)
+		// blocking mode!
+		taskChannel := srv.dispatcher.FreeWorkerTaskChannel()
 
+		// Phase 2. Obtain socket with data from heap/poller
+		// blocking mode!
+		if flow, ok := heap.Pop(srv.heap).(*flow.Data); ok {
+			flow.Timing.Exit("transport")
+			context.SetMeta(flow.Ctx, "srv", srv)
+			// send to worker's channel
+			taskChannel <- Task{flow}
+		}
+	}
 }
 
-// this function listen all server channels and proxying
-// errors to log
-// io.RWC to dispatcher system
-// response.Stat to log and check for errors additionally
-func (srv *Server) listenCh() {
+// this function listen all server channels
+// TODO listen OS signals and gracefully close server
+// check for errors additionally -> errors to log
+// response.Stat to log
+func (srv *Server) listen() {
 	for {
 		select {
 		case err := <-srv.errCh:
 			if err != nil {
 				tools.ErrorLog(err)
 			}
-
-		case flow := <-srv.inputCh:
-			go func() {
-				// input from transport layer (conn, file socket, or something else)
-				// try to fetch empty worker (to be precise, his channel)
-				// blocking mode!
-				flow.Timing.Enter("dispatcher")
-				taskChannel := srv.dispatcher.FreeWorkerTaskChannel()
-				flow.Timing.Exit("dispatcher")
-				// create request own flow context, fill server part of data
-				context.SetMeta(flow.Ctx, "srv", srv)
-				// send to worker's channel
-				taskChannel <- Task{flow}
-			}()
 
 		case flow := <-srv.outputCh:
 			// ready response from dispatcher system
@@ -74,10 +76,11 @@ func (srv *Server) Serve() {
 	srv.dispatcher.Prepare()
 
 	// GOROUTINE 2 (listen server channels)
-	go srv.listenCh()
+	go srv.listen()
 
-	// TODO GOROUTINE 3 (listen for os signals and gracefully close server)
-	// go srv.listenOS()
+	// GOROUTINE 3 (main engine)
+	// bridge between worker(from dispatcher) and task(from heap)
+	go srv.engine()
 
 	// Here we can test some of our system requirements and performance recommendations
 	PerformanceLog(srv.dispatcher.MaxWorkers)

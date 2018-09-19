@@ -17,32 +17,17 @@ var (
 
 type tcp struct {
 	listener *net.TCPListener
-
 	// server integration
-	inputCh chan *flow.Data
-	errCh   chan error
-
-	// poller integration
-	heap heap.Interface
+	heap  heap.Interface // also connect with poller
+	errCh chan error
 }
 
-func (tr *tcp) Connect(inputCh chan *flow.Data, errCh chan error) {
-	tr.inputCh = inputCh
+func (tr *tcp) Connect(heap heap.Interface, errCh chan error) {
+	tr.heap = heap
 	tr.errCh = errCh
 }
 
 func (tr *tcp) Serve() {
-	go func() {
-		for {
-			// Obtain socket with data from heap/poller
-			// (blocking mode)
-			if flow, ok := heap.Pop(tr.heap).(*flow.Data); ok {
-				flow.Timing.Exit("poller")
-				tr.inputCh <- flow
-			}
-		}
-	}()
-
 	for {
 		conn, err := tr.listener.AcceptTCP()
 		if err != nil {
@@ -59,7 +44,7 @@ func (tr *tcp) Serve() {
 		// push incoming connection to heap
 		flow := flow.New(conn)
 		item := &poller.HeapItem{Fd: fd, Value: flow}
-		flow.Timing.Enter("poller")
+		flow.Timing.Enter("transport")
 		heap.Push(tr.heap, item)
 	}
 }
