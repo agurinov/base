@@ -10,43 +10,28 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func TestNew(t *testing.T) {
+func TestPollerPrivate(t *testing.T) {
 	poller, err := New()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if poller == nil {
-		t.Fatal("Unexpected poller (expected *epoll)")
-	}
-
 	epoll, ok := poller.(*epoll)
-	if !ok {
-		t.Fatal("Unexpected poller (expected *epoll)")
-	}
 
-	if epoll.fd <= 0 {
-		t.Fatal("Invalid poller fd")
-	}
-}
+	t.Run("New", func(t *testing.T) {
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Fatal("Unexpected poller type (expected *epoll)")
+		}
+		if epoll.fd <= 0 {
+			t.Fatal("Invalid poller fd")
+		}
+	})
 
-func TestToEvent(t *testing.T) {
-	se := unix.EpollEvent{Fd: 6}
-
-	event := toEvent(se)
-
-	if event.Fd() != 6 {
-		t.Fatal("Unexpected event fd")
-	}
-}
-
-func TestEventsWait(t *testing.T) {
 	t.Run("wait", func(t *testing.T) {
-		poller, _ := New()
 		r, w, _ := os.Pipe()
-		poller.Add(r.Fd())
-		poller.Add(w.Fd())
+		epoll.Add(r.Fd())
+		epoll.Add(w.Fd())
 
-		events, err := poller.(*epoll).wait()
+		events, err := epoll.wait()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -60,7 +45,7 @@ func TestEventsWait(t *testing.T) {
 
 		fmt.Fprint(w, "some playload")
 
-		events, err = poller.(*epoll).wait()
+		events, err = epoll.wait()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -75,47 +60,14 @@ func TestEventsWait(t *testing.T) {
 			t.Fatal("Unexpected event fd")
 		}
 	})
+}
 
-	t.Run("Events", func(t *testing.T) {
-		poller, _ := New()
-		r, w, _ := os.Pipe()
-		poller.Add(r.Fd())
-		poller.Add(w.Fd())
+func TestToEvent(t *testing.T) {
+	se := unix.EpollEvent{Fd: 6}
 
-		re, we, err := poller.Events()
-		if err != nil {
-			t.Fatal(err)
-		}
-		// now only w part is ready for writing -> len == 1
-		if len(we) != 1 {
-			t.Fatal("Unexpected number of write events, expected 1")
-		}
-		if len(re) != 0 {
-			t.Fatal("Unexpected number of read events, expected 0")
-		}
-		if we[0].Fd() != w.Fd() {
-			t.Fatal("Unexpected event fd")
-		}
+	event := toEvent(se)
 
-		// write imitation
-		fmt.Fprint(w, "some playload")
-
-		re, we, err = poller.Events()
-		if err != nil {
-			t.Fatal(err)
-		}
-		// now w and r parts is ready -> len == 2
-		if len(we) != 1 {
-			t.Fatal("Unexpected number of write events, expected 1")
-		}
-		if len(re) != 1 {
-			t.Fatal("Unexpected number of read events, expected 1")
-		}
-		if re[0].Fd() != r.Fd() {
-			t.Fatal("Unexpected event fd")
-		}
-		if we[0].Fd() != w.Fd() {
-			t.Fatal("Unexpected event fd")
-		}
-	})
+	if event.Fd() != 6 {
+		t.Fatal("Unexpected event fd")
+	}
 }
