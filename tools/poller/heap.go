@@ -90,21 +90,26 @@ POP:
 }
 
 func (h *pollerHeap) poll() {
-	for {
-		// blocking mode
-		// fetching events from poller
-		re, _, ce, err := h.poller.Events()
-		if err != nil {
-			continue
-		}
-
-		// push ready, excluding closed
-		readyFds := EventsToFds(re...)
-		closeFds := EventsToFds(ce...)
-		h.actualize(readyFds, closeFds)
-
-		return
+POLL:
+	// blocking mode
+	// fetching events from poller
+	re, _, ce, err := h.poller.Events()
+	if err != nil {
+		// some error from poller -> poll again
+		goto POLL
 	}
+
+	if len(re)+len(ce) == 0 {
+		// not required events came -> poll again
+		goto POLL
+	}
+
+	// events are received
+	// push ready, excluding closed
+	h.actualize(
+		EventsToFds(re...),
+		EventsToFds(ce...),
+	)
 }
 
 func (h *pollerHeap) actualize(ready []uintptr, close []uintptr) {
