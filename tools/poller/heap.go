@@ -11,10 +11,13 @@ type HeapItem struct {
 }
 
 type pollerHeap struct {
+	mux sync.RWMutex
+	wg  sync.WaitGroup
+
 	pending map[uintptr]interface{}
 	ready   []uintptr
 	poller  Interface
-	mux     *sync.RWMutex
+	pl      bool // poller locker
 }
 
 func Heap() (heap.Interface, error) {
@@ -27,36 +30,75 @@ func Heap() (heap.Interface, error) {
 		pending: make(map[uintptr]interface{}, 0),
 		ready:   make([]uintptr, 0),
 		poller:  poller,
-		mux:     new(sync.RWMutex),
 	}
 
 	heap.Init(h)
 	return h, nil
 }
 
-func (h pollerHeap) Len() int {
-	h.mux.RLock()
-	defer h.mux.RUnlock()
+func (h *pollerHeap) pollerLock() {
+	h.mux.Lock()
+	h.pl = true
+	h.mux.Unlock()
+	h.wg.Add(1)
+}
 
+func (h *pollerHeap) pollerUnlock() {
+	h.mux.Lock()
+	h.pl = false
+	h.mux.Unlock()
+	h.wg.Done()
+}
+
+func (h *pollerHeap) isPollerLocked() bool {
+	h.mux.RLock()
+	locked := h.pl
+	h.mux.RUnlock()
+
+	return locked
+}
+
+func (h *pollerHeap) pollerWait() {
+	h.wg.Wait()
+}
+
+func (h *pollerHeap) len() int {
 	return len(h.ready)
 }
 
-func (h pollerHeap) Less(i, j int) bool {
+func (h *pollerHeap) Len() int {
 	h.mux.RLock()
-	defer h.mux.RUnlock()
+	n := h.len()
+	h.mux.RUnlock()
 
+	return n
+}
+
+func (h *pollerHeap) less(i, j int) bool {
 	// Less reports whether the element with
 	// index i should sort before the element with index j.
 	return h.ready[i] < h.ready[j]
 }
 
-func (h pollerHeap) Swap(i, j int) {
-	if h.Len() >= 2 {
+func (h *pollerHeap) Less(i, j int) bool {
+	h.mux.RLock()
+	b := h.less(i, j)
+	h.mux.RUnlock()
+
+	return b
+}
+
+func (h *pollerHeap) swap(i, j int) {
+	if h.len() >= 2 {
 		// there is something to swap
-		h.mux.Lock()
 		h.ready[i], h.ready[j] = h.ready[j], h.ready[i]
-		h.mux.Unlock()
 	}
+}
+
+func (h *pollerHeap) Swap(i, j int) {
+	h.mux.Lock()
+	h.swap(i, j)
+	h.mux.Unlock()
 }
 
 func (h *pollerHeap) Push(x interface{}) {
@@ -73,26 +115,43 @@ func (h *pollerHeap) Push(x interface{}) {
 }
 
 func (h *pollerHeap) Pop() interface{} {
-POP:
-	// if h.Len() == 0 {
-	// 	// case when nothing to fetch -> ask poller
-	// 	// fill ready slice from poller signal
-	// 	h.poll()
-	// }
-	h.poll()
-	// pop ready and return
-	if value := h.pop(); value != nil {
-		return value
-	} else {
-		// repeat this
-		goto POP
+	for {
+		// is polling process running now?
+		// there is only one place per unit of time
+		if !h.isPollerLocked() {
+			h.pollerLock() // mark that polling started (for another routines)
+
+			// run poll with actualizing behind the scenes
+			go func() {
+				h.poll()         // thread-safety
+				h.pollerUnlock() // thread-safety
+			}()
+		}
+
+		if h.Len() == 0 {
+			// case when nothing to fetch -> ask poller and wait as long as necessary
+			// fill ready slice from poller signal
+			h.pollerWait()
+		}
+
+		// pop ready and return
+		h.mux.Lock()
+		value := h.pop()
+		h.mux.Unlock()
+
+		if value != nil {
+			return value
+		} else {
+			// repeat this
+			continue
+		}
 	}
 }
 
 func (h *pollerHeap) poll() {
 POLL:
-	// blocking mode
 	// fetching events from poller
+	// blocking mode !!!
 	re, _, ce, err := h.poller.Events()
 	if err != nil {
 		// some error from poller -> poll again
@@ -104,18 +163,17 @@ POLL:
 		goto POLL
 	}
 
-	// events are received
+	// events are received (and they are!)
 	// push ready, excluding closed
+	h.mux.Lock()
 	h.actualize(
 		EventsToFds(re...),
 		EventsToFds(ce...),
 	)
+	h.mux.Unlock()
 }
 
 func (h *pollerHeap) actualize(ready []uintptr, close []uintptr) {
-	h.mux.Lock()
-	defer h.mux.Unlock()
-
 	// Phase 1. delete from heap if fd closed
 	var nready []uintptr
 OUTER1:
@@ -164,15 +222,11 @@ OUTER2:
 }
 
 func (h *pollerHeap) pop() interface{} {
-	if h.Len() == 0 {
+	if h.len() == 0 {
 		return nil
 	}
 
-	// there is something to pop
-	// at first sight
-	h.mux.Lock()
-	defer h.mux.Unlock()
-
+	// there is something to pop (at first sight)
 	var i int
 	var value interface{}
 

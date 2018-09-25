@@ -1,7 +1,9 @@
 package poller
 
 import (
+	goheap "container/heap"
 	"fmt"
+	// "sync"
 	"testing"
 )
 
@@ -105,7 +107,19 @@ func TestHeap(t *testing.T) {
 	})
 
 	t.Run("Pop", func(t *testing.T) {
-		// TODO mocking poller
+		poller := &mock{5} // 2 seconds wait
+		heap := &pollerHeap{
+			pending: make(map[uintptr]interface{}, 0),
+			ready:   make([]uintptr, 0),
+			poller:  poller,
+			// mux:     new(sync.RWMutex),
+		}
+		goheap.Init(heap)
+		heap.pending[1] = "foobar"
+		heap.pending[2] = "foobar"
+
+		go heap.Pop()
+		heap.Pop()
 	})
 
 	t.Run("Push", func(t *testing.T) {
