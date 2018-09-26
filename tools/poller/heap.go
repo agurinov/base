@@ -39,15 +39,15 @@ func Heap() (heap.Interface, error) {
 func (h *pollerHeap) pollerLock() {
 	h.mux.Lock()
 	h.pl = true
-	h.mux.Unlock()
 	h.wg.Add(1)
+	h.mux.Unlock()
 }
 
 func (h *pollerHeap) pollerUnlock() {
 	h.mux.Lock()
 	h.pl = false
-	h.mux.Unlock()
 	h.wg.Done()
+	h.mux.Unlock()
 }
 
 func (h *pollerHeap) isPollerLocked() bool {
