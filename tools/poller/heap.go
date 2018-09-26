@@ -197,7 +197,7 @@ OUTER1:
 OUTER2:
 	for _, rfd := range ready {
 		// check ready event has associated in pending
-		// if not - not relevant (we have not gor any returnable value)
+		// if not - not relevant (we have not got any returnable value)
 		if _, ok := h.pending[rfd]; !ok {
 			continue OUTER2
 		}
