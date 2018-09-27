@@ -13,22 +13,26 @@ func (ev fakeEvent) Fd() uintptr {
 	return ev.fd
 }
 
-func sliceEqual(a, b []uintptr) bool {
-	if (a == nil) != (b == nil) {
-		return false
+func TestSliceEqual(t *testing.T) {
+	tableTests := []struct {
+		a  []uintptr
+		b  []uintptr
+		eq bool
+	}{
+		{[]uintptr{}, []uintptr{}, true},
+		{[]uintptr{1}, []uintptr{2}, false},
+		{[]uintptr{1}, []uintptr{1}, true},
+		{[]uintptr{1, 2}, []uintptr{2, 1}, false},
+		{[]uintptr{1, 2}, []uintptr{1, 2}, true},
 	}
 
-	if len(a) != len(b) {
-		return false
+	for i, tt := range tableTests {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			if eq := sliceEqual(tt.a, tt.b); eq != tt.eq {
+				t.Fatalf(".sliceEqual() Expected %t, got %t", tt.eq, eq)
+			}
+		})
 	}
-
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-
-	return true
 }
 
 func TestEventsToFds(t *testing.T) {

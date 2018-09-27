@@ -97,6 +97,76 @@ func TestHeapPrivate(t *testing.T) {
 	heapInterface, _ := Heap()
 	heap, _ := heapInterface.(*pollerHeap)
 
+	t.Run("len", func(t *testing.T) {
+		tableTests := []struct {
+			ready []uintptr // ready slice for heap (initial)
+			len   int
+		}{
+			{[]uintptr{}, 0},
+			{[]uintptr{1, 2}, 2},
+			{[]uintptr{1, 2, 3}, 3},
+		}
+
+		for i, tt := range tableTests {
+			t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+				// fill heap
+				heap.ready = tt.ready
+
+				if l := heap.len(); l != tt.len {
+					t.Fatalf("len(). Expected %d, got %d", tt.len, l)
+				}
+			})
+		}
+	})
+
+	t.Run("less", func(t *testing.T) {
+		tableTests := []struct {
+			ready []uintptr // ready slice for heap (initial)
+			i, j  int
+			cond  bool
+		}{
+			// {[]uintptr{}, 0, 1, false},
+			{[]uintptr{1, 2}, 0, 1, true},
+			{[]uintptr{1, 2, 3}, 2, 1, false},
+		}
+
+		for i, tt := range tableTests {
+			t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+				// fill heap
+				heap.ready = tt.ready
+
+				if x := heap.less(tt.i, tt.j); x != tt.cond {
+					t.Fatalf("less(i, j). Expected %t, got %t", tt.cond, x)
+				}
+			})
+		}
+	})
+
+	t.Run("swap", func(t *testing.T) {
+		tableTests := []struct {
+			ready   []uintptr // ready slice for heap (initial)
+			i, j    int
+			swapped []uintptr
+		}{
+			{[]uintptr{}, 0, 1, []uintptr{}},
+			{[]uintptr{1}, 0, 1, []uintptr{1}},
+			{[]uintptr{1, 2}, 0, 1, []uintptr{2, 1}},
+			{[]uintptr{1, 2, 3}, 0, 2, []uintptr{3, 2, 1}},
+		}
+
+		for i, tt := range tableTests {
+			t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+				// fill heap
+				heap.ready = tt.ready
+
+				heap.swap(tt.i, tt.j)
+				if !sliceEqual(heap.ready, tt.swapped) {
+					t.Fatalf("swap(). Expected %v, got %v", tt.swapped, heap.ready)
+				}
+			})
+		}
+	})
+
 	t.Run("pop", func(t *testing.T) {
 		tableTests := []struct {
 			ready        []uintptr               // ready slice for heap (initial)
@@ -104,7 +174,6 @@ func TestHeapPrivate(t *testing.T) {
 			x            interface{}             // value returned by pop()
 			countReady   int                     // ready slice for heap (count)
 			countPending int                     // pending for heap (count)
-
 		}{
 			{[]uintptr{}, map[uintptr]interface{}{}, nil, 0, 0},
 			{[]uintptr{}, map[uintptr]interface{}{1: "some"}, nil, 0, 1},
