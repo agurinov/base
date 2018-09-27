@@ -11,13 +11,15 @@ type HeapItem struct {
 }
 
 type pollerHeap struct {
-	mux sync.RWMutex
-	wg  sync.WaitGroup
+	// poller integration
+	poller       Interface
+	pollerLocked bool
+	pl           *sync.Cond // poller locking
+
+	mux sync.RWMutex // this mutex guards variables below
 
 	pending map[uintptr]interface{}
 	ready   []uintptr
-	poller  Interface
-	pl      bool // poller locker
 }
 
 func Heap() (heap.Interface, error) {
@@ -27,6 +29,7 @@ func Heap() (heap.Interface, error) {
 	}
 
 	h := &pollerHeap{
+		pl:      sync.NewCond(&sync.Mutex{}),
 		pending: make(map[uintptr]interface{}, 0),
 		ready:   make([]uintptr, 0),
 		poller:  poller,
@@ -34,32 +37,6 @@ func Heap() (heap.Interface, error) {
 
 	heap.Init(h)
 	return h, nil
-}
-
-func (h *pollerHeap) pollerLock() {
-	h.mux.Lock()
-	h.pl = true
-	h.wg.Add(1)
-	h.mux.Unlock()
-}
-
-func (h *pollerHeap) pollerUnlock() {
-	h.mux.Lock()
-	h.pl = false
-	h.wg.Done()
-	h.mux.Unlock()
-}
-
-func (h *pollerHeap) isPollerLocked() bool {
-	h.mux.RLock()
-	locked := h.pl
-	h.mux.RUnlock()
-
-	return locked
-}
-
-func (h *pollerHeap) pollerWait() {
-	h.wg.Wait()
 }
 
 func (h *pollerHeap) len() int {
@@ -118,21 +95,39 @@ func (h *pollerHeap) Pop() interface{} {
 	for {
 		// is polling process running now?
 		// there is only one place per unit of time
-		if !h.isPollerLocked() {
-			h.pollerLock() // mark that polling started (for another routines)
+		h.mux.RLock()
+		locked := h.pollerLocked
+		h.mux.RUnlock()
+
+		if !locked {
+			// lock this IF statement for another goroutines
+			h.mux.Lock()
+			h.pollerLocked = true
+			h.mux.Unlock()
 
 			// run poll with actualizing behind the scenes
 			go func() {
-				h.poll()         // thread-safety
-				h.pollerUnlock() // thread-safety
+				h.poll()
+
+				// unlock parent IF statement for another goroutines
+				h.mux.Lock()
+				h.pollerLocked = false
+				h.mux.Unlock()
+
+				// all events polled, data refreshed
+				// unlock all waiting goroutines (server with .Pop() method invoked)
+				h.pl.Broadcast()
 			}()
 		}
 
+		// wait if necessary
+		h.pl.L.Lock()
 		if h.Len() == 0 {
 			// case when nothing to fetch -> ask poller and wait as long as necessary
 			// fill ready slice from poller signal
-			h.pollerWait()
+			h.pl.Wait()
 		}
+		h.pl.L.Unlock()
 
 		// pop ready and return
 		h.mux.Lock()
@@ -149,18 +144,25 @@ func (h *pollerHeap) Pop() interface{} {
 }
 
 func (h *pollerHeap) poll() {
-POLL:
-	// fetching events from poller
-	// blocking mode !!!
-	re, _, ce, err := h.poller.Events()
-	if err != nil {
-		// some error from poller -> poll again
-		goto POLL
-	}
+	var re, ce []Event
 
-	if len(re)+len(ce) == 0 {
-		// not required events came -> poll again
-		goto POLL
+	for {
+		var err error
+		// fetching events from poller
+		// blocking mode !!!
+		re, _, ce, err = h.poller.Events()
+		if err != nil {
+			// some error from poller -> poll again
+			continue
+		}
+
+		if len(re)+len(ce) == 0 {
+			// not required events came -> poll again
+			continue
+		}
+
+		// all fetched without errors
+		break
 	}
 
 	// events are received (and they are!)

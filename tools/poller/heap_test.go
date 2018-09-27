@@ -1,9 +1,9 @@
 package poller
 
 import (
-	goheap "container/heap"
+	"container/heap"
 	"fmt"
-	// "sync"
+	"sync"
 	"testing"
 )
 
@@ -30,9 +30,9 @@ func pollerHeapLen(t *testing.T, heap *pollerHeap, ready, pending int) {
 	})
 }
 
-func TestHeap(t *testing.T) {
+func TestHeapPublic(t *testing.T) {
 	heapInterface, err := Heap()
-	heap, ok := heapInterface.(*pollerHeap)
+	hp, ok := heapInterface.(*pollerHeap)
 
 	t.Run("New", func(t *testing.T) {
 		if err != nil {
@@ -41,8 +41,61 @@ func TestHeap(t *testing.T) {
 		if !ok {
 			t.Fatal("Unexpected heap type (expected *pollerHeap)")
 		}
-		pollerHeapLen(t, heap, 0, 0)
+		pollerHeapLen(t, hp, 0, 0)
 	})
+
+	t.Run("Pop", func(t *testing.T) {
+		hp := &pollerHeap{
+			pl:      sync.NewCond(&sync.Mutex{}),
+			pending: make(map[uintptr]interface{}, 0),
+			ready:   make([]uintptr, 0),
+			poller:  &mock{}, // 2 seconds wait,
+		}
+		heap.Init(hp)
+		hp.pending[1] = "foobar1"
+		hp.pending[2] = "foobar2"
+		hp.pending[3] = "foobar3"
+		hp.pending[4] = "foobar4"
+		hp.pending[5] = "foobar5"
+		hp.pending[6] = "foobar6"
+
+		wg := sync.WaitGroup{}
+		wg.Add(6)
+
+		for i := 0; i < 6; i++ {
+			go func(i int) {
+				t.Logf("WINK (%d): %+v", i, heap.Pop(hp))
+				wg.Done()
+			}(i)
+		}
+
+		wg.Wait()
+	})
+
+	t.Run("Push", func(t *testing.T) {
+		// clear
+		hp.ready = []uintptr{}
+		hp.pending = map[uintptr]interface{}{}
+
+		t.Run("real", func(t *testing.T) {
+			heap.Push(hp, &HeapItem{Fd: uintptr(1), Value: "foobar"})
+			pollerHeapLen(t, hp, 0, 1)
+		})
+
+		t.Run("fake", func(t *testing.T) {
+			heap.Push(hp, "foobar")
+			pollerHeapLen(t, hp, 0, 1)
+		})
+
+		t.Run("poller/error", func(t *testing.T) {
+			// TODO poller error
+		})
+	})
+}
+
+func TestHeapPrivate(t *testing.T) {
+	heapInterface, _ := Heap()
+	heap, _ := heapInterface.(*pollerHeap)
 
 	t.Run("pop", func(t *testing.T) {
 		tableTests := []struct {
@@ -105,41 +158,4 @@ func TestHeap(t *testing.T) {
 			})
 		}
 	})
-
-	t.Run("Pop", func(t *testing.T) {
-		poller := &mock{5} // 2 seconds wait
-		heap := &pollerHeap{
-			pending: make(map[uintptr]interface{}, 0),
-			ready:   make([]uintptr, 0),
-			poller:  poller,
-			// mux:     new(sync.RWMutex),
-		}
-		goheap.Init(heap)
-		heap.pending[1] = "foobar"
-		heap.pending[2] = "foobar"
-
-		go heap.Pop()
-		heap.Pop()
-	})
-
-	t.Run("Push", func(t *testing.T) {
-		// clear
-		heap.ready = []uintptr{}
-		heap.pending = map[uintptr]interface{}{}
-
-		t.Run("real", func(t *testing.T) {
-			heap.Push(&HeapItem{Fd: uintptr(1), Value: "foobar"})
-			pollerHeapLen(t, heap, 0, 1)
-		})
-
-		t.Run("fake", func(t *testing.T) {
-			heap.Push("foobar")
-			pollerHeapLen(t, heap, 0, 1)
-		})
-
-		t.Run("poller/error", func(t *testing.T) {
-			// TODO poller error
-		})
-	})
-
 }
