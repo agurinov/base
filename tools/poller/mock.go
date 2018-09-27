@@ -1,6 +1,8 @@
 package poller
 
 import (
+	"errors"
+	"fmt"
 	"time"
 )
 
@@ -13,7 +15,20 @@ func (ev mockEvent) Fd() uintptr {
 	return ev.se
 }
 
-type mock struct{}
+type mock struct {
+	invokes int
+	err     bool
+	re      []uintptr
+	ce      []uintptr
+}
+
+func MockPoller(re, ce []uintptr, err bool) Interface {
+	return &mock{
+		err: err,
+		re:  re,
+		ce:  ce,
+	}
+}
 
 func (p *mock) Add(fd uintptr) error {
 	return nil
@@ -23,11 +38,35 @@ func (p *mock) Del(fd uintptr) error {
 	return nil
 }
 
+func (p *mock) events() ([]Event, []Event, []Event) {
+	var re, ce []Event
+
+	for _, fd := range p.re {
+		re = append(re, mockEvent{fd})
+	}
+	for _, fd := range p.ce {
+		ce = append(ce, mockEvent{fd})
+	}
+
+	return re, nil, ce
+}
+
 func (p *mock) Events() ([]Event, []Event, []Event, error) {
-	// imitation polling
-	time.Sleep(time.Second * 3)
-	re := []Event{mockEvent{1}, mockEvent{2}, mockEvent{3}, mockEvent{4}, mockEvent{5}, mockEvent{6}}
-	we := []Event{}
-	ce := []Event{}
-	return re, we, ce, nil
+	p.invokes++
+
+	if p.invokes == 1 {
+		// FIRST INVOKE - BY RULE
+		if p.err {
+			// case when error from poller
+			return nil, nil, nil, errors.New("Error from poller")
+		}
+		// imitation polling
+		time.Sleep(time.Second * 1)
+
+		re, _, ce := p.events()
+		return re, nil, ce, nil
+	} else {
+		// SECOND - RETURN empty (otherwise block)
+		return []Event{}, nil, []Event{}, nil
+	}
 }

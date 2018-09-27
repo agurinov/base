@@ -107,7 +107,14 @@ func (h *pollerHeap) Pop() interface{} {
 
 			// run poll with actualizing behind the scenes
 			go func() {
-				h.poll()
+				// blocking mode operation !!
+				re, ce := h.poll()
+
+				// events are received (and they are!)
+				// push ready, excluding closed
+				h.mux.Lock()
+				h.actualize(re, ce)
+				h.mux.Unlock()
 
 				// unlock parent IF statement for another goroutines
 				h.mux.Lock()
@@ -143,7 +150,10 @@ func (h *pollerHeap) Pop() interface{} {
 	}
 }
 
-func (h *pollerHeap) poll() {
+// poll is the main link between heap and core poller
+// blocking operation until really received some events
+// otherwise poll again
+func (h *pollerHeap) poll() ([]uintptr, []uintptr) {
 	var re, ce []Event
 
 	for {
@@ -162,17 +172,8 @@ func (h *pollerHeap) poll() {
 		}
 
 		// all fetched without errors
-		break
+		return EventsToFds(re...), EventsToFds(ce...)
 	}
-
-	// events are received (and they are!)
-	// push ready, excluding closed
-	h.mux.Lock()
-	h.actualize(
-		EventsToFds(re...),
-		EventsToFds(ce...),
-	)
-	h.mux.Unlock()
 }
 
 func (h *pollerHeap) actualize(ready []uintptr, close []uintptr) {

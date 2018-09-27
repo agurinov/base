@@ -7,25 +7,25 @@ import (
 	"testing"
 )
 
-func pollerHeapLen(t *testing.T, heap *pollerHeap, ready, pending int) {
+func pollerHeapLen(t *testing.T, hp *pollerHeap, ready, pending int) {
 	t.Run("ready/Len", func(t *testing.T) {
 		// ready via .Len()
-		if n := heap.Len(); n != ready {
-			t.Fatalf("heap.Len() -> Expected \"%d\", got \"%d\"", ready, n)
+		if n := hp.len(); n != ready {
+			t.Fatalf("hp.len() -> Expected \"%d\", got \"%d\"", ready, n)
 		}
 	})
 
 	t.Run("ready/direct", func(t *testing.T) {
 		// ready direct
-		if n := len(heap.ready); n != ready {
-			t.Fatalf("len(heap.ready) -> Expected \"%d\", got \"%d\"", ready, n)
+		if n := len(hp.ready); n != ready {
+			t.Fatalf("len(hp.ready) -> Expected \"%d\", got \"%d\"", ready, n)
 		}
 	})
 
 	t.Run("pending/direct", func(t *testing.T) {
 		// pending direct
-		if n := len(heap.pending); n != pending {
-			t.Fatalf("len(heap.pending) -> Expected \"%d\", got \"%d\"", pending, n)
+		if n := len(hp.pending); n != pending {
+			t.Fatalf("len(hp.pending) -> Expected \"%d\", got \"%d\"", pending, n)
 		}
 	})
 }
@@ -44,33 +44,63 @@ func TestHeapPublic(t *testing.T) {
 		pollerHeapLen(t, hp, 0, 0)
 	})
 
-	t.Run("Pop", func(t *testing.T) {
-		hp := &pollerHeap{
-			pl:      sync.NewCond(&sync.Mutex{}),
-			pending: make(map[uintptr]interface{}, 0),
-			ready:   make([]uintptr, 0),
-			poller:  &mock{}, // 2 seconds wait,
+	t.Run("Len", func(t *testing.T) {
+		hp.ready = []uintptr{1, 2, 3}
+
+		for i := 0; i < 5; i++ {
+			t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+				t.Parallel()
+				if l := hp.Len(); l != 3 {
+					t.Fatalf("Len(). Expected %d, got %d", 3, l)
+				}
+			})
 		}
-		heap.Init(hp)
-		hp.pending[1] = "foobar1"
-		hp.pending[2] = "foobar2"
-		hp.pending[3] = "foobar3"
-		hp.pending[4] = "foobar4"
-		hp.pending[5] = "foobar5"
-		hp.pending[6] = "foobar6"
-
-		wg := sync.WaitGroup{}
-		wg.Add(6)
-
-		for i := 0; i < 6; i++ {
-			go func(i int) {
-				t.Logf("WINK (%d): %+v", i, heap.Pop(hp))
-				wg.Done()
-			}(i)
-		}
-
-		wg.Wait()
 	})
+
+	// t.Run("Pop", func(t *testing.T) {
+	// 	poller := MockPoller(nil, nil, false).(*mock)
+	//
+	// 	hp := &pollerHeap{
+	// 		pl:      sync.NewCond(&sync.Mutex{}),
+	// 		pending: make(map[uintptr]interface{}, 0),
+	// 		ready:   make([]uintptr, 0),
+	// 		poller:  poller, // 1 second wait,
+	// 	}
+	// 	heap.Init(hp)
+	//
+	// 	// fill
+	// 	hp.pending[1] = "foobar1"
+	// 	hp.pending[2] = "foobar2"
+	// 	hp.pending[3] = "foobar3"
+	// 	hp.pending[4] = "foobar4"
+	// 	hp.pending[5] = "foobar5"
+	// 	hp.pending[6] = "foobar6"
+	//
+	// 	wg := new(sync.WaitGroup)
+	//
+	// 	// concurrent .Pop()
+	// 	for i := 0; i < len(hp.pending); i++ {
+	// 		wg.Add(1)
+	//
+	// 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+	// 			t.Parallel()
+	// 			defer wg.Done()
+	//
+	// 			if v := heap.Pop(hp); v == nil {
+	// 				t.Fatalf("Pop(). Unxpected <nil>")
+	// 			}
+	// 		})
+	// 	}
+	//
+	// 	// wg.Wait()
+	//
+	// 	// check heap state
+	// 	t.Log(poller.invokes)
+	// 	pollerHeapLen(t, hp, 0, 0)
+	// 	if poller.invokes != 1 {
+	// 		t.Fatalf("poller invokes. Expected %d, got %d", 1, poller.invokes)
+	// 	}
+	// })
 
 	t.Run("Push", func(t *testing.T) {
 		// clear
@@ -95,7 +125,7 @@ func TestHeapPublic(t *testing.T) {
 
 func TestHeapPrivate(t *testing.T) {
 	heapInterface, _ := Heap()
-	heap, _ := heapInterface.(*pollerHeap)
+	hp, _ := heapInterface.(*pollerHeap)
 
 	t.Run("len", func(t *testing.T) {
 		tableTests := []struct {
@@ -110,9 +140,9 @@ func TestHeapPrivate(t *testing.T) {
 		for i, tt := range tableTests {
 			t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 				// fill heap
-				heap.ready = tt.ready
+				hp.ready = tt.ready
 
-				if l := heap.len(); l != tt.len {
+				if l := hp.len(); l != tt.len {
 					t.Fatalf("len(). Expected %d, got %d", tt.len, l)
 				}
 			})
@@ -133,9 +163,9 @@ func TestHeapPrivate(t *testing.T) {
 		for i, tt := range tableTests {
 			t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 				// fill heap
-				heap.ready = tt.ready
+				hp.ready = tt.ready
 
-				if x := heap.less(tt.i, tt.j); x != tt.cond {
+				if x := hp.less(tt.i, tt.j); x != tt.cond {
 					t.Fatalf("less(i, j). Expected %t, got %t", tt.cond, x)
 				}
 			})
@@ -157,11 +187,45 @@ func TestHeapPrivate(t *testing.T) {
 		for i, tt := range tableTests {
 			t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 				// fill heap
-				heap.ready = tt.ready
+				hp.ready = tt.ready
 
-				heap.swap(tt.i, tt.j)
-				if !sliceEqual(heap.ready, tt.swapped) {
-					t.Fatalf("swap(). Expected %v, got %v", tt.swapped, heap.ready)
+				hp.swap(tt.i, tt.j)
+				if !sliceEqual(hp.ready, tt.swapped) {
+					t.Fatalf("swap(). Expected %v, got %v", tt.swapped, hp.ready)
+				}
+			})
+		}
+	})
+
+	t.Run("poll", func(t *testing.T) {
+		tableTests := []struct {
+			poller  Interface
+			invokes int
+			re      []uintptr
+			ce      []uintptr
+		}{
+			{MockPoller([]uintptr{1, 2}, []uintptr{3, 4}, true), 2, []uintptr{}, []uintptr{}},          // mock return empty because error
+			{MockPoller([]uintptr{}, []uintptr{}, false), 2, []uintptr{}, []uintptr{}},                 // mock return empty because empty (second continue)
+			{MockPoller([]uintptr{1, 2}, []uintptr{3, 4}, false), 1, []uintptr{1, 2}, []uintptr{3, 4}}, // normal return in one polling
+		}
+
+		for i, tt := range tableTests {
+			t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+				hp := &pollerHeap{
+					pl:      sync.NewCond(&sync.Mutex{}),
+					pending: make(map[uintptr]interface{}, 0),
+					ready:   make([]uintptr, 0),
+					poller:  tt.poller,
+				}
+				heap.Init(hp)
+
+				re, ce := hp.poll()
+				t.Log("NDJKDNKJ", tt.poller.(*mock).invokes)
+				if !sliceEqual(re, tt.re) {
+					t.Fatalf("re. Expected %v, got %v", tt.re, re)
+				}
+				if !sliceEqual(ce, tt.ce) {
+					t.Fatalf("ce. Expected %v, got %v", tt.ce, ce)
 				}
 			})
 		}
@@ -186,14 +250,14 @@ func TestHeapPrivate(t *testing.T) {
 		for i, tt := range tableTests {
 			t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 				// fill heap
-				heap.ready = tt.ready
-				heap.pending = tt.pending
+				hp.ready = tt.ready
+				hp.pending = tt.pending
 
 				// pop and check returned value and counters
-				if x := heap.pop(); x != tt.x {
+				if x := hp.pop(); x != tt.x {
 					t.Fatalf("pop(). Expected %q, got %q", tt.x, x)
 				}
-				pollerHeapLen(t, heap, tt.countReady, tt.countPending)
+				pollerHeapLen(t, hp, tt.countReady, tt.countPending)
 			})
 		}
 	})
@@ -218,12 +282,12 @@ func TestHeapPrivate(t *testing.T) {
 		for i, tt := range tableTests {
 			t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 				// fill heap
-				heap.ready = tt.ready
-				heap.pending = tt.pending
+				hp.ready = tt.ready
+				hp.pending = tt.pending
 
 				// actualize and check returned value and counters
-				heap.actualize(tt.pollerReady, tt.pollerClose)
-				pollerHeapLen(t, heap, tt.countReady, tt.countPending)
+				hp.actualize(tt.pollerReady, tt.pollerClose)
+				pollerHeapLen(t, hp, tt.countReady, tt.countPending)
 			})
 		}
 	})
