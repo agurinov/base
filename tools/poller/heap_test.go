@@ -204,9 +204,10 @@ func TestHeapPrivate(t *testing.T) {
 			re      []uintptr
 			ce      []uintptr
 		}{
-			{MockPoller([]uintptr{1, 2}, []uintptr{3, 4}, true), 2, []uintptr{}, []uintptr{}},          // mock return empty because error
-			{MockPoller([]uintptr{}, []uintptr{}, false), 2, []uintptr{}, []uintptr{}},                 // mock return empty because empty (second continue)
-			{MockPoller([]uintptr{1, 2}, []uintptr{3, 4}, false), 1, []uintptr{1, 2}, []uintptr{3, 4}}, // normal return in one polling
+			// in case error or e,pty we return hardcoded values (100, 500), (200,300) otherwise operation will block
+			{MockPoller([]uintptr{1, 2}, []uintptr{3, 4}, true), 2, []uintptr{100, 500}, []uintptr{200, 300}}, // mock return empty because error
+			{MockPoller([]uintptr{}, []uintptr{}, false), 2, []uintptr{100, 500}, []uintptr{200, 300}},        // mock return empty because empty (second continue)
+			{MockPoller([]uintptr{1, 2}, []uintptr{3, 4}, false), 1, []uintptr{1, 2}, []uintptr{3, 4}},        // normal return in one polling
 		}
 
 		for i, tt := range tableTests {
@@ -220,7 +221,9 @@ func TestHeapPrivate(t *testing.T) {
 				heap.Init(hp)
 
 				re, ce := hp.poll()
-				t.Log("NDJKDNKJ", tt.poller.(*mock).invokes)
+				if invokes := tt.poller.(*mock).invokes; invokes != tt.invokes {
+					t.Fatalf("invokes. Expected %v, got %v", tt.invokes, invokes)
+				}
 				if !sliceEqual(re, tt.re) {
 					t.Fatalf("re. Expected %v, got %v", tt.re, re)
 				}

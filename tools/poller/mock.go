@@ -2,7 +2,6 @@ package poller
 
 import (
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -66,7 +65,7 @@ func (p *mock) Events() ([]Event, []Event, []Event, error) {
 		re, _, ce := p.events()
 		return re, nil, ce, nil
 	} else {
-		// SECOND - RETURN empty (otherwise block)
-		return []Event{}, nil, []Event{}, nil
+		// SECOND - RETURN hardcoded events (otherwise block)
+		return []Event{mockEvent{100}, mockEvent{500}}, nil, []Event{mockEvent{200}, mockEvent{300}}, nil
 	}
 }
