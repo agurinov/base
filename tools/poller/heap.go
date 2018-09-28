@@ -2,6 +2,7 @@ package poller
 
 import (
 	"container/heap"
+	"sort"
 	"sync"
 )
 
@@ -115,6 +116,7 @@ func (h *pollerHeap) Pop() interface{} {
 				h.mux.Lock()
 				h.actualize(re, ce)
 				h.mux.Unlock()
+				sort.Sort(h)
 
 				// unlock parent IF statement for another goroutines
 				h.mux.Lock()
@@ -176,6 +178,8 @@ func (h *pollerHeap) poll() ([]uintptr, []uintptr) {
 	}
 }
 
+// actualize called after success polling process finished
+// purpose: update state (add new ready, delete closed)
 func (h *pollerHeap) actualize(ready []uintptr, close []uintptr) {
 	// Phase 1. delete from heap if fd closed
 	var nready []uintptr
@@ -224,6 +228,8 @@ OUTER2:
 	}
 }
 
+// pop searches first entry in `pending` map
+// using key from `ready` slice according sort.interface
 func (h *pollerHeap) pop() interface{} {
 	if h.len() == 0 {
 		return nil
