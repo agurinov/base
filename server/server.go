@@ -64,6 +64,8 @@ func (srv *Server) listen() {
 			AccessLog(flow)
 			// and errors
 			if err := flow.Stat.Error; err != nil {
+				// TODO think about it
+				// TODO https://play.golang.org/p/dNV2qI90EKQ
 				go func() {
 					srv.errCh <- flow.Stat.Error
 				}()
