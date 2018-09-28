@@ -13,6 +13,7 @@ import (
 )
 
 var (
+	ErrWrongFlow          = errors.New("server: Unexpected flow received from heap")
 	ErrWrongContext       = errors.New("server: Context without required key")
 	ErrUnknownApplication = errors.New("server: Unknown server application")
 	ErrUnknownTransport   = errors.New("server: Unknown server transport")

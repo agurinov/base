@@ -12,7 +12,7 @@ import (
 )
 
 type Server struct {
-	transport  transport.Interface
+	transport  transport.Interface // TODO https://github.com/boomfunc/base/issues/20
 	app        application.Interface
 	dispatcher *dispatcher.Dispatcher
 
@@ -26,6 +26,8 @@ func (srv *Server) engine() {
 		// Phase 1. get worker
 		// try to fetch empty worker (to be precise, his channel)
 		// blocking mode!
+		// TODO implement some kind of TimingNode instead og this
+		// TODO https://github.com/boomfunc/base/issues/18
 		taskChannel := srv.dispatcher.FreeWorkerTaskChannel()
 
 		// Phase 2. Obtain socket with data from heap/poller
@@ -35,6 +37,11 @@ func (srv *Server) engine() {
 			context.SetMeta(flow.Ctx, "srv", srv)
 			// send to worker's channel
 			taskChannel <- Task{flow}
+		} else {
+			// something wrong received
+			srv.errCh <- ErrWrongFlow
+			// release worker
+			// TODO https://github.com/boomfunc/base/issues/19
 		}
 	}
 }

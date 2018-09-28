@@ -31,7 +31,7 @@ func errs(errCh chan error) error {
 		// no need for starting execution of this fn
 		return err
 	default:
-		// Default is must to avoid blocking
+		// Default is must be to avoid blocking
 		return nil
 	}
 }
