@@ -8,21 +8,14 @@ import (
 )
 
 func pollerHeapLen(t *testing.T, hp *pollerHeap, ready, pending int) {
-	t.Run("ready/Len", func(t *testing.T) {
+	t.Run("ready", func(t *testing.T) {
 		// ready via .Len()
-		if n := hp.len(); n != ready {
-			t.Fatalf("hp.len() -> Expected \"%d\", got \"%d\"", ready, n)
+		if n := hp.Len(); n != ready {
+			t.Fatalf("hp.Len() -> Expected \"%d\", got \"%d\"", ready, n)
 		}
 	})
 
-	t.Run("ready/direct", func(t *testing.T) {
-		// ready direct
-		if n := len(hp.ready); n != ready {
-			t.Fatalf("len(hp.ready) -> Expected \"%d\", got \"%d\"", ready, n)
-		}
-	})
-
-	t.Run("pending/direct", func(t *testing.T) {
+	t.Run("pending", func(t *testing.T) {
 		// pending direct
 		if n := len(hp.pending); n != pending {
 			t.Fatalf("len(hp.pending) -> Expected \"%d\", got \"%d\"", pending, n)
@@ -57,50 +50,49 @@ func TestHeapPublic(t *testing.T) {
 		}
 	})
 
-	// t.Run("Pop", func(t *testing.T) {
-	// 	poller := MockPoller(nil, nil, false).(*mock)
-	//
-	// 	hp := &pollerHeap{
-	// 		pl:      sync.NewCond(&sync.Mutex{}),
-	// 		pending: make(map[uintptr]interface{}, 0),
-	// 		ready:   make([]uintptr, 0),
-	// 		poller:  poller, // 1 second wait,
-	// 	}
-	// 	heap.Init(hp)
-	//
-	// 	// fill
-	// 	hp.pending[1] = "foobar1"
-	// 	hp.pending[2] = "foobar2"
-	// 	hp.pending[3] = "foobar3"
-	// 	hp.pending[4] = "foobar4"
-	// 	hp.pending[5] = "foobar5"
-	// 	hp.pending[6] = "foobar6"
-	//
-	// 	wg := new(sync.WaitGroup)
-	//
-	// 	// concurrent .Pop()
-	// 	for i := 0; i < len(hp.pending); i++ {
-	// 		wg.Add(1)
-	//
-	// 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-	// 			t.Parallel()
-	// 			defer wg.Done()
-	//
-	// 			if v := heap.Pop(hp); v == nil {
-	// 				t.Fatalf("Pop(). Unxpected <nil>")
-	// 			}
-	// 		})
-	// 	}
-	//
-	// 	// wg.Wait()
-	//
-	// 	// check heap state
-	// 	t.Log(poller.invokes)
-	// 	pollerHeapLen(t, hp, 0, 0)
-	// 	if poller.invokes != 1 {
-	// 		t.Fatalf("poller invokes. Expected %d, got %d", 1, poller.invokes)
-	// 	}
-	// })
+	t.Run("Pop", func(t *testing.T) {
+		poller := MockPoller(
+			[]uintptr{1, 2, 3, 4, 5, 6},
+			nil,
+			false,
+		).(*mock)
+
+		hp := &pollerHeap{
+			pl:      sync.NewCond(&sync.Mutex{}),
+			pending: make(map[uintptr]interface{}, 0),
+			ready:   make([]uintptr, 0),
+			poller:  poller, // 1 second wait,
+		}
+		heap.Init(hp)
+
+		// fill
+		hp.pending[1] = "foobar1"
+		hp.pending[2] = "foobar2"
+		hp.pending[3] = "foobar3"
+		hp.pending[4] = "foobar4"
+		hp.pending[5] = "foobar5"
+		hp.pending[6] = "foobar6"
+
+		// concurrent .Pop()
+		t.Run("Parallel", func(t *testing.T) {
+			for i := 0; i < 6; i++ {
+				j := i
+				t.Run(fmt.Sprintf("%d", j), func(t *testing.T) {
+					t.Parallel()
+
+					if v := heap.Pop(hp); v == nil {
+						t.Fatalf("Pop(). Unexpected <nil>")
+					}
+				})
+			}
+		})
+
+		// check heap state
+		pollerHeapLen(t, hp, 0, 0)
+		// if poller.invokes != 1 {
+		// 	t.Fatalf("poller invokes. Expected %d, got %d", 1, poller.invokes)
+		// }
+	})
 
 	t.Run("Push", func(t *testing.T) {
 		// clear
@@ -112,13 +104,27 @@ func TestHeapPublic(t *testing.T) {
 			pollerHeapLen(t, hp, 0, 1)
 		})
 
+		// clear
+		hp.ready = []uintptr{}
+		hp.pending = map[uintptr]interface{}{}
+
 		t.Run("fake", func(t *testing.T) {
 			heap.Push(hp, "foobar")
-			pollerHeapLen(t, hp, 0, 1)
+			pollerHeapLen(t, hp, 0, 0)
 		})
 
 		t.Run("poller/error", func(t *testing.T) {
-			// TODO poller error
+			hp := &pollerHeap{
+				pl:      sync.NewCond(&sync.Mutex{}),
+				pending: make(map[uintptr]interface{}, 0),
+				ready:   make([]uintptr, 0),
+				poller:  MockPoller(nil, nil, true).(*mock),
+			}
+			heap.Init(hp)
+
+			// real value, but error from poller -> 0
+			heap.Push(hp, &HeapItem{Fd: uintptr(1), Value: "foobar"})
+			pollerHeapLen(t, hp, 0, 0)
 		})
 	})
 }

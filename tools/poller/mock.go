@@ -30,10 +30,20 @@ func MockPoller(re, ce []uintptr, err bool) Interface {
 }
 
 func (p *mock) Add(fd uintptr) error {
+	if p.err {
+		// case when error from poller
+		return errors.New("Error from poller")
+	}
+
 	return nil
 }
 
 func (p *mock) Del(fd uintptr) error {
+	if p.err {
+		// case when error from poller
+		return errors.New("Error from poller")
+	}
+
 	return nil
 }
 
