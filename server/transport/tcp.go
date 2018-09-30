@@ -44,7 +44,7 @@ func (tr *tcp) Serve() {
 		// push incoming connection to heap
 		flow := flow.New(conn)
 		item := &poller.HeapItem{Fd: fd, Value: flow}
-		flow.Timing.Enter("transport")
+		flow.Chronometer.Enter("transport")
 		heap.Push(tr.heap, item)
 	}
 }

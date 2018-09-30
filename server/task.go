@@ -39,9 +39,9 @@ func (task Task) Solve() {
 
 	defer task.flow.RWC.Close()
 
-	task.flow.Timing.Enter("app")
+	task.flow.Chronometer.Enter("app")
 	srv.app.Handle(task.flow)
-	task.flow.Timing.Exit("app")
+	task.flow.Chronometer.Exit("app")
 
 	srv.outputCh <- task.flow
 }

@@ -66,5 +66,5 @@ func AccessLog(flow *flow.Data) {
 		url = "/XXX/XXX/XXX"
 	}
 
-	log.Infof("%s\t-\t%s\t-\t%s\t-\tTiming: `%s`", flow.UUID.String(), url, status, flow.Timing)
+	log.Infof("%s\t-\t%s\t-\t%s\t-\tTiming: `%s`", flow.UUID.String(), url, status, flow.Chronometer)
 }

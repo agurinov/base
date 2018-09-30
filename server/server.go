@@ -9,6 +9,7 @@ import (
 	"github.com/boomfunc/base/server/flow"
 	"github.com/boomfunc/base/server/transport"
 	"github.com/boomfunc/base/tools"
+	"github.com/boomfunc/base/tools/chronometer"
 )
 
 type Server struct {
@@ -26,14 +27,15 @@ func (srv *Server) engine() {
 		// Phase 1. get worker
 		// try to fetch empty worker (to be precise, his channel)
 		// blocking mode!
-		// TODO implement some kind of TimingNode instead og this
-		// TODO https://github.com/boomfunc/base/issues/18
+		node := chronometer.NewNode()
 		taskChannel := srv.dispatcher.FreeWorkerTaskChannel()
+		node.Exit()
 
 		// Phase 2. Obtain socket with data from heap/poller
 		// blocking mode!
 		if flow, ok := heap.Pop(srv.heap).(*flow.Data); ok {
-			flow.Timing.Exit("transport")
+			flow.Chronometer.Exit("transport")
+			flow.Chronometer.AddNode("dispatcher", node)
 			context.SetMeta(flow.Ctx, "srv", srv)
 			// send to worker's channel
 			taskChannel <- Task{flow}
