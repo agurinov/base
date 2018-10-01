@@ -25,10 +25,10 @@ type Server struct {
 func (srv *Server) engine() {
 	for {
 		// Phase 1. get worker
-		// try to fetch empty worker (to be precise, his channel)
+		// try to fetch empty worker
 		// blocking mode!
 		node := chronometer.NewNode()
-		taskChannel := srv.dispatcher.FreeWorkerTaskChannel()
+		worker := srv.dispatcher.OccupyWorker()
 		node.Exit()
 
 		// Phase 2. Obtain socket with data from heap/poller
@@ -38,13 +38,16 @@ func (srv *Server) engine() {
 			flow.Chronometer.AddNode("dispatcher", node)
 			context.SetMeta(flow.Ctx, "srv", srv)
 			// send to worker's channel
-			taskChannel <- Task{flow}
+			// blocking send operation!
+			worker.TaskChannel <- Task{flow}
 		} else {
 			// something wrong received
+			// we don't know how to work with this
 			srv.errCh <- ErrWrongFlow
-			// release worker
-			// TODO https://github.com/boomfunc/base/issues/19
 		}
+
+		// Phase 3. Return worker to dispatcher in any way
+		srv.dispatcher.AttachWorker(worker)
 	}
 }
 
@@ -68,6 +71,7 @@ func (srv *Server) listen() {
 			if err := flow.Stat.Error; err != nil {
 				// TODO think about it
 				// TODO https://play.golang.org/p/dNV2qI90EKQ
+				// TODO https://blog.quickmediasolutions.com/2015/09/13/non-blocking-channels-in-go.html
 				go func() {
 					srv.errCh <- flow.Stat.Error
 				}()
