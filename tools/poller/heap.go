@@ -2,13 +2,15 @@ package poller
 
 import (
 	"container/heap"
-	"sort"
+	// "sort"
 	"sync"
+	// "github.com/boomfunc/log"
 )
 
 type HeapItem struct {
 	Fd    uintptr
 	Value interface{}
+	ready bool
 }
 
 type pollerHeap struct {
@@ -19,8 +21,7 @@ type pollerHeap struct {
 
 	mux sync.RWMutex // this mutex guards variables below
 
-	pending map[uintptr]interface{}
-	ready   []uintptr
+	pending []*HeapItem
 }
 
 func Heap() (heap.Interface, error) {
@@ -30,10 +31,9 @@ func Heap() (heap.Interface, error) {
 	}
 
 	h := &pollerHeap{
-		pl:      sync.NewCond(&sync.Mutex{}),
-		pending: make(map[uintptr]interface{}, 0),
-		ready:   make([]uintptr, 0),
 		poller:  poller,
+		pl:      sync.NewCond(&sync.Mutex{}),
+		pending: make([]*HeapItem, 0),
 	}
 
 	heap.Init(h)
@@ -41,7 +41,7 @@ func Heap() (heap.Interface, error) {
 }
 
 func (h *pollerHeap) len() int {
-	return len(h.ready)
+	return len(h.pending)
 }
 
 func (h *pollerHeap) Len() int {
@@ -55,28 +55,33 @@ func (h *pollerHeap) Len() int {
 func (h *pollerHeap) less(i, j int) bool {
 	// Less reports whether the element with
 	// index i should sort before the element with index j.
-	return h.ready[i] < h.ready[j]
+	if !h.pending[i].ready && h.pending[j].ready {
+		return true
+	}
+	return false
 }
 
 func (h *pollerHeap) Less(i, j int) bool {
-	h.mux.RLock()
-	b := h.less(i, j)
-	h.mux.RUnlock()
-
-	return b
+	return false
+	// h.mux.RLock()
+	// b := h.less(i, j)
+	// h.mux.RUnlock()
+	//
+	// return b
 }
 
 func (h *pollerHeap) swap(i, j int) {
 	if h.len() >= 2 {
 		// there is something to swap
-		h.ready[i], h.ready[j] = h.ready[j], h.ready[i]
+		h.pending[i], h.pending[j] = h.pending[j], h.pending[i]
 	}
 }
 
 func (h *pollerHeap) Swap(i, j int) {
-	h.mux.Lock()
-	h.swap(i, j)
-	h.mux.Unlock()
+	return
+	// h.mux.Lock()
+	// h.swap(i, j)
+	// h.mux.Unlock()
 }
 
 func (h *pollerHeap) Push(x interface{}) {
@@ -86,7 +91,7 @@ func (h *pollerHeap) Push(x interface{}) {
 		if err := h.poller.Add(item.Fd); err == nil {
 			// fd in poller, store it for .Pop()
 			h.mux.Lock()
-			h.pending[item.Fd] = item.Value
+			h.pending = append(h.pending, item)
 			h.mux.Unlock()
 		}
 	}
@@ -116,16 +121,16 @@ func (h *pollerHeap) Pop() interface{} {
 				h.mux.Lock()
 				h.actualize(re, ce)
 				h.mux.Unlock()
-				sort.Sort(h)
+				// sort.Sort(h)
+
+				// all events polled, data refreshed
+				// unlock all waiting goroutines (server with .Pop() method invoked)
+				h.pl.Broadcast()
 
 				// unlock parent IF statement for another goroutines
 				h.mux.Lock()
 				h.pollerLocked = false
 				h.mux.Unlock()
-
-				// all events polled, data refreshed
-				// unlock all waiting goroutines (server with .Pop() method invoked)
-				h.pl.Broadcast()
 			}()
 		}
 
@@ -181,51 +186,32 @@ func (h *pollerHeap) poll() ([]uintptr, []uintptr) {
 // actualize called after success polling process finished
 // purpose: update state (add new ready, delete closed)
 func (h *pollerHeap) actualize(ready []uintptr, close []uintptr) {
-	// Phase 1. delete from heap if fd closed
-	var nready []uintptr
-OUTER1:
-	for _, fd := range h.ready {
+	var new []*HeapItem
+
+OUTER:
+	for _, item := range h.pending {
+		// check in closed
 		for _, cfd := range close {
-			if fd == cfd {
+			if item.Fd == cfd {
 				// fd from heap is closed
 				// not relevant, delete it from future .Pop()
-				continue OUTER1
+				// delete = skip from appending
+				continue OUTER
 			}
 		}
-		// if this code reachable -> no continue in close loop
-		// no occurences in close - save
-		nready = append(nready, fd)
-	}
-	h.ready = nready
 
-	// Phase 2. add to heap if
-	// fd has some data (in ready) and not closed (not in close)
-	// and fd has associated in pending
-OUTER2:
-	for _, rfd := range ready {
-		// check ready event has associated in pending
-		// if not - not relevant (we have not got any returnable value)
-		if _, ok := h.pending[rfd]; !ok {
-			continue OUTER2
-		}
-
-		// ready event can be returned, check next for closing at same time
-		for _, cfd := range close {
-			if rfd == cfd {
-				// ready event is closed -> not relevant, skip
-				continue OUTER2
+		// this item not closed yet, check for ready state
+		for _, rfd := range ready {
+			if item.Fd == rfd {
+				item.ready = true
 			}
 		}
-		h.ready = append(h.ready, rfd)
+
+		new = append(new, item)
 	}
 
-	// Phase 3. actualize heap pending elements
-	// closed elements remove from pending (memory release)
-	for _, cfd := range close {
-		if _, ok := h.pending[cfd]; ok {
-			delete(h.pending, cfd)
-		}
-	}
+	// update heap items
+	h.pending = new
 }
 
 // pop searches first entry in `pending` map
@@ -237,28 +223,23 @@ func (h *pollerHeap) pop() interface{} {
 
 	// there is something to pop (at first sight)
 	var i int
-	var value interface{}
+
+	defer func() {
+		// we return value but we need to cut this value from pending
+		// if nothing returns -> i == len(h.pending - 1) and we return same slice
+		h.pending = append(h.pending[:i], h.pending[i+1:]...)
+	}()
 
 	// get first fd from heap, available in pending
-	for j, fd := range h.ready {
-		// save counter
-		i = j
-		// get Value by fd from pending
-		var ok bool
-		value, ok = h.pending[fd]
-		if ok {
-			// there is associated value in pending
-			// delete from pending and return
-			delete(h.pending, fd)
-			break
+	for j, item := range h.pending {
+		if item.ready {
+			i = j
+			// log.Debugf("RETURNED: i=%d, Fd=%d", i, item.Fd)
+			return item.Value
 		}
 	}
 
-	// we got first associated entry
-	// all before not relevant, because
-	// if associated pending exists - return this (it is this case)
-	// otherwise it is orphans -> try again (loop continue)
-	h.ready = h.ready[i+1:]
-
-	return value
+	// nobody ready
+	// log.Debug("RETURNED <nil>")
+	return nil
 }
