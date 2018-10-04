@@ -2,9 +2,9 @@ package poller
 
 import (
 	"container/heap"
-	// "sort"
 	"sync"
-	// "github.com/boomfunc/log"
+
+	"github.com/boomfunc/log"
 )
 
 type HeapItem struct {
@@ -93,6 +93,8 @@ func (h *pollerHeap) Push(x interface{}) {
 			h.mux.Lock()
 			h.pending = append(h.pending, item)
 			h.mux.Unlock()
+		} else {
+			log.Errorf("ERROR FROM POLLER: %v", err)
 		}
 	}
 }
@@ -121,7 +123,6 @@ func (h *pollerHeap) Pop() interface{} {
 				h.mux.Lock()
 				h.actualize(re, ce)
 				h.mux.Unlock()
-				// sort.Sort(h)
 
 				// all events polled, data refreshed
 				// unlock all waiting goroutines (server with .Pop() method invoked)
@@ -135,13 +136,12 @@ func (h *pollerHeap) Pop() interface{} {
 		}
 
 		// wait if necessary
-		h.pl.L.Lock()
 		if h.Len() == 0 {
 			// case when nothing to fetch -> ask poller and wait as long as necessary
-			// fill ready slice from poller signal
+			h.pl.L.Lock()
 			h.pl.Wait()
+			h.pl.L.Unlock()
 		}
-		h.pl.L.Unlock()
 
 		// pop ready and return
 		h.mux.Lock()
@@ -149,8 +149,15 @@ func (h *pollerHeap) Pop() interface{} {
 		h.mux.Unlock()
 
 		if value != nil {
+			// log.Debug("REAL VALUE RETURNED")
 			return value
 		} else {
+			// case when nothing to fetch -> ask poller and wait as long as necessary
+			h.pl.L.Lock()
+			h.pl.Wait()
+			// log.Debug("WAITED IN ELSE")
+			h.pl.L.Unlock()
+
 			// repeat this
 			continue
 		}
@@ -214,32 +221,22 @@ OUTER:
 	h.pending = new
 }
 
-// pop searches first entry in `pending` map
-// using key from `ready` slice according sort.interface
+// pop searches first entry in `pending` slice
+// which has `ready` flag == true
 func (h *pollerHeap) pop() interface{} {
 	if h.len() == 0 {
 		return nil
 	}
 
 	// there is something to pop (at first sight)
-	var i int
-
-	defer func() {
-		// we return value but we need to cut this value from pending
-		// if nothing returns -> i == len(h.pending - 1) and we return same slice
-		h.pending = append(h.pending[:i], h.pending[i+1:]...)
-	}()
-
 	// get first fd from heap, available in pending
-	for j, item := range h.pending {
+	for i, item := range h.pending {
 		if item.ready {
-			i = j
-			// log.Debugf("RETURNED: i=%d, Fd=%d", i, item.Fd)
+			h.pending = append(h.pending[:i], h.pending[i+1:]...)
 			return item.Value
 		}
 	}
 
 	// nobody ready
-	// log.Debug("RETURNED <nil>")
 	return nil
 }
