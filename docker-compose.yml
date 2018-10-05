@@ -22,7 +22,7 @@ services:
     volumes: *volumes
     working_dir: *working_dir
     logging: *logging
-    command: .circleci/scripts/run.sh
+    command: .ci/scripts/run.sh
 
   # ms:
   #   build:
@@ -39,35 +39,35 @@ services:
     volumes: *volumes
     working_dir: *working_dir
     logging: *logging
-    command: .circleci/scripts/build.sh
+    command: .ci/scripts/build.sh
 
   test:
     image: golang
     volumes: *volumes
     working_dir: *working_dir
     logging: *logging
-    command: .circleci/scripts/test.sh
+    command: .ci/scripts/test.sh
 
   bench:
     image: golang
     volumes: *volumes
     working_dir: *working_dir
     logging: *logging
-    command: .circleci/scripts/bench.sh
+    command: .ci/scripts/bench.sh
 
   fmt:
     image: golang
     volumes: *volumes
     working_dir: *working_dir
     logging: *logging
-    command: .circleci/scripts/fmt.sh
+    command: .ci/scripts/fmt.sh
 
   # *:
   #   image: golang
   #   volumes: *volumes
   #   working_dir: *working_dir
   #   logging: *logging
-  #   command: .circleci/scripts/docker-entrypoint.sh
+  #   command: .ci/scripts/docker-entrypoint.sh
 
 volumes:
   src-vol:

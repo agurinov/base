@@ -9,7 +9,7 @@ jobs:
 
     steps:
       - checkout
-      - run: ./.circleci/scripts/test.sh
+      - run: ./.ci/scripts/test.sh
 
 
   build:
@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - checkout
-      - run: ./.circleci/scripts/build.sh
+      - run: ./.ci/scripts/build.sh
       - persist_to_workspace:
           root: /go/bin
           paths:
