@@ -40,7 +40,6 @@ func (p *epoll) Add(fd uintptr) error {
 }
 
 func (p *epoll) Del(fd uintptr) error {
-	// TODO maybe it is optional
 	return unix.EpollCtl(p.fd, unix.EPOLL_CTL_DEL, int(fd), nil)
 }
 
@@ -53,7 +52,7 @@ func (p *epoll) Events() ([]Event, []Event, []Event, error) {
 	// something received, try it
 	var re, we, ce []Event
 	for _, event := range events {
-		if event.Events&(unix.EPOLLRDHUP) != 0 {
+		if event.Events&(unix.EPOLLRDHUP|unix.EPOLLHUP) != 0 {
 			// closed by peer
 			// http://man7.org/linux/man-pages/man7/epoll.7.html
 			ce = append(ce, toEvent(event))

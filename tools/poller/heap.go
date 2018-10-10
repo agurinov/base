@@ -3,8 +3,7 @@ package poller
 import (
 	"container/heap"
 	"sync"
-
-	"github.com/boomfunc/log"
+	// "github.com/boomfunc/log"
 )
 
 type HeapItem struct {
@@ -93,8 +92,6 @@ func (h *pollerHeap) Push(x interface{}) {
 			h.mux.Lock()
 			h.pending = append(h.pending, item)
 			h.mux.Unlock()
-		} else {
-			log.Errorf("ERROR FROM POLLER: %v", err)
 		}
 	}
 }
@@ -122,20 +119,16 @@ func (h *pollerHeap) Pop() interface{} {
 				// push ready, excluding closed
 				h.mux.Lock()
 				h.actualize(re, ce)
+				h.pollerLocked = false // unlock parent IF statement for another goroutines
 				h.mux.Unlock()
 
 				// all events polled, data refreshed
 				// unlock all waiting goroutines (server with .Pop() method invoked)
 				h.pl.Broadcast()
-
-				// unlock parent IF statement for another goroutines
-				h.mux.Lock()
-				h.pollerLocked = false
-				h.mux.Unlock()
 			}()
 		}
 
-		// wait if necessary
+		// wait if nothing to check for ready
 		if h.Len() == 0 {
 			// case when nothing to fetch -> ask poller and wait as long as necessary
 			h.pl.L.Lock()
@@ -149,17 +142,19 @@ func (h *pollerHeap) Pop() interface{} {
 		h.mux.Unlock()
 
 		if value != nil {
-			// log.Debug("REAL VALUE RETURNED")
 			return value
 		} else {
-			// case when nothing to fetch -> ask poller and wait as long as necessary
-			h.pl.L.Lock()
-			h.pl.Wait()
-			// log.Debug("WAITED IN ELSE")
-			h.pl.L.Unlock()
+			// is polling process running now?
+			// there is only one place per unit of time
+			h.mux.RLock()
+			locked := h.pollerLocked
+			h.mux.RUnlock()
 
-			// repeat this
-			continue
+			if locked {
+				h.pl.L.Lock()
+				h.pl.Wait()
+				h.pl.L.Unlock()
+			}
 		}
 	}
 }
@@ -193,32 +188,11 @@ func (h *pollerHeap) poll() ([]uintptr, []uintptr) {
 // actualize called after success polling process finished
 // purpose: update state (add new ready, delete closed)
 func (h *pollerHeap) actualize(ready []uintptr, close []uintptr) {
-	var new []*HeapItem
+	// log.Debug("POLLED:", ready, close)
+	filtered := pendingFilterClosed(h.pending, close)
+	mapped := pendingMapReady(filtered, ready)
 
-OUTER:
-	for _, item := range h.pending {
-		// check in closed
-		for _, cfd := range close {
-			if item.Fd == cfd {
-				// fd from heap is closed
-				// not relevant, delete it from future .Pop()
-				// delete = skip from appending
-				continue OUTER
-			}
-		}
-
-		// this item not closed yet, check for ready state
-		for _, rfd := range ready {
-			if item.Fd == rfd {
-				item.ready = true
-			}
-		}
-
-		new = append(new, item)
-	}
-
-	// update heap items
-	h.pending = new
+	h.pending = mapped
 }
 
 // pop searches first entry in `pending` slice
