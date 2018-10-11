@@ -1,6 +1,10 @@
 package poller
 
 func pendingFilterClosed(pending []*HeapItem, close []uintptr) []*HeapItem {
+	if pending == nil || len(pending) == 0 {
+		return nil
+	}
+
 	new := make([]*HeapItem, 0)
 
 OUTER:
@@ -21,6 +25,10 @@ OUTER:
 }
 
 func pendingMapReady(pending []*HeapItem, ready []uintptr) []*HeapItem {
+	if pending == nil || len(pending) == 0 {
+		return nil
+	}
+
 OUTER:
 	for _, item := range pending {
 		for _, rfd := range ready {
@@ -32,24 +40,6 @@ OUTER:
 	}
 
 	return pending
-}
-
-func sliceEqual(a, b []uintptr) bool {
-	if (a == nil) != (b == nil) {
-		return false
-	}
-
-	if len(a) != len(b) {
-		return false
-	}
-
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-
-	return true
 }
 
 func EventsToFds(events ...Event) []uintptr {
