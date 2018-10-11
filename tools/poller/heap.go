@@ -3,7 +3,8 @@ package poller
 import (
 	"container/heap"
 	"sync"
-	// "github.com/boomfunc/log"
+
+	"github.com/boomfunc/log"
 )
 
 type HeapItem struct {
@@ -100,40 +101,14 @@ func (h *pollerHeap) Pop() interface{} {
 	for {
 		// is polling process running now?
 		// there is only one place per unit of time
-		h.mux.RLock()
-		locked := h.pollerLocked
-		h.mux.RUnlock()
+		h.mux.Lock()
 
-		if !locked {
-			// lock this IF statement for another goroutines
-			h.mux.Lock()
+		if !h.pollerLocked {
 			h.pollerLocked = true
 			h.mux.Unlock()
-
-			// run poll with actualizing behind the scenes
-			go func() {
-				// blocking mode operation !!
-				re, ce := h.poll()
-
-				// events are received (and they are!)
-				// push ready, excluding closed
-				h.mux.Lock()
-				h.actualize(re, ce)
-				h.pollerLocked = false // unlock parent IF statement for another goroutines
-				h.mux.Unlock()
-
-				// all events polled, data refreshed
-				// unlock all waiting goroutines (server with .Pop() method invoked)
-				h.pl.Broadcast()
-			}()
-		}
-
-		// wait if nothing to check for ready
-		if h.Len() == 0 {
-			// case when nothing to fetch -> ask poller and wait as long as necessary
-			h.pl.L.Lock()
-			h.pl.Wait()
-			h.pl.L.Unlock()
+			go h.Poll()
+		} else {
+			h.mux.Unlock()
 		}
 
 		// pop ready and return
@@ -146,15 +121,19 @@ func (h *pollerHeap) Pop() interface{} {
 		} else {
 			// is polling process running now?
 			// there is only one place per unit of time
-			h.mux.RLock()
-			locked := h.pollerLocked
-			h.mux.RUnlock()
+			h.mux.Lock()
+			h.pl.L.Lock()
 
-			if locked {
-				h.pl.L.Lock()
+			if h.pollerLocked {
+				h.mux.Unlock()
+				log.Debug("WAIT FOR POLLER")
 				h.pl.Wait()
-				h.pl.L.Unlock()
+				log.Debug("WAITED!")
+			} else {
+				h.mux.Unlock()
 			}
+
+			h.pl.L.Unlock()
 		}
 	}
 }
@@ -183,6 +162,24 @@ func (h *pollerHeap) poll() ([]uintptr, []uintptr) {
 		// all fetched without errors
 		return EventsToFds(re...), EventsToFds(ce...)
 	}
+}
+
+// Poll is thread safety operation for waiting events from poller
+// and actualize heap data
+func (h *pollerHeap) Poll() {
+	// blocking mode operation !!
+	re, ce := h.poll()
+
+	// events are received (and they are!)
+	// push ready, excluding closed
+	h.mux.Lock()
+	h.actualize(re, ce)
+	h.pollerLocked = false
+	h.mux.Unlock()
+
+	// all events polled, data refreshed
+	// unlock all waiting goroutines (server worker with .Pop() method invoked)
+	h.pl.Broadcast()
 }
 
 // actualize called after success polling process finished
