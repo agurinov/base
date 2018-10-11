@@ -3,8 +3,6 @@ package poller
 import (
 	"container/heap"
 	"sync"
-
-	"github.com/boomfunc/log"
 )
 
 type HeapItem struct {
@@ -15,12 +13,12 @@ type HeapItem struct {
 
 type pollerHeap struct {
 	// poller integration
-	poller       Interface
-	pollerLocked bool
-	pl           *sync.Cond // poller locking
+	poller Interface
+	once   sync.Once // poller locking
 
-	mux sync.RWMutex // this mutex guards variables below
-
+	// mutex and state
+	mutex   sync.Mutex // this mutex guards variables below
+	cond    *sync.Cond
 	pending []*HeapItem
 }
 
@@ -30,11 +28,10 @@ func Heap() (heap.Interface, error) {
 		return nil, err
 	}
 
-	h := &pollerHeap{
-		poller:  poller,
-		pl:      sync.NewCond(&sync.Mutex{}),
-		pending: make([]*HeapItem, 0),
-	}
+	h := new(pollerHeap)
+	h.poller = poller
+	h.cond = sync.NewCond(&h.mutex)
+	h.pending = make([]*HeapItem, 0)
 
 	heap.Init(h)
 	return h, nil
@@ -45,9 +42,9 @@ func (h *pollerHeap) len() int {
 }
 
 func (h *pollerHeap) Len() int {
-	h.mux.RLock()
+	h.mutex.Lock()
 	n := h.len()
-	h.mux.RUnlock()
+	h.mutex.Unlock()
 
 	return n
 }
@@ -63,9 +60,9 @@ func (h *pollerHeap) less(i, j int) bool {
 
 func (h *pollerHeap) Less(i, j int) bool {
 	return false
-	// h.mux.RLock()
+	// h.mutex.RLock()
 	// b := h.less(i, j)
-	// h.mux.RUnlock()
+	// h.mutex.RUnlock()
 	//
 	// return b
 }
@@ -79,61 +76,44 @@ func (h *pollerHeap) swap(i, j int) {
 
 func (h *pollerHeap) Swap(i, j int) {
 	return
-	// h.mux.Lock()
+	// h.mutex.Lock()
 	// h.swap(i, j)
-	// h.mux.Unlock()
+	// h.mutex.Unlock()
 }
 
+// Pop implements heap.Interface
+// adds flow to poller
 func (h *pollerHeap) Push(x interface{}) {
 	if item, ok := x.(*HeapItem); ok {
 		// try to add to poller
 		// TODO error not visible! in transport layer
 		if err := h.poller.Add(item.Fd); err == nil {
 			// fd in poller, store it for .Pop()
-			h.mux.Lock()
+			h.mutex.Lock()
 			h.pending = append(h.pending, item)
-			h.mux.Unlock()
+			h.mutex.Unlock()
 		}
 	}
 }
 
+// Pop implements heap.Interface
+// pops first in flow with `ready` status
 func (h *pollerHeap) Pop() interface{} {
 	for {
-		// is polling process running now?
-		// there is only one place per unit of time
-		h.mux.Lock()
+		go h.Poll()
 
-		if !h.pollerLocked {
-			h.pollerLocked = true
-			h.mux.Unlock()
-			go h.Poll()
-		} else {
-			h.mux.Unlock()
+		// try to pop ready
+		h.mutex.Lock()
+
+		value := h.pop()
+		if value == nil {
+			h.cond.Wait()
 		}
 
-		// pop ready and return
-		h.mux.Lock()
-		value := h.pop()
-		h.mux.Unlock()
+		h.mutex.Unlock()
 
 		if value != nil {
 			return value
-		} else {
-			// is polling process running now?
-			// there is only one place per unit of time
-			h.mux.Lock()
-			h.pl.L.Lock()
-
-			if h.pollerLocked {
-				h.mux.Unlock()
-				log.Debug("WAIT FOR POLLER")
-				h.pl.Wait()
-				log.Debug("WAITED!")
-			} else {
-				h.mux.Unlock()
-			}
-
-			h.pl.L.Unlock()
 		}
 	}
 }
@@ -167,25 +147,28 @@ func (h *pollerHeap) poll() ([]uintptr, []uintptr) {
 // Poll is thread safety operation for waiting events from poller
 // and actualize heap data
 func (h *pollerHeap) Poll() {
-	// blocking mode operation !!
-	re, ce := h.poll()
+	// f is poll with actualizing heap data
+	// 1 running instance of this function per time across all workers
+	f := func() {
+		// blocking mode operation !!
+		re, ce := h.poll()
+		// events are received (and they are!)
+		h.actualize(re, ce) // push ready, excluding closed
+		h.cond.Broadcast()  // release all .Wait()
+	}
 
-	// events are received (and they are!)
-	// push ready, excluding closed
-	h.mux.Lock()
-	h.actualize(re, ce)
-	h.pollerLocked = false
-	h.mux.Unlock()
+	// f invokes with mutex locking on once.Do layer -> thread safety
+	h.once.Do(f)
 
-	// all events polled, data refreshed
-	// unlock all waiting goroutines (server worker with .Pop() method invoked)
-	h.pl.Broadcast()
+	// invalidate once for future
+	h.mutex.Lock()
+	h.once = sync.Once{} // reset sync.Once
+	h.mutex.Unlock()
 }
 
 // actualize called after success polling process finished
 // purpose: update state (add new ready, delete closed)
 func (h *pollerHeap) actualize(ready []uintptr, close []uintptr) {
-	// log.Debug("POLLED:", ready, close)
 	filtered := pendingFilterClosed(h.pending, close)
 	mapped := pendingMapReady(filtered, ready)
 
