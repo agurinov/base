@@ -21,6 +21,10 @@ services:
         - "8080:8080"
     volumes: *volumes
     working_dir: *working_dir
+    sysctls:
+      net.core.somaxconn: 100000
+    ulimits:
+      nofile: 100000
     logging: *logging
     command: .ci/scripts/run.sh
 
