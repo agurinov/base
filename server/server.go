@@ -39,10 +39,13 @@ func (srv *Server) engine() {
 			context.SetMeta(flow.Ctx, "srv", srv)
 			// send to worker's channel
 			// blocking send operation!
+			// TODO be careful -> blocking operation if worker not listening channel
+			// TODO because unbuffered and no receiver
 			worker.TaskChannel <- Task{flow}
 		} else {
 			// something wrong received
 			// we don't know how to work with this
+			// TODO same shit as earlier
 			srv.errCh <- ErrWrongFlow
 		}
 
