@@ -22,7 +22,9 @@ var (
 func New(transportName string, applicationName string, workers int, ip net.IP, port int, config string) (*Server, error) {
 	// Phase 1. Prepare light application layer things
 	// router
-	router, err := conf.LoadFile(config)
+	// TODO switch detect type
+	// router, err := conf.LoadExternalFile(config)
+	router, err := conf.LoadLocalFile(config)
 	if err != nil {
 		// cannot load server config
 		return nil, err
