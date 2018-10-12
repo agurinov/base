@@ -74,42 +74,65 @@ func TestHeapPublic(t *testing.T) {
 	// t.Run("Swap", func(t *testing.T) {})
 
 	t.Run("Pop", func(t *testing.T) {
-		poller := MockPoller(
-			[]uintptr{1, 2, 3, 4, 5, 6},
-			nil,
-			false,
-		).(*mock)
+		infinityPoller := MockPoller(nil, nil, false).(*mock)
+		infinityPoller.inifinity = true
 
-		heapInterface, _ := HeapWithPoller(poller)
-		hp, _ := heapInterface.(*pollerHeap)
+		tableTests := []struct {
+			poller  Interface
+			pending []*HeapItem
+		}{
+			{
+				MockPoller([]uintptr{1, 2, 3, 4, 5, 6}, nil, false),
+				[]*HeapItem{
+					&HeapItem{Fd: 1, Value: "1"},
+					&HeapItem{Fd: 2, Value: "2"},
+					&HeapItem{Fd: 3, Value: "3"},
+					&HeapItem{Fd: 4, Value: "4"},
+					&HeapItem{Fd: 5, Value: "5"},
+					&HeapItem{Fd: 6, Value: "6"},
+				},
+			},
+			{
+				infinityPoller,
+				[]*HeapItem{
+					&HeapItem{Fd: 1, Value: "1", ready: true},
+					&HeapItem{Fd: 2, Value: "2", ready: true},
+					&HeapItem{Fd: 3, Value: "3", ready: true},
+					&HeapItem{Fd: 4, Value: "4", ready: true},
+					&HeapItem{Fd: 5, Value: "5", ready: true},
+					&HeapItem{Fd: 6, Value: "6", ready: true},
+				},
+			},
+		}
 
-		// fill
-		heap.Push(hp, &HeapItem{Fd: 1, Value: "1"})
-		heap.Push(hp, &HeapItem{Fd: 2, Value: "2"})
-		heap.Push(hp, &HeapItem{Fd: 3, Value: "3"})
-		heap.Push(hp, &HeapItem{Fd: 4, Value: "4"})
-		heap.Push(hp, &HeapItem{Fd: 5, Value: "5"})
-		heap.Push(hp, &HeapItem{Fd: 6, Value: "6"})
+		for i, tt := range tableTests {
+			// wg := new(sync.WaitGroup)
 
-		// concurrent .Pop()
-		t.Run("Parallel", func(t *testing.T) {
-			for i := 0; i < 6; i++ {
-				j := i
-				t.Run(fmt.Sprintf("%d", j), func(t *testing.T) {
-					t.Parallel()
+			t.Run(fmt.Sprintf("Parallel/%d", i), func(t *testing.T) {
+				heapInterface, _ := HeapWithPoller(tt.poller)
+				hp, _ := heapInterface.(*pollerHeap)
+				hp.pending = tt.pending
 
-					if v := heap.Pop(hp); v == nil {
-						t.Fatalf("hp.Pop() -> Unexpected <nil>")
-					}
-				})
-			}
-		})
+				for i := 0; i < len(tt.pending); i++ {
+					j := i
+					t.Run(fmt.Sprintf("%d", j), func(t *testing.T) {
+						t.Parallel()
 
-		// check heap state
-		// pollerHeapState(t, hp, 0)
-		// if poller.invokes != 1 {
-		// 	t.Fatalf("poller invokes. Expected %d, got %d", 1, poller.invokes)
-		// }
+						// wg.Add(1)
+						// defer wg.Done()
+
+						if v := heap.Pop(hp); v == nil {
+							t.Fatalf("hp.Pop() -> Unexpected <nil>")
+						}
+					})
+				}
+			})
+
+			// t.Run(fmt.Sprintf("PollerInvokes/%d", i), func(t *testing.T) {
+			// 	wg.Wait()
+			// 	t.Fatal("DMKLDNDJNDK", tt.poller.(*mock).invokes)
+			// })
+		}
 	})
 
 	t.Run("Push", func(t *testing.T) {

@@ -3,6 +3,8 @@ package poller
 import (
 	"container/heap"
 	"sync"
+
+	"github.com/boomfunc/base/tools"
 )
 
 type HeapItem struct {
@@ -14,7 +16,7 @@ type HeapItem struct {
 type pollerHeap struct {
 	// poller integration
 	poller Interface
-	once   sync.Once // poller locking
+	once   tools.Once // poller locking
 
 	// mutex and state
 	mutex   sync.Mutex // this mutex guards variables below
@@ -170,13 +172,13 @@ func (h *pollerHeap) Poll() {
 		h.cond.Broadcast() // release all .Wait()
 	}
 
-	// f invokes with mutex locking on once.Do layer -> thread safety
+	// f invokes with mutex locking on once.Do layer
+	// but once.m is a different mutex than h.mutex
+	// -> f() not thread safety
 	h.once.Do(f)
 
 	// invalidate once for future
-	h.mutex.Lock()
-	h.once = sync.Once{} // reset sync.Once
-	h.mutex.Unlock()
+	h.once.Reset()
 }
 
 // actualize called after success polling process finished

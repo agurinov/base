@@ -15,10 +15,11 @@ func (ev mockEvent) Fd() uintptr {
 }
 
 type mock struct {
-	invokes int
-	err     bool
-	re      []uintptr
-	ce      []uintptr
+	invokes   int
+	err       bool
+	inifinity bool // bool for infinity loop
+	re        []uintptr
+	ce        []uintptr
 }
 
 func MockPoller(re, ce []uintptr, err bool) Interface {
@@ -63,7 +64,7 @@ func (p *mock) events() ([]Event, []Event, []Event) {
 func (p *mock) Events() ([]Event, []Event, []Event, error) {
 	p.invokes++
 
-	if p.invokes == 1 {
+	if p.invokes == 1 || p.inifinity {
 		// FIRST INVOKE - BY RULE
 		if p.err {
 			// case when error from poller
