@@ -22,9 +22,7 @@ func (o *Once) Do(f func()) {
 	}
 	// Slow-path.
 	o.m.Lock()
-	defer func() {
-		o.m.Unlock()
-	}()
+	defer o.m.Unlock()
 	if o.done == 0 {
 		defer atomic.StoreUint32(&o.done, 1)
 		f()
@@ -34,5 +32,7 @@ func (o *Once) Do(f func()) {
 // Reset indicates that the next call to Do should actually be called
 // once again.
 func (o *Once) Reset() {
+	o.m.Lock()
+	defer o.m.Unlock()
 	atomic.StoreUint32(&o.done, 0)
 }
