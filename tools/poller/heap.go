@@ -22,12 +22,9 @@ type pollerHeap struct {
 	pending []*HeapItem
 }
 
-func Heap() (heap.Interface, error) {
-	poller, err := New()
-	if err != nil {
-		return nil, err
-	}
-
+// HeapWithPoller creates instance of heap.Interface with poller background refresh
+// the provided poller will be used
+func HeapWithPoller(poller Interface) (heap.Interface, error) {
 	h := new(pollerHeap)
 	h.poller = poller
 	h.cond = sync.NewCond(&h.mutex)
@@ -35,6 +32,17 @@ func Heap() (heap.Interface, error) {
 
 	heap.Init(h)
 	return h, nil
+}
+
+// Heap creates instance of heap.Interface with poller background refresh
+// poller will be selected based on OS
+func Heap() (heap.Interface, error) {
+	poller, err := New()
+	if err != nil {
+		return nil, err
+	}
+
+	return HeapWithPoller(poller)
 }
 
 func (h *pollerHeap) len() int {
@@ -100,6 +108,7 @@ func (h *pollerHeap) Push(x interface{}) {
 // pops first in flow with `ready` status
 func (h *pollerHeap) Pop() interface{} {
 	for {
+		// background poll refresh
 		go h.Poll()
 
 		// try to pop ready
@@ -148,13 +157,17 @@ func (h *pollerHeap) poll() ([]uintptr, []uintptr) {
 // and actualize heap data
 func (h *pollerHeap) Poll() {
 	// f is poll with actualizing heap data
-	// 1 running instance of this function per time across all workers
+	// Only one running instance of this function per time across all workers
 	f := func() {
 		// blocking mode operation !!
 		re, ce := h.poll()
+
 		// events are received (and they are!)
+		h.mutex.Lock()
 		h.actualize(re, ce) // push ready, excluding closed
-		h.cond.Broadcast()  // release all .Wait()
+		h.mutex.Unlock()
+
+		h.cond.Broadcast() // release all .Wait()
 	}
 
 	// f invokes with mutex locking on once.Do layer -> thread safety
