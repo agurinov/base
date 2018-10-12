@@ -5,5 +5,5 @@ import (
 )
 
 func StartupLog(workerNum int) {
-	log.Infof("dispatcher:\tSpawned %s workers", log.Wrap(workerNum, log.Bold))
+	log.Debugf("dispatcher:\tSpawned %s worker(s)", log.Wrap(workerNum, log.Bold))
 }
