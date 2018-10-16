@@ -175,10 +175,7 @@ func (h *pollerHeap) Poll() {
 	// f invokes with mutex locking on once.Do layer
 	// but once.m is a different mutex than h.mutex
 	// -> f() not thread safety
-	h.once.Do(f)
-
-	// invalidate once for future
-	h.once.Reset()
+	h.once.Do(f, true)
 }
 
 // actualize called after success polling process finished
